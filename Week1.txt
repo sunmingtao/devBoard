@@ -1,0 +1,23 @@
+第1周任务清单（热身与项目启动）
+📌 目标概述：
+•	明确项目目标和功能
+•	搭建 Java 后端 + Vue3 前端的开发环境
+•	完成最小可运行的前后端框架
+•	熟悉 Vue3 Composition API 基础写法
+ 
+🗓 每日任务建议
+🔹 Day 1–2：项目准备 & 技术回炉
+•	✅ 制定项目名称、核心功能草案（可参考我之前建议的 DevBoard）
+•	✅ 复习/查漏补缺：
+o	Java 8+（Stream API, Optional, Lambda）
+o	Spring Boot 基础（Controller, Service, Repository 分层）
+o	Maven 项目结构、依赖管理
+o	Git 基础操作（init, commit, push, branch）
+🔹 Day 3：后端骨架初始化
+•	✅ 用 Spring Initializr 初始化项目（模块：Web, Spring Data JPA, Lombok, MySQL Driver）
+•	✅ 配置 application.yml 文件（数据库连接、端口、跨域）
+•	✅ 创建一个简单的 REST API 示例（如 /api/hello 返回 Hello World）
+•	✅ 配置基础结构（Controller/Service/Entity/Repository）
+🔹 Day 4：前端骨架初始化
+•	✅ 使用 Vite 创建 Vue3 项目
+

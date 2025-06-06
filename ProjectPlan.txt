@@ -1,0 +1,50 @@
+📦 项目建议
+项目名称：DevBoard
+类型：开发者任务看板系统
+功能参考：
+•	登录注册（JWT）
+•	个人信息管理
+•	创建/指派/更新任务（Kanban 风格）
+•	看板展示（To Do / Doing / Done）
+•	管理员权限（可控制用户）
+•	后台管理页面（Vue3+Pinia）
+👉 项目技术点可以覆盖：
+•	Spring Boot REST API
+•	Vue 3 Composition API + Vite + Tailwind UI
+•	JWT 认证
+•	MySQL / JPA
+•	Docker 容器化部署
+•	GitHub 项目管理 + README + 单元测试
+ 
+📅 8周详细计划
+✅ 第1-2周：准备 & 架构搭建
+•	复习 Java 8+、Lombok、Spring Boot 核心用法
+•	学习 Vue 3 + Composition API 基础（可以用小页面练手）
+•	项目需求分析、画简单原型图
+•	初始化后端（Spring Boot）和前端（Vue 3 + Vite）项目结构
+•	配置跨域、后端REST接口测试、前端组件路由基础
+✅ 第3-4周：基本功能开发
+•	登录注册模块（JWT）
+•	用户信息维护接口 + 前端页面
+•	任务管理功能（增删查改）
+•	MySQL 表结构设计与连接调优
+•	REST API 开发规范化（分页、错误处理、DTO转换）
+✅ 第5-6周：微服务 & Docker 化
+•	简单拆分模块（如 Auth 服务 / Task 服务）
+•	用 Spring Cloud 或 Spring Boot 多模块管理
+•	学习并编写 Dockerfile + docker-compose
+•	数据库容器 + 后端服务容器 + 前端容器
+•	本地容器环境运行
+✅ 第7-8周：打磨细节 + 上线部署
+•	添加单元测试（JUnit / Mockito）
+•	使用 GitHub Actions 自动部署
+•	写一份详细的 README（项目介绍、技术栈、部署方法）
+•	用 Vercel / Netlify / Render 免费部署前端
+•	用 Fly.io / Railway / Render 部署后端和数据库
+•	分享到 GitHub，作为面试作品展示
+ 
+📖 每周产出记录（建议）
+•	每周写一篇进展日志（可以发布在 GitHub / 博客 / 朋友圈）
+•	记录你学到的新技能、遇到的问题和解决办法
+•	如果愿意，我可以帮你润色或整理为 portfolio 内容
+
