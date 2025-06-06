@@ -1,23 +1,46 @@
-第1周任务清单（热身与项目启动）
-📌 目标概述：
-•	明确项目目标和功能
-•	搭建 Java 后端 + Vue3 前端的开发环境
-•	完成最小可运行的前后端框架
-•	熟悉 Vue3 Composition API 基础写法
- 
-🗓 每日任务建议
-🔹 Day 1–2：项目准备 & 技术回炉
-•	✅ 制定项目名称、核心功能草案（可参考我之前建议的 DevBoard）
-•	✅ 复习/查漏补缺：
-o	Java 8+（Stream API, Optional, Lambda）
-o	Spring Boot 基础（Controller, Service, Repository 分层）
-o	Maven 项目结构、依赖管理
-o	Git 基础操作（init, commit, push, branch）
-🔹 Day 3：后端骨架初始化
-•	✅ 用 Spring Initializr 初始化项目（模块：Web, Spring Data JPA, Lombok, MySQL Driver）
-•	✅ 配置 application.yml 文件（数据库连接、端口、跨域）
-•	✅ 创建一个简单的 REST API 示例（如 /api/hello 返回 Hello World）
-•	✅ 配置基础结构（Controller/Service/Entity/Repository）
-🔹 Day 4：前端骨架初始化
-•	✅ 使用 Vite 创建 Vue3 项目
+Day 1–2：项目准备 & 技术回炉
 
+    ✅ 制定项目名称、核心功能草案（可参考我之前建议的 DevBoard）
+
+    ✅ 复习/查漏补缺：
+
+        Java 8+（Stream API, Optional, Lambda）
+
+        Spring Boot 基础（Controller, Service, Repository 分层）
+
+        Maven 项目结构、依赖管理
+
+        Git 基础操作（init, commit, push, branch）
+
+🔹 Day 3：后端骨架初始化
+
+    ✅ 用 Spring Initializr 初始化项目（模块：Web, Spring Data JPA, Lombok, MySQL Driver）
+
+    ✅ 配置 application.yml 文件（数据库连接、端口、跨域）
+
+    ✅ 创建一个简单的 REST API 示例（如 /api/hello 返回 Hello World）
+
+    ✅ 配置基础结构（Controller/Service/Entity/Repository）
+
+🔹 Day 4：前端骨架初始化
+
+    ✅ 使用 Vite 创建 Vue3 项目
+
+    npm init vite@latest devboard-frontend --template vue
+    cd devboard-frontend && npm install
+
+    ✅ 配置 ESLint、Prettier（代码风格统一）
+
+    ✅ 实现首页 + 路由跳转（使用 Vue Router）
+
+    ✅ 写一个简单组件调用后端接口（/api/hello）
+
+🔹 Day 5–6：基础整合 + 技术掌握
+
+    ✅ 搭建前后端联调环境（开发时 proxy 跨域配置）
+
+    ✅ 熟悉 Vue3 Composition API（用 ref、reactive 写个计数器组件）
+
+    ✅ 使用 Axios 调用后端 REST 接口并显示内容
+
+    ✅ 学习并演示一次 Git 操作流程（新建分支、推送到 GitHub）
