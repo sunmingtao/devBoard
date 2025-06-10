@@ -1172,4 +1172,169 @@ Our implementation is clean, simple, and fully functional without needing Pinia!
 
 ---
 
+## Route Guards & Welcome Messages (Day 5-6)
+
+### Router Guards Implementation ✅
+
+**Already Implemented in Day 3**:
+```javascript
+// src/router/index.js
+router.beforeEach((to, from, next) => {
+  // Update page title
+  document.title = to.meta.title || 'DevBoard'
+  
+  // Check if route requires authentication
+  if (to.meta.requiresAuth) {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      next('/login')     // Redirect to login if not authenticated
+    } else {
+      next()             // Allow access to protected route
+    }
+  } else {
+    next()               // Allow access to public route
+  }
+})
+```
+
+**Protected Routes Configuration**:
+```javascript
+{
+  path: '/tasks',
+  name: 'TaskBoard',
+  component: TaskBoard,
+  meta: {
+    title: 'DevBoard - Task Board',
+    requiresAuth: true    // This route requires authentication
+  }
+}
+```
+
+### Backend /api/auth/me Endpoint ✅
+
+**Already Implemented in Day 2**:
+```java
+@GetMapping("/me")
+public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+    UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+    
+    return ResponseEntity.ok(Map.of(
+        "id", userPrincipal.getId(),
+        "username", userPrincipal.getUsername(),
+        "email", userPrincipal.getEmail(),
+        "role", "USER"
+    ));
+}
+```
+
+### Personalized Welcome Message ✅
+
+**Home.vue Dynamic Welcome**:
+```javascript
+// Template with conditional rendering
+<h1 v-if="isAuthenticated">Welcome back, {{ username }}! 👋</h1>
+<h1 v-else>Welcome to DevBoard</h1>
+
+// Different actions based on auth state
+<router-link v-if="isAuthenticated" to="/tasks" class="btn btn-primary">
+  View Your Tasks
+</router-link>
+<router-link v-else to="/login" class="btn btn-primary">
+  Get Started
+</router-link>
+```
+
+**Reactive Auth State Management**:
+```javascript
+setup() {
+  const route = useRoute()
+  const isAuthenticated = ref(authService.isAuthenticated())
+  const username = ref('')
+
+  const updateAuthInfo = () => {
+    isAuthenticated.value = authService.isAuthenticated()
+    if (isAuthenticated.value) {
+      const user = authService.getUser()
+      username.value = user?.username || ''
+    }
+  }
+
+  // Watch for route changes to update auth state
+  watch(() => route.path, updateAuthInfo)
+  onMounted(updateAuthInfo)
+}
+```
+
+### Complete Authentication Flow
+
+**User Journey**:
+1. **Unauthenticated User**:
+   - Visits home page → sees "Welcome to DevBoard"
+   - Clicks "Get Started" → redirects to login
+   - Tries to access `/tasks` → redirected to login
+
+2. **Authentication Process**:
+   - Registers account → redirected to login
+   - Logs in → JWT token stored in localStorage
+   - Redirected to home page
+
+3. **Authenticated User**:
+   - Home page shows "Welcome back, [Username]! 👋"
+   - Navigation shows username and logout button
+   - Can access protected `/tasks` route
+   - Button changes to "View Your Tasks"
+
+### Token Validation Flow
+
+**Frontend Route Guard**:
+```
+1. User navigates to protected route
+2. Router checks `to.meta.requiresAuth`
+3. If true, checks localStorage for token
+4. If no token → redirect to /login
+5. If token exists → allow navigation
+```
+
+**Backend JWT Validation**:
+```
+1. Request with Bearer token hits protected endpoint
+2. JwtAuthenticationFilter intercepts request
+3. Validates JWT signature and expiration
+4. Sets authentication in SecurityContext
+5. If invalid → return 401 Unauthorized
+6. If valid → proceed to controller
+```
+
+### Error Handling
+
+**Token Expiry Handling**:
+```javascript
+// Automatic logout on 401 response
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+```
+
+### Day 5-6 Requirements Summary ✅
+
+All requirements successfully implemented:
+- ✅ **Route Guards**: Protect authenticated routes with automatic redirect
+- ✅ **Login Protection**: Unauthenticated users redirected to login
+- ✅ **Protected Access**: Authenticated users can access restricted pages
+- ✅ **Personalized Welcome**: "Welcome back, [Username]!" message
+- ✅ **Backend /me Endpoint**: Returns current user info with JWT validation
+- ✅ **Complete Flow**: End-to-end authentication working seamlessly
+
+Our authentication system is production-ready with proper security, user experience, and error handling!
+
+---
+
 *This file contains useful tips and learnings discovered during the DevBoard project development.*

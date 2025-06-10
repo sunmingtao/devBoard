@@ -1,13 +1,17 @@
 <template>
   <div class="home">
     <header class="hero">
-      <h1>Welcome to DevBoard</h1>
+      <h1 v-if="isAuthenticated">Welcome back, {{ username }}! 👋</h1>
+      <h1 v-else>Welcome to DevBoard</h1>
       <p class="hero-subtitle">
         A modern task management system for developers
       </p>
       <div class="hero-actions">
-        <router-link to="/tasks" class="btn btn-primary">
-          View Task Board
+        <router-link v-if="isAuthenticated" to="/tasks" class="btn btn-primary">
+          View Your Tasks
+        </router-link>
+        <router-link v-else to="/login" class="btn btn-primary">
+          Get Started
         </router-link>
         <router-link to="/about" class="btn btn-secondary">
           Learn More
@@ -48,8 +52,11 @@
 </template>
 
 <script>
+  import { ref, onMounted, watch } from 'vue'
+  import { useRoute } from 'vue-router'
   import ApiTest from '../components/ApiTest.vue'
   import Counter from '../components/Counter.vue'
+  import { authService } from '../services/authService'
 
   export default {
     name: 'Home',
@@ -57,6 +64,32 @@
       ApiTest,
       Counter,
     },
+    setup() {
+      const route = useRoute()
+      const isAuthenticated = ref(authService.isAuthenticated())
+      const username = ref('')
+
+      const updateAuthInfo = () => {
+        isAuthenticated.value = authService.isAuthenticated()
+        if (isAuthenticated.value) {
+          const user = authService.getUser()
+          username.value = user?.username || ''
+        } else {
+          username.value = ''
+        }
+      }
+
+      // Watch for route changes to update auth state
+      watch(() => route.path, updateAuthInfo)
+
+      // Initialize auth info on mount
+      onMounted(updateAuthInfo)
+
+      return {
+        isAuthenticated,
+        username
+      }
+    }
   }
 </script>
 
