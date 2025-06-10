@@ -2,6 +2,7 @@ package com.example.devboard.controller;
 
 import com.example.devboard.dto.*;
 import com.example.devboard.entity.User;
+import com.example.devboard.security.UserPrincipal;
 import com.example.devboard.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,6 +11,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -47,6 +50,31 @@ public class AuthController {
             return ResponseEntity.ok(jwtResponse);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/me")
+    @Operation(summary = "Get current user", description = "Get information about the currently authenticated user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User information retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
+    public ResponseEntity<?> getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            
+            // Create response without password
+            JwtResponse userInfo = JwtResponse.builder()
+                    .id(userPrincipal.getId())
+                    .username(userPrincipal.getUsername())
+                    .email(userPrincipal.getEmail())
+                    .role(userPrincipal.getAuthorities().iterator().next().getAuthority().replace("ROLE_", ""))
+                    .build();
+            
+            return ResponseEntity.ok(userInfo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error retrieving user information"));
         }
     }
 }

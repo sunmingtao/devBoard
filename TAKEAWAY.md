@@ -622,6 +622,138 @@ Jwts.parserBuilder()
 
 **Migration Tip**: Check your jjwt version in `pom.xml` and use appropriate API!
 
+### JWT Authentication Filter Flow
+
+**Common Misconception**: JWT filter exceptions directly return 401 responses ❌
+
+**Reality**: JWT filter and AuthenticationEntryPoint handle different scenarios:
+
+#### Filter vs Entry Point Responsibilities
+
+**1. JwtAuthenticationFilter** (Opportunistic Authentication):
+```java
+try {
+    String jwt = parseJwt(request);
+    if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
+        // Set authentication in SecurityContext
+    }
+} catch (Exception e) {
+    logger.error("Cannot set user authentication: {}", e.getMessage());
+    // ❗ CONTINUES to filterChain.doFilter() - doesn't stop!
+}
+filterChain.doFilter(request, response); // Always executes
+```
+
+**Purpose**: Opportunistically set authentication if valid JWT exists
+
+**2. JwtAuthenticationEntryPoint** (Authorization Decision):
+```java
+// After ALL filters complete, Spring Security checks:
+if (SecurityContextHolder.getContext().getAuthentication() == null) {
+    // No authentication was set by any filter
+    // → Throw AuthenticationException  
+    // → Trigger AuthenticationEntryPoint.commence()
+    // → Return 401 Unauthorized
+}
+```
+
+**Purpose**: Handle final "access denied" response when no authentication provided
+
+#### Complete Request Flow
+
+```
+1. Request arrives → JWT Filter runs
+   ├── Has valid JWT? → Set authentication → Continue
+   ├── Has invalid JWT? → Log error → Continue (no auth set)
+   └── No JWT? → Continue (no auth set)
+
+2. Filter chain completes → Spring Security authorization check
+   ├── Authentication exists? → Allow request to controller
+   └── No authentication? → AuthenticationException
+                            → JwtAuthenticationEntryPoint.commence()
+                            → Return 401
+```
+
+#### HTTP Status Code Meanings
+
+- **401 Unauthorized**: "You need to authenticate" (missing/invalid token)
+- **403 Forbidden**: "You're authenticated but don't have permission" (valid token but insufficient role)
+
+#### Example Scenarios
+
+**Valid JWT Token**:
+```
+JWT Filter: ✅ Parse token → Set authentication
+Authorization: ✅ User authenticated → Allow access
+Result: 200 OK + controller response
+```
+
+**Invalid JWT Token**:
+```
+JWT Filter: ❌ Invalid token → Log error → Continue (no auth set)
+Authorization: ❌ No authentication → AuthenticationException
+Entry Point: 🎯 Return 401 Unauthorized
+```
+
+**No JWT Token**:
+```
+JWT Filter: ⏭️ No token → Continue (no auth set)
+Authorization: ❌ No authentication → AuthenticationException  
+Entry Point: 🎯 Return 401 Unauthorized
+```
+
+**Key Insight**: The JWT filter never stops the request flow - it just decides whether to set authentication. The entry point handles the final authorization decision made by Spring Security.
+
+### Testing JWT Authentication with curl
+
+**Register a new user**:
+```bash
+curl -X POST http://localhost:8080/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john_doe",
+    "email": "john@example.com", 
+    "password": "password123"
+  }'
+```
+
+**Login to get JWT token**:
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john_doe",
+    "password": "password123"
+  }'
+```
+Response: `{"token": "eyJhbGc...", "username": "john_doe", ...}`
+
+**Access protected endpoint with token**:
+```bash
+# Save token from login response
+TOKEN="eyJhbGciOiJIUzI1NiJ9..."
+
+# Get current user info
+curl -X GET http://localhost:8080/api/auth/me \
+  -H "Authorization: Bearer $TOKEN"
+
+# Get all tasks
+curl -X GET http://localhost:8080/api/tasks \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Test without token (should return 401)**:
+```bash
+curl -X GET http://localhost:8080/api/tasks
+# Response: {"error": "Unauthorized", "message": "..."}
+```
+
+**Test with invalid token (should return 401)**:
+```bash
+curl -X GET http://localhost:8080/api/tasks \
+  -H "Authorization: Bearer invalid-token"
+```
+
 ---
 
 ## Docker & Database Tips
