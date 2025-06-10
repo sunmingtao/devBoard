@@ -4,6 +4,7 @@ import About from '../views/About.vue'
 import TaskBoard from '../views/TaskBoard.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
+import Profile from '../views/Profile.vue'
 
 const routes = [
   {
@@ -45,6 +46,15 @@ const routes = [
     component: Register,
     meta: {
       title: 'DevBoard - Register',
+    },
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: {
+      title: 'DevBoard - Profile',
+      requiresAuth: true,
     },
   },
 ]

@@ -1337,4 +1337,180 @@ Our authentication system is production-ready with proper security, user experie
 
 ---
 
+## User Profile Management & Avatar Storage Strategy
+
+### Database Schema Design for User Profiles
+
+**Extended User Entity** (Week 3 Day 1):
+```java
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(nullable = false, unique = true, length = 50)
+    private String username;
+    
+    @Column(nullable = false)
+    private String password;
+    
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+    
+    @Column(length = 50)
+    private String nickname;        // Display name
+    
+    @Column(length = 255)
+    private String avatar;          // URL/path to image
+    
+    @Enumerated(EnumType.STRING)
+    private UserRole role = UserRole.USER;
+}
+```
+
+### Avatar Storage: Industry Standard Approach
+
+**Why String URLs Instead of Binary Data**:
+
+#### 1. **Database Performance Benefits**
+```sql
+-- Fast: Avatar URLs don't bloat query results
+SELECT id, username, email, avatar FROM users; -- Microseconds
+
+-- Slow: Binary data kills performance  
+SELECT id, username, email, avatar_blob FROM users; -- Seconds with large images
+```
+
+#### 2. **Scalability Architecture**
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────────┐
+│   Database  │    │ File Storage │    │      CDN        │
+│   (10GB)    │    │   (500GB)    │    │  Global Cache   │
+│ User data   │───▶│   Images     │───▶│  Edge Servers   │
+│ Fast queries│    │   Videos     │    │  <2ms latency   │
+└─────────────┘    └──────────────┘    └─────────────────┘
+```
+
+#### 3. **Real-World Examples**
+All major platforms use URL storage:
+- **GitHub**: `https://avatars.githubusercontent.com/u/12345?v=4`
+- **Discord**: `https://cdn.discordapp.com/avatars/user/hash.png`
+- **Twitter**: `https://pbs.twimg.com/profile_images/...`
+- **LinkedIn**: `https://media.licdn.com/dms/image/...`
+
+#### 4. **Storage Strategy Comparison**
+
+| Approach | Pros | Cons | Use Case |
+|----------|------|------|----------|
+| **URL/Path** ✅ | Fast DB, CDN support, scalable | File management | **Production apps** |
+| **Base64 String** | Simple implementation | Huge DB size, slow queries | **Prototypes only** |
+| **Binary BLOB** | All in DB | Memory issues, slow | **Internal tools** |
+
+#### 5. **Complete Upload Flow**
+```java
+@PostMapping("/api/users/avatar")
+public ResponseEntity<?> uploadAvatar(
+    @RequestParam("file") MultipartFile file,
+    Authentication auth) {
+    
+    // 1. Validate image (size, format, dimensions)
+    if (!isValidImage(file)) {
+        return ResponseEntity.badRequest()
+            .body(new MessageResponse("Invalid image format"));
+    }
+    
+    // 2. Generate unique filename
+    String filename = generateUniqueFilename(file.getOriginalFilename());
+    
+    // 3. Save to cloud storage (S3, CloudFlare, etc.)
+    String imageUrl = cloudStorage.upload(file, filename);
+    
+    // 4. Update user record with URL
+    User user = getCurrentUser(auth);
+    user.setAvatar(imageUrl);
+    userRepository.save(user);
+    
+    // 5. Return URL for immediate frontend use
+    return ResponseEntity.ok(Map.of("avatarUrl", imageUrl));
+}
+```
+
+#### 6. **Frontend Implementation**
+```javascript
+// Upload avatar
+const uploadAvatar = async (file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  const response = await api.post('/api/users/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  
+  // Update UI immediately with new URL
+  userAvatar.value = response.data.avatarUrl
+}
+
+// Display avatar
+<img :src="user.avatar || '/default-avatar.png'" 
+     :alt="user.nickname || user.username" 
+     class="avatar" />
+```
+
+#### 7. **Advanced Features Enabled by URL Storage**
+```java
+// Multiple image sizes
+user.setAvatar("https://cdn.app.com/avatars/user123.jpg");
+user.setAvatarThumbnail("https://cdn.app.com/avatars/user123_thumb.jpg");
+
+// Format optimization
+// Original: https://cdn.app.com/avatars/user123.jpg
+// WebP: https://cdn.app.com/avatars/user123.webp
+// AVIF: https://cdn.app.com/avatars/user123.avif
+```
+
+#### 8. **Production Considerations**
+```yaml
+# CDN Configuration
+avatar_storage:
+  max_size: 5MB
+  allowed_formats: [jpg, png, webp]
+  resize_dimensions: [150x150, 300x300, 600x600]
+  cdn_domain: "https://cdn.yourapp.com"
+  fallback_image: "/assets/default-avatar.png"
+```
+
+### User Profile API Design
+
+**Profile Management Endpoints**:
+```java
+// Get detailed profile
+GET /api/users/me → UserProfileResponse
+
+// Update profile  
+PUT /api/users/me → Update nickname, email, avatar URL
+
+// Upload avatar (future enhancement)
+POST /api/users/avatar → Upload image, return URL, update profile
+```
+
+**Security & Validation**:
+- JWT authentication required for all profile endpoints
+- Users can only access/modify their own profiles
+- Email uniqueness validation across the system
+- Avatar URL validation (format, domain whitelist)
+
+### Key Takeaways
+
+1. **Avatar URLs are industry standard** - Every major platform uses this approach
+2. **Database performance matters** - Keep binary data out of relational tables
+3. **Separation of concerns** - Database for data, file storage for assets, CDN for delivery
+4. **Scalability first** - Design for millions of users from day one
+5. **User experience** - Fast loading images via global CDN edge servers
+
+This approach scales from 10 users to 10 million users without architectural changes!
+
+---
+
 *This file contains useful tips and learnings discovered during the DevBoard project development.*

@@ -26,6 +26,15 @@
           📋 Tasks
         </router-link>
         <router-link
+          v-if="isAuthenticated"
+          to="/profile"
+          class="nav-link"
+          :class="{ active: $route.name === 'Profile' }"
+          @click="closeMenu"
+        >
+          👤 Profile
+        </router-link>
+        <router-link
           to="/about"
           class="nav-link"
           :class="{ active: $route.name === 'About' }"
@@ -54,7 +63,14 @@
             </router-link>
           </template>
           <template v-else>
-            <span class="user-info">👤 {{ username }}</span>
+            <router-link
+              to="/profile"
+              class="nav-link auth-link"
+              :class="{ active: $route.name === 'Profile' }"
+              @click="closeMenu"
+            >
+              👤 {{ username }}
+            </router-link>
             <button @click="handleLogout" class="nav-link auth-link logout-btn">
               Logout
             </button>

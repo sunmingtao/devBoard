@@ -64,12 +64,18 @@ public class AuthController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             
+            // Get full user details from database to include nickname and avatar
+            User user = userService.findById(userPrincipal.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
             // Create response without password
             JwtResponse userInfo = JwtResponse.builder()
-                    .id(userPrincipal.getId())
-                    .username(userPrincipal.getUsername())
-                    .email(userPrincipal.getEmail())
-                    .role(userPrincipal.getAuthorities().iterator().next().getAuthority().replace("ROLE_", ""))
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .nickname(user.getNickname())
+                    .avatar(user.getAvatar())
+                    .role(user.getRole().name())
                     .build();
             
             return ResponseEntity.ok(userInfo);

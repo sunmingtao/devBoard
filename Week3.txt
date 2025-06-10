@@ -1,104 +1,61 @@
-✅ Week 2 任务清单：实现用户注册、登录、基础权限控制
-🎯 本周目标：
+✅ Week 3：用户信息管理 + 任务系统初步搭建
 
-    后端实现用户注册、登录接口（含密码加密）
+🎯 目标：实现用户信息维护功能，搭建任务（Task）模块的增删改查基础功能。
+🗓 日常任务分解：
+🔹 Day 1：用户信息维护（后端）
 
-    前端实现注册/登录页面，状态管理
+为 User 实体添加额外字段（如：nickname, avatar, email 等）
 
-    完成 JWT 登录认证机制
+增加 /api/users/me 获取当前用户详细信息接口
 
-    实现基础的"权限拦截"（登录后才能访问主界面）
+增加 /api/users/update 修改当前用户信息接口（PUT / PATCH）
 
-    实现当前登录用户信息展示（前端显示欢迎语等）
+    对接口加上权限拦截，确保用户只能修改自己的信息
 
-🗓 日常任务分解
-🔹 Day 1：设计用户模型 + 登录注册接口（后端）✅
+🔹 Day 2：用户信息维护（前端）
 
-MySQL 设计 user 表（字段：id, username, password, role, create_time 等）
+创建 Profile.vue 页面（展示当前用户信息 + 可编辑）
 
-使用 JPA 创建 User 实体类 + Repository
+通过 token 获取 /api/users/me 数据并展示
 
-后端实现注册接口（保存加密密码）：
+    实现表单提交更新用户信息（昵称 / 邮箱等, upload avartar image）
 
-    用 Spring Security 的 BCryptPasswordEncoder 进行密码加密
+🔹 Day 3：任务模型设计（后端）
 
-后端实现登录接口（验证用户、返回 JWT Token）
+设计 Task 实体（字段：id, title, description, status, assignee_id, creator_id, create_time, update_time）
 
-    将 JWT 的 secret/key 保存在配置中（application.yml）
+创建 TaskRepository, TaskService, TaskController
 
-🔹 Day 2：集成 JWT + 登录鉴权中间件 ✅
+实现基础增删查改接口（Create, Read, Update, Delete）
 
-集成 JWT（可用 jjwt 或 java-jwt）
+    支持分页查询所有任务（可按状态筛选）
 
-登录成功后生成 Token 并返回给前端
+🔹 Day 4–5：任务模块（前端）
 
-编写 JWTFilter 或 OncePerRequestFilter 来校验 Token
+创建 TaskList.vue 页面（展示所有任务）
 
-    拦截所有受保护接口，未携带 token 返回 401
+创建 TaskForm.vue 页面（创建/编辑任务）
 
-🔹 Day 3：前端页面（登录/注册）✅
+实现任务增删改查功能（使用 Axios 调用后端 API）
 
-编写 Login.vue、Register.vue 页面
+    使用 v-for 渲染任务列表，展示 title, status, assignee
 
-使用 Axios 发送注册/登录请求，获取 Token
+🔹 Day 6：状态切换 + 看板视图准备
 
-登录成功后将 Token 存在浏览器（localStorage / sessionStorage）
+支持任务状态的切换（To Do → Doing → Done）
 
-    实现跳转逻辑：登录成功 → 进入主页面，失败 → 显示错误提示
+前端尝试实现看板样式布局（简单的列 + 拖拽可稍后实现）
 
-🔹 Day 4：实现登录状态管理 ✅
+    状态颜色区分，增强视觉清晰度
 
-使用 Pinia（或 Vue3 组合式 API + ref/reactive）存储当前用户状态
-    ✅ 实现方式：使用 Vue3 组合式 API + localStorage，更简单直接
+🔹 Day 7：总结 & 推送
 
-Axios 设置全局请求头，将 token 加入请求
-    ✅ 通过 axios interceptors 实现自动注入 Bearer token
+整理代码，推送 GitHub（分支名：feature/task 或 week3）
 
-添加退出登录功能（清空 token + 跳转回登录页）
-    ✅ Navigation.vue 中实现 handleLogout 功能
+编写本周日志（README 或博客）
 
-    添加导航栏，展示当前用户名、退出按钮
-    ✅ Navigation 组件动态显示用户名和登录/登出按钮
+    完成的功能
 
-🔹 Day 5–6：权限路由拦截 + 调试 ✅
+    遇到的问题 & 学习记录
 
-配置 Vue Router，添加"路由守卫"：
-    ✅ 已在 Day 3 实现：router.beforeEach() 检查 requiresAuth meta 属性
-
-    未登录时跳转到登录页
-    ✅ 路由守卫自动重定向未认证用户到 /login
-
-    登录后可访问受限页面
-    ✅ 有效 token 的用户可以访问 /tasks 等受保护页面
-
-前端首页展示欢迎语（如："欢迎回来，admin！"）
-    ✅ Home.vue 显示个性化欢迎消息："Welcome back, [Username]! 👋"
-    ✅ 根据认证状态显示不同的按钮："Get Started" vs "View Your Tasks"
-
-    后端暴露一个 /me 接口返回当前用户信息，用 token 解析
-    ✅ 已在 Day 2 实现：/api/auth/me 端点返回当前用户信息
-
-🔹 Day 7：总结 & GitHub 推送
-
-项目 push 到 GitHub（分支名 feature/auth 或 week2）
-
-    编写本周学习日志（可写进 README.md 或 issue 里）
-
-        遇到的坑
-
-        学到的知识（如 JWT、前后端鉴权流程）
-
-        对项目的下一步设想
-
-📌 本周产出清单
-项目	内容
-后端	用户注册 + 登录 + JWT 生成和校验 + 登录用户接口
-前端	登录/注册页面、Token 存储、权限跳转、状态管理
-项目结构	已形成前后端联调、可进入"用户系统"的项目雏形
-🧪 建议使用的工具或库（如果还没用的话）
-功能	工具
-JWT	jjwt 或 java-jwt
-密码加密	BCryptPasswordEncoder（Spring Security）
-状态管理	Pinia（Vue3 官方推荐）
-前端路由拦截	Vue Router 的 beforeEach 钩子
-接口测试	Postman / Swagger UI
+    下周目标展望（如看板拖拽、任务评论、标签系统）

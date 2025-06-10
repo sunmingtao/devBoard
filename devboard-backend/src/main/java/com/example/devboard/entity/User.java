@@ -29,6 +29,12 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
     
+    @Column(length = 50)
+    private String nickname;
+    
+    @Column(length = 255)
+    private String avatar;
+    
     @Column(length = 20)
     @Enumerated(EnumType.STRING)
     private UserRole role = UserRole.USER;

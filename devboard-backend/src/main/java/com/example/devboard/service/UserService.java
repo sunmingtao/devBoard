@@ -3,6 +3,7 @@ package com.example.devboard.service;
 import com.example.devboard.dto.JwtResponse;
 import com.example.devboard.dto.LoginRequest;
 import com.example.devboard.dto.SignupRequest;
+import com.example.devboard.dto.UserProfileUpdateRequest;
 import com.example.devboard.entity.User;
 import com.example.devboard.repository.UserRepository;
 import com.example.devboard.security.JwtUtils;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +64,8 @@ public class UserService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .nickname(user.getNickname())
+                .avatar(user.getAvatar())
                 .role(user.getRole().name())
                 .build();
     }
@@ -68,5 +73,35 @@ public class UserService {
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+    }
+    
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
+    }
+    
+    @Transactional
+    public User updateUserProfile(Long userId, UserProfileUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
+        // Check if email is being changed and if it's already taken by another user
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Error: Email is already in use!");
+            }
+            user.setEmail(request.getEmail());
+        }
+        
+        // Update nickname if provided
+        if (request.getNickname() != null) {
+            user.setNickname(request.getNickname());
+        }
+        
+        // Update avatar if provided
+        if (request.getAvatar() != null) {
+            user.setAvatar(request.getAvatar());
+        }
+        
+        return userRepository.save(user);
     }
 }
