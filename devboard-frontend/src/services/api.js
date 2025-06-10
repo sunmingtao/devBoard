@@ -13,6 +13,13 @@ const api = axios.create({
 api.interceptors.request.use(
   config => {
     console.log('🚀 Making API request:', config.method?.toUpperCase(), config.url)
+    
+    // Add auth token if available
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    
     return config
   },
   error => {
@@ -30,7 +37,12 @@ api.interceptors.response.use(
   error => {
     console.error('❌ API error:', error.response?.status, error.message)
     
-    if (error.response?.status === 404) {
+    if (error.response?.status === 401) {
+      console.error('🔐 Unauthorized - redirecting to login')
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    } else if (error.response?.status === 404) {
       console.error('🔍 Resource not found')
     } else if (error.response?.status >= 500) {
       console.error('🔥 Server error')

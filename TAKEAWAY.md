@@ -840,4 +840,170 @@ lsof -ti:8080 | xargs kill -9
 
 ---
 
+## Unix/Linux Command Tips
+
+### Finding Running Processes with grep
+**Common Pattern**: Using `ps aux | grep` to find specific processes
+
+**The Double grep Problem**:
+```bash
+# This command...
+ps aux | grep java
+
+# ...might return:
+user  12345  0.0  0.0  java -jar devboard.jar
+user  12346  0.0  0.0  grep java              # The grep command itself!
+```
+
+**Solution: Exclude grep from results**:
+```bash
+ps aux | grep java | grep -v grep
+```
+
+**Advanced Example - Finding Java processes with flexible patterns**:
+```bash
+ps aux | grep -E "java.*devboard|devboard.*java" | grep -v grep
+```
+
+**Breakdown**:
+- `ps aux` - List all running processes
+  - `a` = show processes for all users
+  - `u` = display user-oriented format
+  - `x` = show processes not attached to terminal
+- `grep -E "java.*devboard|devboard.*java"` - Extended regex to match either pattern
+  - `-E` = enable extended regular expressions
+  - `java.*devboard` = matches "java" followed by anything, then "devboard"
+  - `|` = OR operator
+  - `devboard.*java` = matches "devboard" followed by anything, then "java"
+- `grep -v grep` - Exclude lines containing "grep"
+  - `-v` = invert match (show lines that DON'T match)
+
+**Why it works**: When you run a pipeline like `ps | grep`, both commands run simultaneously. The `ps` command captures its process list while `grep` is already running, so `grep` appears in the process list. The second `grep -v grep` filters it out.
+
+**Alternative Solutions**:
+```bash
+# Using pgrep (process grep)
+pgrep -f "java.*devboard"
+
+# Using the bracket trick
+ps aux | grep "[j]ava.*devboard"  # The regex [j]ava doesn't match "java" in the grep command
+
+# Using awk
+ps aux | awk '/java.*devboard/ && !/awk/'
+```
+
+---
+
+## Frontend Authentication Implementation
+
+### Vue 3 Login/Register Components
+**Key Features Implemented**:
+- Clean, responsive login and register forms using Tailwind-like styling
+- Form validation (password confirmation, minimum length)
+- Error handling with user-friendly messages
+- Success feedback on registration
+- Automatic redirect after successful login/registration
+
+### Authentication Service Architecture
+**Service Structure** (`authService.js`):
+```javascript
+// Separate auth API instance
+const authApi = axios.create({
+  baseURL: 'http://localhost:8080/api/auth'
+})
+
+// Core auth methods
+authService = {
+  register(userData) -> POST /signup
+  login(credentials) -> POST /login
+  getCurrentUser(token) -> GET /me
+  logout() -> Clear localStorage
+  isAuthenticated() -> Check token exists
+  getToken() -> Get stored token
+  getUser() -> Get stored user info
+}
+```
+
+**Key Design Decisions**:
+1. **Separate Auth Service**: Dedicated service for all auth-related API calls
+2. **Token Management**: Automatic token injection via interceptors
+3. **401 Handling**: Global interceptor redirects to login on token expiry
+4. **Local Storage**: Token and user info stored for persistence
+
+### Navigation Component Authentication
+**Dynamic UI Based on Auth State**:
+- Show/hide menu items based on authentication
+- Display username when logged in
+- Login/Register buttons when logged out
+- Logout functionality with redirect
+
+**Reactive Auth State Management**:
+```javascript
+// Watch route changes to update auth state
+watch(() => route.path, () => {
+  isAuthenticated.value = authService.isAuthenticated()
+  updateUserInfo()
+})
+```
+
+### Router Guards for Protected Routes
+**Implementation**:
+```javascript
+router.beforeEach((to, from, next) => {
+  if (to.meta.requiresAuth) {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      next('/login')
+    } else {
+      next()
+    }
+  } else {
+    next()
+  }
+})
+```
+
+**Protected Routes**:
+- `/tasks` - Requires authentication
+- Automatic redirect to login if not authenticated
+
+### Token Storage Strategy
+**localStorage vs sessionStorage**:
+- **localStorage**: Persists across browser sessions (chosen approach)
+- **sessionStorage**: Cleared when tab closes
+
+**Security Considerations**:
+- Never store sensitive data in JWT payload (it's base64 encoded, not encrypted)
+- Token expiry handled by backend
+- Clear token on logout or 401 response
+
+### Testing Authentication Flow
+**Manual Testing Steps**:
+1. Register new user at `/register`
+2. Auto-redirect to `/login`
+3. Login with credentials
+4. Token stored in localStorage
+5. Navigation updates to show username
+6. Access protected `/tasks` route
+7. Logout clears token and redirects home
+
+**curl Testing**:
+```bash
+# Register
+curl -X POST http://localhost:8080/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","email":"test@example.com","password":"password123"}'
+
+# Login (get token)
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"password123"}'
+
+# Use token
+curl -X GET http://localhost:8080/api/auth/me \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
 *This file contains useful tips and learnings discovered during the DevBoard project development.*
