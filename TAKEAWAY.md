@@ -1006,4 +1006,170 @@ curl -X GET http://localhost:8080/api/auth/me \
 
 ---
 
+## Login State Management (Without Pinia)
+
+### Our Implementation Approach
+We implemented login state management using **Vue 3 Composition API + localStorage** instead of Pinia. This approach is simpler and works perfectly for our use case.
+
+### State Management Architecture
+
+**1. Token Storage (localStorage)**:
+```javascript
+// Login success
+localStorage.setItem('token', response.token)
+localStorage.setItem('user', JSON.stringify(userData))
+
+// Logout
+localStorage.removeItem('token')
+localStorage.removeItem('user')
+```
+
+**2. Auth Service Methods**:
+```javascript
+authService = {
+  isAuthenticated: () => !!localStorage.getItem('token'),
+  getToken: () => localStorage.getItem('token'),
+  getUser: () => JSON.parse(localStorage.getItem('user') || '{}')
+}
+```
+
+**3. Component State Management**:
+```javascript
+// Each component manages its own reactive state
+const isAuthenticated = ref(authService.isAuthenticated())
+const username = ref('')
+
+// Update on route changes
+watch(() => route.path, () => {
+  isAuthenticated.value = authService.isAuthenticated()
+  updateUserInfo()
+})
+```
+
+### Global Request Headers (Axios Interceptors)
+
+**Auth Service Interceptor** (authService.js):
+```javascript
+authApi.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
+  if (token && config.url !== '/login' && config.url !== '/signup') {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+```
+
+**Main API Interceptor** (api.js):
+```javascript
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+```
+
+### Logout Implementation
+
+**In Navigation Component**:
+```javascript
+const handleLogout = () => {
+  authService.logout()           // Clear localStorage
+  isAuthenticated.value = false  // Update local state
+  username.value = ''            // Clear username
+  closeMenu()                    // Close mobile menu
+  router.push('/')              // Redirect to home
+}
+```
+
+**Logout Button**:
+```html
+<button @click="handleLogout" class="nav-link auth-link logout-btn">
+  Logout
+</button>
+```
+
+### Why This Approach Works Well
+
+**Advantages**:
+1. **Simple**: No extra dependencies or setup
+2. **Sufficient**: Meets all requirements for auth state
+3. **Performant**: No unnecessary reactivity overhead
+4. **Clear**: Easy to understand and debug
+5. **Persistent**: Survives page refreshes
+
+**When to Consider Pinia**:
+- Multiple components need deep user data
+- Complex state mutations
+- Need time-travel debugging
+- Want centralized state management
+- Team prefers store pattern
+
+### Pinia Alternative (For Reference)
+
+If we wanted to use Pinia, here's how it would look:
+
+```javascript
+// stores/auth.js
+import { defineStore } from 'pinia'
+import { authService } from '@/services/authService'
+
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref(null)
+  const token = ref(localStorage.getItem('token'))
+  
+  const isAuthenticated = computed(() => !!token.value)
+  const username = computed(() => user.value?.username || '')
+  
+  async function login(credentials) {
+    const response = await authService.login(credentials)
+    token.value = response.token
+    user.value = { id: response.id, username: response.username }
+    localStorage.setItem('token', response.token)
+    localStorage.setItem('user', JSON.stringify(user.value))
+  }
+  
+  function logout() {
+    user.value = null
+    token.value = null
+    authService.logout()
+  }
+  
+  // Initialize from localStorage
+  function initializeAuth() {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      user.value = JSON.parse(savedUser)
+    }
+  }
+  
+  return { 
+    user, 
+    token, 
+    isAuthenticated, 
+    username, 
+    login, 
+    logout,
+    initializeAuth 
+  }
+})
+
+// Usage in components
+const authStore = useAuthStore()
+// authStore.isAuthenticated - reactive everywhere!
+```
+
+### Summary: Day 4 Requirements ✅
+
+All Day 4 requirements were actually implemented in Day 3:
+- ✅ **User state storage**: localStorage + reactive refs
+- ✅ **Global request headers**: Axios interceptors with Bearer token
+- ✅ **Logout functionality**: Clear storage + redirect
+- ✅ **Navigation display**: Username and logout button when authenticated
+
+Our implementation is clean, simple, and fully functional without needing Pinia!
+
+---
+
 *This file contains useful tips and learnings discovered during the DevBoard project development.*
