@@ -45,6 +45,11 @@ dist/
 .env.local
 .env.*.local
 
+# Environment files
+.env
+*.env
+!.env.example
+
 # Compiled class files
 *.class
 

@@ -422,6 +422,208 @@ configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
 
 ---
 
+## JWT & Authentication
+
+### Understanding JWT vs Password Encryption
+**Common Misconception**: JWT is used to encrypt/decrypt passwords ❌
+
+**Reality**: JWT and password encryption serve completely different purposes:
+
+#### 1. **BCrypt (Password Encryption)**
+```java
+// This HASHES passwords (one-way, cannot decrypt)
+passwordEncoder.encode("myPassword123")  
+// Result: $2a$10$N9qo8uLOickgx2ZMRZoMye... (irreversible)
+
+// This VERIFIES passwords against stored hash
+passwordEncoder.matches(loginPassword, storedHashedPassword)
+```
+
+**Purpose**: Securely store passwords in database (can't be decrypted, only verified)
+
+#### 2. **JWT (Authentication Token)**
+```java
+// After successful login, create a token (like an ID card)
+String token = Jwts.builder()
+    .subject("john_doe")        // WHO you are
+    .issuedAt(new Date())       // WHEN issued  
+    .expiration(futureDate)     // WHEN expires
+    .signWith(secretKey)        // SIGNATURE (not encryption!)
+    .compact();
+
+// Result: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huX2RvZSI...
+```
+
+**Purpose**: Prove you're authenticated without sending password again
+
+### Authentication Flow Breakdown
+
+**1. Registration**:
+- User provides password → BCrypt hashes it → Store hash in DB
+- JWT not involved!
+
+**2. Login**:
+- User provides password → BCrypt verifies against stored hash
+- If correct → Generate JWT token → Send to client
+
+**3. Subsequent Requests**:
+- Client sends JWT in header: `Authorization: Bearer eyJhbG...`
+- Server validates JWT signature + expiry
+- If valid → Allow access (no password needed!)
+
+### JWT Structure (3 Parts)
+```
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huX2RvZSI.signature
+     HEADER            PAYLOAD            SIGNATURE
+```
+
+**Header**: Algorithm info (base64 encoded)
+**Payload**: User data + claims (base64 encoded, readable!)
+**Signature**: Prevents tampering (uses secret key)
+
+### Key Security Points
+
+**JWT is NOT encrypted** - it's signed:
+- Anyone can decode and read the payload
+- But they can't modify it without the secret key
+- Think of it like a movie ticket with a hologram
+
+**JWT Expiry Checking**:
+```java
+// Automatic expiry check happens here:
+Jwts.parser().verifyWith(key()).build().parseSignedClaims(token)
+// Throws ExpiredJwtException if current time > token expiry
+```
+
+### JWT Best Practices
+
+**Secret Management**:
+```yaml
+# ❌ DON'T: Hard-code secrets in application.yml
+devboard:
+  app:
+    jwtSecret: myHardCodedSecret
+
+# ✅ DO: Use environment variables
+devboard:
+  app:
+    jwtSecret: ${JWT_SECRET:defaultForDevOnly}
+```
+
+**Security Setup**:
+1. Generate strong secret: `openssl rand -base64 32`
+2. Set environment variable: `export JWT_SECRET=your-generated-key`
+3. Use different secrets per environment
+4. Add `.env` to `.gitignore`
+5. Create `.env.example` for team documentation
+
+**Production Deployment**:
+```bash
+# Environment variable approach
+JWT_SECRET=your-production-secret java -jar app.jar
+
+# Docker approach
+docker run -e JWT_SECRET=your-secret your-app
+
+# Kubernetes approach (using secrets)
+kubectl create secret generic jwt-secret --from-literal=JWT_SECRET=your-secret
+```
+
+### JWT vs Session Comparison
+
+**Traditional Sessions**:
+- Server stores session data in memory/database
+- Client gets session ID cookie
+- Stateful (server must remember sessions)
+
+**JWT Tokens**:
+- Server stores nothing (token contains all info)
+- Client stores token (localStorage/sessionStorage)
+- Stateless (server just validates signature)
+
+**JWT Pros**:
+- Scalable (no server-side storage)
+- Works across microservices
+- Mobile-friendly
+
+**JWT Cons**:
+- Larger than session IDs
+- Can't revoke easily (until expiry)
+- Payload is readable
+
+### Common JWT Pitfalls
+
+**1. Storing Sensitive Data**:
+```javascript
+// ❌ DON'T: JWT payload is readable!
+const payload = { 
+  username: "john", 
+  password: "secret123"  // Anyone can see this!
+}
+
+// ✅ DO: Only store non-sensitive identifiers
+const payload = { 
+  username: "john", 
+  userId: 123,
+  role: "user"
+}
+```
+
+**2. Long Expiry Times**:
+```yaml
+# ❌ DON'T: Too long
+jwtExpirationMs: 2592000000  # 30 days
+
+# ✅ DO: Reasonable expiry
+jwtExpirationMs: 86400000    # 24 hours
+```
+
+**3. Not Validating on Every Request**:
+- JWT should be validated on every protected endpoint
+- Check signature, expiry, and format
+- Don't trust the client!
+
+### JWT Library Version Issues
+**Problem**: Different jjwt versions have different APIs
+
+**jjwt 0.12.x (Current)**:
+```java
+// Token creation
+Jwts.builder()
+    .subject(username)      // New fluent API
+    .issuedAt(new Date())
+    .expiration(expiryDate)
+    .signWith(key())        // Algorithm auto-detected
+
+// Token parsing  
+Jwts.parser()
+    .verifyWith((SecretKey) key())
+    .build()
+    .parseSignedClaims(token)
+    .getPayload()
+```
+
+**jjwt 0.11.x (Older)**:
+```java
+// Token creation
+Jwts.builder()
+    .setSubject(username)   // Old setter API
+    .setIssuedAt(new Date())
+    .setExpiration(expiryDate)
+    .signWith(key(), SignatureAlgorithm.HS256)  // Explicit algorithm
+
+// Token parsing
+Jwts.parserBuilder()
+    .setSigningKey(key())
+    .build()
+    .parseClaimsJws(token)
+    .getBody()
+```
+
+**Migration Tip**: Check your jjwt version in `pom.xml` and use appropriate API!
+
+---
+
 ## Docker & Database Tips
 
 ### Setting Up MySQL with Docker

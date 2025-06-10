@@ -18,3 +18,10 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+# Development JWT Configuration
+# IMPORTANT: For production, use strong secret via environment variable
+devboard:
+  app:
+    jwtSecret: ${JWT_SECRET:myDevelopmentSecretKeyThatShouldBeChangedInProduction}
+    jwtExpirationMs: ${JWT_EXPIRATION_MS:86400000}

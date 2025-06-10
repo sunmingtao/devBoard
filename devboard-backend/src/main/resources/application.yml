@@ -25,3 +25,9 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+# DevBoard Application Configuration
+devboard:
+  app:
+    jwtSecret: ${JWT_SECRET:defaultSecretKeyForDevelopmentOnly}
+    jwtExpirationMs: ${JWT_EXPIRATION_MS:86400000} # 24 hours

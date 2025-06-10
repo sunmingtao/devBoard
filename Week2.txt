@@ -1,0 +1,94 @@
+✅ Week 2 任务清单：实现用户注册、登录、基础权限控制
+🎯 本周目标：
+
+    后端实现用户注册、登录接口（含密码加密）
+
+    前端实现注册/登录页面，状态管理
+
+    完成 JWT 登录认证机制
+
+    实现基础的“权限拦截”（登录后才能访问主界面）
+
+    实现当前登录用户信息展示（前端显示欢迎语等）
+
+🗓 日常任务分解
+🔹 Day 1：设计用户模型 + 登录注册接口（后端）
+
+MySQL 设计 user 表（字段：id, username, password, role, create_time 等）
+
+使用 JPA 创建 User 实体类 + Repository
+
+后端实现注册接口（保存加密密码）：
+
+    用 Spring Security 的 BCryptPasswordEncoder 进行密码加密
+
+后端实现登录接口（验证用户、返回 JWT Token）
+
+    将 JWT 的 secret/key 保存在配置中（application.yml）
+
+🔹 Day 2：集成 JWT + 登录鉴权中间件
+
+集成 JWT（可用 jjwt 或 java-jwt）
+
+登录成功后生成 Token 并返回给前端
+
+编写 JWTFilter 或 OncePerRequestFilter 来校验 Token
+
+    拦截所有受保护接口，未携带 token 返回 401
+
+🔹 Day 3：前端页面（登录/注册）
+
+编写 Login.vue、Register.vue 页面
+
+使用 Axios 发送注册/登录请求，获取 Token
+
+登录成功后将 Token 存在浏览器（localStorage / sessionStorage）
+
+    实现跳转逻辑：登录成功 → 进入主页面，失败 → 显示错误提示
+
+🔹 Day 4：实现登录状态管理
+
+使用 Pinia（或 Vue3 组合式 API + ref/reactive）存储当前用户状态
+
+Axios 设置全局请求头，将 token 加入请求
+
+添加退出登录功能（清空 token + 跳转回登录页）
+
+    添加导航栏，展示当前用户名、退出按钮
+
+🔹 Day 5–6：权限路由拦截 + 调试
+
+配置 Vue Router，添加“路由守卫”：
+
+    未登录时跳转到登录页
+
+    登录后可访问受限页面
+
+前端首页展示欢迎语（如：“欢迎回来，admin！”）
+
+    后端暴露一个 /me 接口返回当前用户信息，用 token 解析
+
+🔹 Day 7：总结 & GitHub 推送
+
+项目 push 到 GitHub（分支名 feature/auth 或 week2）
+
+    编写本周学习日志（可写进 README.md 或 issue 里）
+
+        遇到的坑
+
+        学到的知识（如 JWT、前后端鉴权流程）
+
+        对项目的下一步设想
+
+📌 本周产出清单
+项目	内容
+后端	用户注册 + 登录 + JWT 生成和校验 + 登录用户接口
+前端	登录/注册页面、Token 存储、权限跳转、状态管理
+项目结构	已形成前后端联调、可进入“用户系统”的项目雏形
+🧪 建议使用的工具或库（如果还没用的话）
+功能	工具
+JWT	jjwt 或 java-jwt
+密码加密	BCryptPasswordEncoder（Spring Security）
+状态管理	Pinia（Vue3 官方推荐）
+前端路由拦截	Vue Router 的 beforeEach 钩子
+接口测试	Postman / Swagger UI
