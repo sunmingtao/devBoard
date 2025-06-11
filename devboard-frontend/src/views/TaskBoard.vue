@@ -23,12 +23,34 @@
               :key="task.id"
               class="task-card"
               :class="task.priority.toLowerCase()"
+              @click="editTask(task)"
             >
-              <h3>{{ task.title }}</h3>
-              <p>{{ task.description }}</p>
+              <div class="task-header">
+                <h3>{{ task.title }}</h3>
+                <div class="task-actions">
+                  <button @click.stop="editTask(task)" class="action-btn edit" title="Edit">✏️</button>
+                  <button 
+                    v-if="canDeleteTask(task)" 
+                    @click.stop="deleteTask(task)" 
+                    class="action-btn delete" 
+                    title="Delete"
+                  >🗑️</button>
+                </div>
+              </div>
+              <p v-if="task.description">{{ task.description }}</p>
               <div class="task-meta">
-                <span class="priority">{{ task.priority }}</span>
+                <span class="priority">{{ getPriorityIcon(task.priority) }} {{ task.priority }}</span>
                 <span class="status">{{ task.status }}</span>
+              </div>
+              <div class="task-users">
+                <div class="user-info">
+                  <span class="user-label">Creator:</span>
+                  <span class="user-name">{{ task.creator?.username || 'Unknown' }}</span>
+                </div>
+                <div v-if="task.assignee" class="user-info">
+                  <span class="user-label">Assignee:</span>
+                  <span class="user-name">{{ task.assignee.username }}</span>
+                </div>
               </div>
             </div>
             <div v-if="todoTasks.length === 0" class="empty-state">
@@ -48,12 +70,34 @@
               :key="task.id"
               class="task-card"
               :class="task.priority.toLowerCase()"
+              @click="editTask(task)"
             >
-              <h3>{{ task.title }}</h3>
-              <p>{{ task.description }}</p>
+              <div class="task-header">
+                <h3>{{ task.title }}</h3>
+                <div class="task-actions">
+                  <button @click.stop="editTask(task)" class="action-btn edit" title="Edit">✏️</button>
+                  <button 
+                    v-if="canDeleteTask(task)" 
+                    @click.stop="deleteTask(task)" 
+                    class="action-btn delete" 
+                    title="Delete"
+                  >🗑️</button>
+                </div>
+              </div>
+              <p v-if="task.description">{{ task.description }}</p>
               <div class="task-meta">
-                <span class="priority">{{ task.priority }}</span>
+                <span class="priority">{{ getPriorityIcon(task.priority) }} {{ task.priority }}</span>
                 <span class="status">{{ task.status }}</span>
+              </div>
+              <div class="task-users">
+                <div class="user-info">
+                  <span class="user-label">Creator:</span>
+                  <span class="user-name">{{ task.creator?.username || 'Unknown' }}</span>
+                </div>
+                <div v-if="task.assignee" class="user-info">
+                  <span class="user-label">Assignee:</span>
+                  <span class="user-name">{{ task.assignee.username }}</span>
+                </div>
               </div>
             </div>
             <div v-if="inProgressTasks.length === 0" class="empty-state">
@@ -73,12 +117,34 @@
               :key="task.id"
               class="task-card"
               :class="task.priority.toLowerCase()"
+              @click="editTask(task)"
             >
-              <h3>{{ task.title }}</h3>
-              <p>{{ task.description }}</p>
+              <div class="task-header">
+                <h3>{{ task.title }}</h3>
+                <div class="task-actions">
+                  <button @click.stop="editTask(task)" class="action-btn edit" title="Edit">✏️</button>
+                  <button 
+                    v-if="canDeleteTask(task)" 
+                    @click.stop="deleteTask(task)" 
+                    class="action-btn delete" 
+                    title="Delete"
+                  >🗑️</button>
+                </div>
+              </div>
+              <p v-if="task.description">{{ task.description }}</p>
               <div class="task-meta">
-                <span class="priority">{{ task.priority }}</span>
+                <span class="priority">{{ getPriorityIcon(task.priority) }} {{ task.priority }}</span>
                 <span class="status">{{ task.status }}</span>
+              </div>
+              <div class="task-users">
+                <div class="user-info">
+                  <span class="user-label">Creator:</span>
+                  <span class="user-name">{{ task.creator?.username || 'Unknown' }}</span>
+                </div>
+                <div v-if="task.assignee" class="user-info">
+                  <span class="user-label">Assignee:</span>
+                  <span class="user-name">{{ task.assignee.username }}</span>
+                </div>
               </div>
             </div>
             <div v-if="doneTasks.length === 0" class="empty-state">
@@ -92,10 +158,22 @@
         <router-link to="/" class="btn btn-secondary">
           ← Back to Home
         </router-link>
+        <button class="btn btn-success" @click="createTask">
+          ➕ New Task
+        </button>
         <button class="btn btn-primary" @click="loadTasks" :disabled="loading">
           {{ loading ? '⏳ Loading...' : '🔄 Refresh Tasks' }}
         </button>
       </div>
+
+      <!-- Task Form Modal -->
+      <TaskForm
+        v-if="showTaskForm"
+        :task="selectedTask"
+        :visible="showTaskForm"
+        @close="closeTaskForm"
+        @submit="handleTaskSubmit"
+      />
     </div>
   </div>
 </template>
@@ -103,13 +181,21 @@
 <script>
   import { ref, computed, onMounted } from 'vue'
   import taskService from '../services/taskService'
+  import TaskForm from '../components/TaskForm.vue'
+  import { authService } from '../services/authService'
 
   export default {
     name: 'TaskBoard',
+    components: {
+      TaskForm
+    },
     setup() {
       const tasks = ref([])
       const loading = ref(false)
       const error = ref('')
+      const showTaskForm = ref(false)
+      const selectedTask = ref(null)
+      const currentUser = ref(null)
 
       const todoTasks = computed(() =>
         tasks.value.filter(task => task.status === 'TODO')
@@ -145,6 +231,8 @@
               description: 'Using sample data. Check if backend is running on localhost:8080',
               status: 'TODO',
               priority: 'HIGH',
+              creator: { username: 'system' },
+              assignee: null
             }
           ]
         } finally {
@@ -152,7 +240,99 @@
         }
       }
 
+      const createTask = () => {
+        selectedTask.value = null
+        showTaskForm.value = true
+      }
+
+      const editTask = (task) => {
+        selectedTask.value = task
+        showTaskForm.value = true
+      }
+
+      const closeTaskForm = () => {
+        showTaskForm.value = false
+        selectedTask.value = null
+      }
+
+      const handleTaskSubmit = async (taskData) => {
+        try {
+          if (selectedTask.value) {
+            // Update existing task
+            console.log('🔄 Updating task:', selectedTask.value.id)
+            const updatedTask = await taskService.updateTask(selectedTask.value.id, taskData)
+            
+            // Update task in local array
+            const index = tasks.value.findIndex(t => t.id === selectedTask.value.id)
+            if (index !== -1) {
+              tasks.value[index] = updatedTask
+            }
+            console.log('✅ Task updated successfully')
+          } else {
+            // Create new task
+            console.log('🔄 Creating new task')
+            const newTask = await taskService.createTask(taskData)
+            tasks.value.push(newTask)
+            console.log('✅ Task created successfully')
+          }
+          
+          closeTaskForm()
+        } catch (err) {
+          console.error('❌ Failed to save task:', err)
+          // Let TaskForm handle the error display
+          throw err
+        }
+      }
+
+      const deleteTask = async (task) => {
+        if (!confirm(`Are you sure you want to delete "${task.title}"?`)) {
+          return
+        }
+
+        try {
+          console.log('🔄 Deleting task:', task.id)
+          await taskService.deleteTask(task.id)
+          
+          // Remove task from local array
+          tasks.value = tasks.value.filter(t => t.id !== task.id)
+          console.log('✅ Task deleted successfully')
+        } catch (err) {
+          console.error('❌ Failed to delete task:', err)
+          error.value = `Failed to delete task: ${err.message}`
+        }
+      }
+
+      const getPriorityIcon = (priority) => {
+        const icons = {
+          HIGH: '🔴',
+          MEDIUM: '🟡',
+          LOW: '🟢'
+        }
+        return icons[priority] || '⚪'
+      }
+
+      const canDeleteTask = (task) => {
+        if (!currentUser.value) return false
+        
+        // Creator can always delete
+        const isCreator = task.creator?.id === currentUser.value.id
+        
+        // Admin can always delete
+        const isAdmin = currentUser.value.role === 'ADMIN'
+        
+        return isCreator || isAdmin
+      }
+
+      const loadCurrentUser = async () => {
+        try {
+          currentUser.value = authService.getUser()
+        } catch (error) {
+          console.error('Failed to load current user:', error)
+        }
+      }
+
       onMounted(() => {
+        loadCurrentUser()
         loadTasks()
       })
 
@@ -161,9 +341,18 @@
         todoTasks,
         inProgressTasks,
         doneTasks,
-        loadTasks,
         loading,
         error,
+        showTaskForm,
+        selectedTask,
+        loadTasks,
+        createTask,
+        editTask,
+        closeTaskForm,
+        handleTaskSubmit,
+        deleteTask,
+        getPriorityIcon,
+        canDeleteTask
       }
     },
   }
@@ -266,11 +455,48 @@
     margin-bottom: 1rem;
     border-left: 4px solid #ddd;
     transition: all 0.3s ease;
+    cursor: pointer;
   }
 
   .task-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .task-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .task-card:hover .task-actions {
+    opacity: 1;
+  }
+
+  .action-btn {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .action-btn.edit:hover {
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .action-btn.delete:hover {
+    background: rgba(220, 53, 69, 0.1);
   }
 
   .task-card.high {
@@ -300,6 +526,7 @@
   .task-meta {
     display: flex;
     gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
 
   .priority,
@@ -319,6 +546,32 @@
   .status {
     background: #667eea;
     color: white;
+  }
+
+  .task-users {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .user-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+  }
+
+  .user-info:last-child {
+    margin-bottom: 0;
+  }
+
+  .user-label {
+    color: #666;
+    font-weight: 500;
+  }
+
+  .user-name {
+    color: #333;
+    font-weight: 600;
   }
 
   .empty-state {
@@ -366,5 +619,16 @@
   .btn-secondary:hover {
     background-color: #667eea;
     color: white;
+  }
+
+  .btn-success {
+    background-color: #48bb78;
+    color: white;
+    border: 2px solid #48bb78;
+  }
+
+  .btn-success:hover {
+    background-color: #38a169;
+    border-color: #38a169;
   }
 </style>

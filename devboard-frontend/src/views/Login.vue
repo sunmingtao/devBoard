@@ -84,7 +84,10 @@ const handleSubmit = async () => {
     localStorage.setItem('user', JSON.stringify({
       id: response.id,
       username: response.username,
-      email: response.email
+      email: response.email,
+      nickname: response.nickname,
+      avatar: response.avatar,
+      role: response.role
     }))
     
     // Redirect to home or dashboard

@@ -24,5 +24,18 @@ export const userService = {
       }
     })
     return response.data
+  },
+
+  // Get all users (for assignee dropdown)
+  async getAllUsers() {
+    try {
+      const response = await api.get('/users')
+      return response.data
+    } catch (error) {
+      // If endpoint doesn't exist, return current user as fallback
+      console.warn('getAllUsers endpoint not available, using current user as fallback')
+      const currentUser = await this.getProfile()
+      return [currentUser]
+    }
   }
 }
