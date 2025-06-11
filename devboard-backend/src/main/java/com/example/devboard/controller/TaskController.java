@@ -3,6 +3,7 @@ package com.example.devboard.controller;
 import com.example.devboard.dto.TaskCreateRequest;
 import com.example.devboard.dto.TaskResponse;
 import com.example.devboard.dto.TaskUpdateRequest;
+import com.example.devboard.dto.TaskDetailResponse;
 import com.example.devboard.service.TaskService;
 import com.example.devboard.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,24 @@ public class TaskController {
             TaskResponse task = taskService.getTaskById(id);
             return ResponseEntity.ok(task);
         } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @GetMapping("/{id}/detail")
+    @Operation(summary = "Get task detail with comments", description = "Retrieve a task with all its comments")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Task detail found"),
+        @ApiResponse(responseCode = "404", description = "Task not found")
+    })
+    public ResponseEntity<TaskDetailResponse> getTaskDetail(
+            @Parameter(description = "ID of the task to retrieve", required = true)
+            @PathVariable Long id) {
+        try {
+            TaskDetailResponse taskDetail = taskService.getTaskDetail(id);
+            return ResponseEntity.ok(taskDetail);
+        } catch (RuntimeException e) {
+            log.error("Failed to get task detail {}: {}", id, e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }

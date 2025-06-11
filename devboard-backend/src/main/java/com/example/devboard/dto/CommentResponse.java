@@ -11,17 +11,12 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskResponse {
+public class CommentResponse {
     private Long id;
-    private String title;
-    private String description;
-    private String status;
-    private String priority;
-    private UserSummary creator;
-    private UserSummary assignee;
+    private String content;
+    private UserSummary user;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Long commentCount;
     
     @Data
     @Builder

@@ -3,10 +3,13 @@ package com.example.devboard.service;
 import com.example.devboard.dto.TaskCreateRequest;
 import com.example.devboard.dto.TaskResponse;
 import com.example.devboard.dto.TaskUpdateRequest;
+import com.example.devboard.dto.TaskDetailResponse;
+import com.example.devboard.dto.CommentResponse;
 import com.example.devboard.entity.Task;
 import com.example.devboard.entity.User;
 import com.example.devboard.repository.TaskRepository;
 import com.example.devboard.repository.UserRepository;
+import com.example.devboard.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class TaskService {
     
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
     
     public List<TaskResponse> getAllTasks() {
         return taskRepository.findAll().stream()
@@ -34,6 +38,37 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         return convertToResponse(task);
+    }
+    
+    public TaskDetailResponse getTaskDetail(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Task not found with id: {}", id);
+                    return new RuntimeException("Task not found with id: " + id);
+                });
+        
+        TaskResponse taskResponse = convertToResponse(task);
+        List<CommentResponse> comments = commentRepository.findByTaskIdOrderByCreatedAtDesc(id)
+                .stream()
+                .map(comment -> {
+                    CommentResponse.UserSummary userSummary = CommentResponse.UserSummary.builder()
+                            .id(comment.getUser().getId())
+                            .username(comment.getUser().getUsername())
+                            .nickname(comment.getUser().getNickname())
+                            .avatar(comment.getUser().getAvatar())
+                            .build();
+                    
+                    return CommentResponse.builder()
+                            .id(comment.getId())
+                            .content(comment.getContent())
+                            .user(userSummary)
+                            .createdAt(comment.getCreatedAt())
+                            .updatedAt(comment.getUpdatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
+        
+        return TaskDetailResponse.fromTaskResponse(taskResponse, comments);
     }
     
     public TaskResponse createTask(TaskCreateRequest request, Long creatorId) {
@@ -172,6 +207,7 @@ public class TaskService {
                 .assignee(assignee)
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
+                .commentCount(commentRepository.countByTaskId(task.getId()))
                 .build();
     }
 }
