@@ -756,6 +756,105 @@ curl -X GET http://localhost:8080/api/tasks \
 
 ---
 
+## JPA & Hibernate Database Migration Tips
+
+### Temporary FK Constraint Disabling with @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+**Problem**: Database migration errors when adding foreign key relationships to existing tables with invalid data.
+
+**Real Example**: Adding `creator_id` foreign key to existing `tasks` table where tasks have `creator_id = 0` (no user with ID 0 exists).
+
+**Error**:
+```
+Cannot add or update a child row: a foreign key constraint fails
+```
+
+**Traditional Solution** (Complex):
+1. Make FK nullable temporarily 
+2. Create migration service to fix data
+3. Re-enable FK constraints
+4. Remove migration code
+
+**JPA/Hibernate Secret Weapon** 🎯:
+```java
+@Entity
+public class Task {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private User creator;
+}
+```
+
+**What `ConstraintMode.NO_CONSTRAINT` does**:
+- **Disables automatic FK creation** during Hibernate schema generation
+- **Allows invalid data to exist** temporarily (creator_id = 0, NULL, etc.)
+- **Prevents startup failures** from constraint violations
+- **Table still has the column**, just no database-level constraint
+
+**Migration Strategy**:
+```java
+// Phase 1: Disable FK constraints (deploy safely)
+@JoinColumn(name = "creator_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+
+// Phase 2: Clean up data manually
+UPDATE tasks SET creator_id = 1 WHERE creator_id = 0 OR creator_id IS NULL;
+
+// Phase 3: Re-enable normal FK behavior (next release)
+@JoinColumn(name = "creator_id")  // Back to normal
+```
+
+**Alternative: Manual FK Addition**:
+```java
+// Disable automatic FK, add manually after startup
+@Service
+@Order(1)
+public class DatabaseMigrationService implements CommandLineRunner {
+    public void run(String... args) {
+        // Fix data first
+        jdbcTemplate.execute("UPDATE tasks SET creator_id = 1 WHERE creator_id = 0");
+        
+        // Add FK constraint manually
+        jdbcTemplate.execute("ALTER TABLE tasks ADD CONSTRAINT fk_task_creator FOREIGN KEY (creator_id) REFERENCES users(id)");
+    }
+}
+```
+
+**When to Use This Pattern**:
+- Adding FK relationships to existing production data
+- Database migrations with potentially invalid legacy data  
+- Gradual rollout of stricter data integrity
+- Emergency fixes for constraint violations
+
+**Key Benefits**:
+- **Zero downtime deployments** - app starts even with bad data
+- **Flexible migration** - fix data at your own pace
+- **Rollback safety** - can revert without data loss
+- **Gradual enforcement** - enable constraints when ready
+
+**⚠️ Important Notes**:
+- Only use temporarily during migrations
+- Always plan to re-enable normal FK behavior
+- Document the temporary nature clearly
+- Don't forget to clean up the migration code later
+
+**Other ConstraintMode Options**:
+```java
+// Default: Hibernate creates FK constraint automatically
+@ForeignKey                                           // or omit completely
+
+// Explicit: Force constraint creation  
+@ForeignKey(ConstraintMode.CONSTRAINT)
+
+// Disabled: No constraint created (migration mode)
+@ForeignKey(ConstraintMode.NO_CONSTRAINT)
+
+// Custom: Specify exact constraint definition
+@ForeignKey(name = "FK_CUSTOM_NAME")
+```
+
+This technique is incredibly handy for real-world production migrations where data might not be perfectly clean!
+
+---
+
 ## Docker & Database Tips
 
 ### Setting Up MySQL with Docker
@@ -891,6 +990,70 @@ ps aux | grep "[j]ava.*devboard"  # The regex [j]ava doesn't match "java" in the
 # Using awk
 ps aux | awk '/java.*devboard/ && !/awk/'
 ```
+
+### Background Process Management with Output Redirection
+
+**Shell Redirection Pattern**: `> /dev/null 2>&1 &`
+
+**Component Breakdown**:
+1. **`> /dev/null`** - Redirects standard output (stdout) to `/dev/null`
+   - `/dev/null` is a special "black hole" file that discards everything
+   - Equivalent to deleting all normal output
+
+2. **`2>&1`** - Redirects standard error (stderr) to same place as stdout
+   - `2` = stderr file descriptor
+   - `1` = stdout file descriptor  
+   - `&1` = "wherever stdout is currently going" (which is `/dev/null`)
+
+3. **`&`** - Runs command in background
+   - Process continues running after you get your shell prompt back
+   - Doesn't block the terminal
+
+**Combined Effect**: Command runs silently in background with all output discarded.
+
+**Example Usage**:
+```bash
+# Silent background execution
+./mvnw spring-boot:run > /dev/null 2>&1 &
+
+# Background with output visible
+./mvnw spring-boot:run &
+
+# Background with only errors visible  
+./mvnw spring-boot:run > /dev/null &
+
+# Background that survives terminal closure
+nohup ./mvnw spring-boot:run > /dev/null 2>&1 &
+```
+
+**Common Use Cases**:
+- Starting development servers silently
+- Running background scripts without terminal clutter
+- CI/CD pipelines where output is logged separately
+- Daemon processes that should run independently
+
+**File Descriptor Reference**:
+- `0` = stdin (standard input)
+- `1` = stdout (standard output) 
+- `2` = stderr (standard error)
+
+**Alternative Approaches**:
+```bash
+# Redirect to log file instead of discarding
+./mvnw spring-boot:run > app.log 2>&1 &
+
+# Separate files for stdout and stderr
+./mvnw spring-boot:run > app.log 2> error.log &
+
+# Keep stderr visible, discard stdout
+./mvnw spring-boot:run > /dev/null &
+```
+
+**When NOT to use `/dev/null 2>&1 &`**:
+- Development/debugging (you want to see output)
+- Important processes (you need error messages)
+- Scripts where exit codes matter
+- Commands that require user input
 
 ---
 
@@ -1510,6 +1673,210 @@ POST /api/users/avatar → Upload image, return URL, update profile
 5. **User experience** - Fast loading images via global CDN edge servers
 
 This approach scales from 10 users to 10 million users without architectural changes!
+
+---
+
+## Vue 3 Component Communication with emit()
+
+### Understanding How emit() Works
+
+Vue's `emit()` system is the standard way for child components to communicate with parent components. It creates a clean, decoupled communication channel.
+
+#### Basic Flow
+
+```javascript
+// Child Component (e.g., TaskForm.vue)
+emit('submit', taskData)  // Fires an event named 'submit' with taskData
+
+// Parent Component (e.g., TaskBoard.vue)
+<TaskForm @submit="handleTaskSubmit" />  // Listens for 'submit' event
+```
+
+#### The Connection Mechanism
+
+Vue matches the **event name** (first argument of emit) with the **listener name** (after the @):
+
+```javascript
+// Child emits:                    // Parent listens:
+emit('close')                   →  @close="closeTaskForm"
+emit('submit', data)            →  @submit="handleTaskSubmit" 
+emit('delete-task', id)         →  @delete-task="deleteTask"
+emit('user-updated', user)      →  @user-updated="refreshUser"
+```
+
+#### Complete Example
+
+**Child Component (TaskForm.vue):**
+```javascript
+export default {
+  emits: ['close', 'submit'],  // Optional: declare emitted events
+  setup(props, { emit }) {
+    
+    const handleSubmit = async () => {
+      const taskData = {
+        title: formData.title,
+        description: formData.description
+      }
+      
+      emit('submit', taskData)  // Fire event with data
+    }
+    
+    const handleClose = () => {
+      emit('close')  // Fire event without data
+    }
+    
+    return { handleSubmit, handleClose }
+  }
+}
+```
+
+**Parent Component (TaskBoard.vue):**
+```vue
+<template>
+  <TaskForm
+    v-if="showTaskForm"
+    :task="selectedTask"
+    @close="closeTaskForm"        <!-- When 'close' is emitted → call closeTaskForm() -->
+    @submit="handleTaskSubmit"    <!-- When 'submit' is emitted → call handleTaskSubmit(taskData) -->
+  />
+</template>
+
+<script>
+export default {
+  setup() {
+    const closeTaskForm = () => {
+      showTaskForm.value = false
+    }
+    
+    const handleTaskSubmit = (taskData) => {
+      console.log('Received from child:', taskData)
+      // Process the submitted data
+    }
+    
+    return { closeTaskForm, handleTaskSubmit }
+  }
+}
+</script>
+```
+
+#### Key Points
+
+1. **Event Names Must Match:**
+   ```javascript
+   emit('submit', data)  // Child
+   @submit="handler"     // Parent - ✅ Matches!
+   
+   emit('save', data)    // Child  
+   @submit="handler"     // Parent - ❌ Won't work!
+   ```
+
+2. **Multiple Arguments:**
+   ```javascript
+   // Child
+   emit('update', id, name, status)
+   
+   // Parent method receives all arguments
+   const handleUpdate = (id, name, status) => {
+     console.log(id, name, status)
+   }
+   ```
+
+3. **Naming Conventions:**
+   ```javascript
+   // Vue converts between kebab-case and camelCase
+   emit('delete-task', id)        // Child
+   @delete-task="handleDelete"    // Parent (kebab-case) ✅
+   @deleteTask="handleDelete"     // Parent (camelCase) ✅ Also works
+   ```
+
+4. **Event Declaration (Vue 3):**
+   ```javascript
+   export default {
+     emits: ['submit', 'close', 'update'],  // Explicit declaration
+     // Helps with:
+     // - Documentation
+     // - Type checking with TypeScript
+     // - Vue DevTools debugging
+   }
+   ```
+
+#### Common Patterns
+
+**Simple Notification:**
+```javascript
+// Child
+emit('close')
+
+// Parent
+@close="showModal = false"
+```
+
+**Data Submission:**
+```javascript
+// Child
+emit('submit', formData)
+
+// Parent
+@submit="saveToDatabase"
+```
+
+**Status Updates:**
+```javascript
+// Child
+emit('loading', true)
+emit('progress', 50)
+emit('complete', result)
+emit('error', errorMessage)
+
+// Parent
+@loading="isLoading = $event"
+@progress="updateProgressBar"
+@complete="handleComplete"
+@error="showError"
+```
+
+**Request Pattern:**
+```javascript
+// Child requests parent to do something
+emit('refresh-data')
+emit('delete-item', itemId)
+emit('navigate', '/home')
+
+// Parent handles the request
+@refresh-data="loadData"
+@delete-item="deleteFromList"
+@navigate="router.push"
+```
+
+#### Debugging Tips
+
+1. **Vue DevTools**: 
+   - Shows all emitted events in timeline
+   - Displays event data/payload
+   - Tracks which component emitted
+
+2. **Console Logging**:
+   ```javascript
+   // Add to debug
+   emit('submit', taskData)
+   console.log('Emitted submit with:', taskData)
+   ```
+
+3. **Event Validation**:
+   ```javascript
+   emits: {
+     // Validate event payload
+     submit: (payload) => {
+       return payload && payload.title  // Must have title
+     }
+   }
+   ```
+
+The emit() system enables clean component architecture where:
+- Child components don't need to know about parent implementation
+- Parents control how they respond to child events
+- Components remain reusable and testable
+- Data flows predictably: props down, events up
 
 ---
 

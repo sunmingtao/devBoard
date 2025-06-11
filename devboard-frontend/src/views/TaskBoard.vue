@@ -2,8 +2,15 @@
   <div class="task-board">
     <div class="container">
       <header class="board-header">
-        <h1>Task Board</h1>
-        <p>Manage your development tasks efficiently</p>
+        <div class="header-content">
+          <div>
+            <h1>Task Board</h1>
+            <p>Manage your development tasks efficiently</p>
+          </div>
+          <button class="btn btn-success" @click="createTask">
+            ➕ New Task
+          </button>
+        </div>
       </header>
 
       <!-- Error Display -->
@@ -17,12 +24,22 @@
             <h2>📝 To Do</h2>
             <span class="task-count">{{ todoTasks.length }}</span>
           </div>
-          <div class="task-list">
+          <div 
+            class="task-list"
+            @dragover.prevent
+            @drop="handleDrop('TODO', $event)"
+            @dragenter="handleDragEnter('TODO')"
+            @dragleave="handleDragLeave('TODO')"
+            :class="{ 'drag-over': dragOverColumn === 'TODO' }"
+          >
             <div
               v-for="task in todoTasks"
               :key="task.id"
               class="task-card"
-              :class="task.priority.toLowerCase()"
+              :class="[task.priority.toLowerCase(), { 'dragging': draggedTask?.id === task.id }]"
+              draggable="true"
+              @dragstart="handleDragStart(task, $event)"
+              @dragend="handleDragEnd"
               @click="editTask(task)"
             >
               <div class="task-header">
@@ -40,7 +57,6 @@
               <p v-if="task.description">{{ task.description }}</p>
               <div class="task-meta">
                 <span class="priority">{{ getPriorityIcon(task.priority) }} {{ task.priority }}</span>
-                <span class="status">{{ task.status }}</span>
               </div>
               <div class="task-users">
                 <div class="user-info">
@@ -64,12 +80,22 @@
             <h2>🔄 In Progress</h2>
             <span class="task-count">{{ inProgressTasks.length }}</span>
           </div>
-          <div class="task-list">
+          <div 
+            class="task-list"
+            @dragover.prevent
+            @drop="handleDrop('IN_PROGRESS', $event)"
+            @dragenter="handleDragEnter('IN_PROGRESS')"
+            @dragleave="handleDragLeave('IN_PROGRESS')"
+            :class="{ 'drag-over': dragOverColumn === 'IN_PROGRESS' }"
+          >
             <div
               v-for="task in inProgressTasks"
               :key="task.id"
               class="task-card"
-              :class="task.priority.toLowerCase()"
+              :class="[task.priority.toLowerCase(), { 'dragging': draggedTask?.id === task.id }]"
+              draggable="true"
+              @dragstart="handleDragStart(task, $event)"
+              @dragend="handleDragEnd"
               @click="editTask(task)"
             >
               <div class="task-header">
@@ -87,7 +113,6 @@
               <p v-if="task.description">{{ task.description }}</p>
               <div class="task-meta">
                 <span class="priority">{{ getPriorityIcon(task.priority) }} {{ task.priority }}</span>
-                <span class="status">{{ task.status }}</span>
               </div>
               <div class="task-users">
                 <div class="user-info">
@@ -111,12 +136,22 @@
             <h2>✅ Done</h2>
             <span class="task-count">{{ doneTasks.length }}</span>
           </div>
-          <div class="task-list">
+          <div 
+            class="task-list"
+            @dragover.prevent
+            @drop="handleDrop('DONE', $event)"
+            @dragenter="handleDragEnter('DONE')"
+            @dragleave="handleDragLeave('DONE')"
+            :class="{ 'drag-over': dragOverColumn === 'DONE' }"
+          >
             <div
               v-for="task in doneTasks"
               :key="task.id"
               class="task-card"
-              :class="task.priority.toLowerCase()"
+              :class="[task.priority.toLowerCase(), { 'dragging': draggedTask?.id === task.id }]"
+              draggable="true"
+              @dragstart="handleDragStart(task, $event)"
+              @dragend="handleDragEnd"
               @click="editTask(task)"
             >
               <div class="task-header">
@@ -134,7 +169,6 @@
               <p v-if="task.description">{{ task.description }}</p>
               <div class="task-meta">
                 <span class="priority">{{ getPriorityIcon(task.priority) }} {{ task.priority }}</span>
-                <span class="status">{{ task.status }}</span>
               </div>
               <div class="task-users">
                 <div class="user-info">
@@ -158,9 +192,6 @@
         <router-link to="/" class="btn btn-secondary">
           ← Back to Home
         </router-link>
-        <button class="btn btn-success" @click="createTask">
-          ➕ New Task
-        </button>
         <button class="btn btn-primary" @click="loadTasks" :disabled="loading">
           {{ loading ? '⏳ Loading...' : '🔄 Refresh Tasks' }}
         </button>
@@ -196,6 +227,8 @@
       const showTaskForm = ref(false)
       const selectedTask = ref(null)
       const currentUser = ref(null)
+      const draggedTask = ref(null)
+      const dragOverColumn = ref(null)
 
       const todoTasks = computed(() =>
         tasks.value.filter(task => task.status === 'TODO')
@@ -331,6 +364,82 @@
         }
       }
 
+      // Drag and Drop handlers
+      const handleDragStart = (task, event) => {
+        draggedTask.value = task
+        event.dataTransfer.effectAllowed = 'move'
+        event.dataTransfer.setData('taskId', task.id.toString())
+        
+        // Add dragging class after a slight delay to prevent immediate visual change
+        setTimeout(() => {
+          event.target.classList.add('dragging')
+        }, 0)
+      }
+
+      const handleDragEnd = (event) => {
+        event.target.classList.remove('dragging')
+        draggedTask.value = null
+        dragOverColumn.value = null
+      }
+
+      const handleDragEnter = (columnStatus) => {
+        if (draggedTask.value) {
+          dragOverColumn.value = columnStatus
+        }
+      }
+
+      const handleDragLeave = (columnStatus) => {
+        // Only clear if we're leaving the actual column, not just moving between cards
+        setTimeout(() => {
+          if (dragOverColumn.value === columnStatus) {
+            dragOverColumn.value = null
+          }
+        }, 10)
+      }
+
+      const handleDrop = async (newStatus, event) => {
+        event.preventDefault()
+        dragOverColumn.value = null
+
+        if (!draggedTask.value || draggedTask.value.status === newStatus) {
+          return
+        }
+
+        const taskToUpdate = { ...draggedTask.value }
+        const originalStatus = taskToUpdate.status
+
+        try {
+          // Optimistically update the UI
+          taskToUpdate.status = newStatus
+          const index = tasks.value.findIndex(t => t.id === taskToUpdate.id)
+          if (index !== -1) {
+            tasks.value[index] = taskToUpdate
+          }
+
+          // Update the backend
+          console.log(`🔄 Moving task ${taskToUpdate.id} from ${originalStatus} to ${newStatus}`)
+          const updatedTask = await taskService.updateTask(taskToUpdate.id, {
+            status: newStatus
+          })
+
+          // Update with server response
+          if (index !== -1) {
+            tasks.value[index] = updatedTask
+          }
+
+          console.log(`✅ Task moved successfully`)
+        } catch (err) {
+          console.error('❌ Failed to update task status:', err)
+          // Revert the optimistic update
+          taskToUpdate.status = originalStatus
+          const index = tasks.value.findIndex(t => t.id === taskToUpdate.id)
+          if (index !== -1) {
+            tasks.value[index] = taskToUpdate
+          }
+          error.value = `Failed to move task: ${err.message}`
+        }
+      }
+
       onMounted(() => {
         loadCurrentUser()
         loadTasks()
@@ -352,7 +461,14 @@
         handleTaskSubmit,
         deleteTask,
         getPriorityIcon,
-        canDeleteTask
+        canDeleteTask,
+        draggedTask,
+        dragOverColumn,
+        handleDragStart,
+        handleDragEnd,
+        handleDragEnter,
+        handleDragLeave,
+        handleDrop
       }
     },
   }
@@ -371,8 +487,13 @@
   }
 
   .board-header {
-    text-align: center;
     margin-bottom: 2rem;
+  }
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .board-header h1 {
@@ -398,9 +519,32 @@
 
   .board-columns {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
     margin-bottom: 2rem;
+  }
+
+  @media (max-width: 1200px) {
+    .board-columns {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .header-content {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .board-header h1 {
+      font-size: 2rem;
+    }
+
+    .board-header p {
+      font-size: 1rem;
+    }
   }
 
   .column {
@@ -408,6 +552,9 @@
     border-radius: 0.5rem;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
   }
 
   .column-header {
@@ -445,7 +592,10 @@
 
   .task-list {
     padding: 1rem;
-    min-height: 400px;
+    flex: 1;
+    min-height: 200px;
+    transition: background-color 0.2s ease, border 0.2s ease;
+    position: relative;
   }
 
   .task-card {
@@ -455,12 +605,45 @@
     margin-bottom: 1rem;
     border-left: 4px solid #ddd;
     transition: all 0.3s ease;
-    cursor: pointer;
+    cursor: move;
+    user-select: none;
   }
 
   .task-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .task-card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+    cursor: grabbing;
+  }
+
+  .task-list.drag-over {
+    background-color: rgba(102, 126, 234, 0.05);
+    box-shadow: inset 0 0 0 2px #667eea;
+    border-radius: 0.5rem;
+  }
+  
+  .task-list.drag-over::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, 
+      transparent 0%, 
+      rgba(102, 126, 234, 0.1) 50%, 
+      transparent 100%);
+    pointer-events: none;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
   }
 
   .task-header {
@@ -529,23 +712,14 @@
     margin-bottom: 0.5rem;
   }
 
-  .priority,
-  .status {
+  .priority {
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.75rem;
     font-weight: bold;
     text-transform: uppercase;
-  }
-
-  .priority {
     background: #e2e8f0;
     color: #4a5568;
-  }
-
-  .status {
-    background: #667eea;
-    color: white;
   }
 
   .task-users {
@@ -579,6 +753,8 @@
     color: #999;
     padding: 2rem;
     font-style: italic;
+    pointer-events: none;
+    user-select: none;
   }
 
   .board-actions {
