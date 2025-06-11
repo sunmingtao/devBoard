@@ -18,6 +18,99 @@
         ⚠️ {{ error }}
       </div>
 
+      <!-- Filter Controls -->
+      <div class="filter-section">
+        <div class="filter-controls">
+          <!-- Search Bar -->
+          <div class="search-box">
+            <input
+              v-model="filters.search"
+              type="text"
+              placeholder="🔍 Search tasks..."
+              class="search-input"
+              @input="debouncedApplyFilters"
+            />
+          </div>
+
+          <!-- Filter Dropdowns -->
+          <div class="filter-dropdowns">
+            <select v-model="filters.assigneeId" @change="applyFilters" class="filter-select">
+              <option value="">👤 All Assignees</option>
+              <option value="unassigned">🚫 Unassigned</option>
+              <option v-for="user in users" :key="user.id" :value="user.id">
+                {{ user.nickname || user.username }}
+              </option>
+            </select>
+
+            <select v-model="filters.priority" @change="applyFilters" class="filter-select">
+              <option value="">⭐ All Priorities</option>
+              <option value="HIGH">🔴 High</option>
+              <option value="MEDIUM">🟡 Medium</option>
+              <option value="LOW">🟢 Low</option>
+            </select>
+
+            <select v-model="filters.creatorId" @change="applyFilters" class="filter-select">
+              <option value="">👨‍💻 All Creators</option>
+              <option v-for="user in users" :key="user.id" :value="user.id">
+                {{ user.nickname || user.username }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Quick Filter Buttons -->
+          <div class="quick-filters">
+            <button 
+              @click="applyQuickFilter('my-tasks')" 
+              :class="{ active: activeQuickFilter === 'my-tasks' }"
+              class="quick-filter-btn"
+            >
+              👤 My Tasks
+            </button>
+            <button 
+              @click="applyQuickFilter('unassigned')" 
+              :class="{ active: activeQuickFilter === 'unassigned' }"
+              class="quick-filter-btn"
+            >
+              🚫 Unassigned
+            </button>
+            <button 
+              @click="applyQuickFilter('high-priority')" 
+              :class="{ active: activeQuickFilter === 'high-priority' }"
+              class="quick-filter-btn"
+            >
+              🔴 High Priority
+            </button>
+            <button 
+              @click="clearFilters" 
+              class="clear-filters-btn"
+              v-if="hasActiveFilters"
+            >
+              ✖️ Clear Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Filters Display -->
+        <div v-if="hasActiveFilters" class="active-filters">
+          <span class="filter-label">Active filters:</span>
+          <span v-if="filters.search" class="filter-tag">
+            Search: "{{ filters.search }}" <button @click="filters.search = ''; applyFilters()">×</button>
+          </span>
+          <span v-if="filters.assigneeId && filters.assigneeId !== 'unassigned'" class="filter-tag">
+            Assignee: {{ getUserName(filters.assigneeId) }} <button @click="filters.assigneeId = ''; applyFilters()">×</button>
+          </span>
+          <span v-if="filters.assigneeId === 'unassigned'" class="filter-tag">
+            Unassigned <button @click="filters.assigneeId = ''; applyFilters()">×</button>
+          </span>
+          <span v-if="filters.priority" class="filter-tag">
+            Priority: {{ filters.priority }} <button @click="filters.priority = ''; applyFilters()">×</button>
+          </span>
+          <span v-if="filters.creatorId" class="filter-tag">
+            Creator: {{ getUserName(filters.creatorId) }} <button @click="filters.creatorId = ''; applyFilters()">×</button>
+          </span>
+        </div>
+      </div>
+
       <div class="board-columns">
         <div class="column">
           <div class="column-header todo">
@@ -40,7 +133,7 @@
               draggable="true"
               @dragstart="handleDragStart(task, $event)"
               @dragend="handleDragEnd"
-              @click="editTask(task)"
+              @click="viewTaskDetail(task)"
             >
               <div class="task-header">
                 <h3>{{ task.title }}</h3>
@@ -96,7 +189,7 @@
               draggable="true"
               @dragstart="handleDragStart(task, $event)"
               @dragend="handleDragEnd"
-              @click="editTask(task)"
+              @click="viewTaskDetail(task)"
             >
               <div class="task-header">
                 <h3>{{ task.title }}</h3>
@@ -152,7 +245,7 @@
               draggable="true"
               @dragstart="handleDragStart(task, $event)"
               @dragend="handleDragEnd"
-              @click="editTask(task)"
+              @click="viewTaskDetail(task)"
             >
               <div class="task-header">
                 <h3>{{ task.title }}</h3>
@@ -211,6 +304,7 @@
 
 <script>
   import { ref, computed, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
   import taskService from '../services/taskService'
   import TaskForm from '../components/TaskForm.vue'
   import { authService } from '../services/authService'
@@ -221,7 +315,9 @@
       TaskForm
     },
     setup() {
+      const router = useRouter()
       const tasks = ref([])
+      const users = ref([])
       const loading = ref(false)
       const error = ref('')
       const showTaskForm = ref(false)
@@ -229,6 +325,24 @@
       const currentUser = ref(null)
       const draggedTask = ref(null)
       const dragOverColumn = ref(null)
+      
+      // Filter state
+      const filters = ref({
+        search: '',
+        assigneeId: '',
+        priority: '',
+        creatorId: ''
+      })
+      const activeQuickFilter = ref('')
+      
+      // Debounced search
+      let searchTimeout = null
+      const debouncedApplyFilters = () => {
+        clearTimeout(searchTimeout)
+        searchTimeout = setTimeout(() => {
+          applyFilters()
+        }, 300)
+      }
 
       const todoTasks = computed(() =>
         tasks.value.filter(task => task.status === 'TODO')
@@ -241,6 +355,101 @@
       const doneTasks = computed(() =>
         tasks.value.filter(task => task.status === 'DONE')
       )
+
+      // Filter computed properties
+      const hasActiveFilters = computed(() => {
+        return filters.value.search || 
+               filters.value.assigneeId || 
+               filters.value.priority || 
+               filters.value.creatorId ||
+               activeQuickFilter.value
+      })
+
+      const getUserName = (userId) => {
+        const user = users.value.find(u => u.id == userId)
+        return user ? (user.nickname || user.username) : 'Unknown'
+      }
+
+      // Filter methods
+      const applyFilters = async () => {
+        loading.value = true
+        error.value = ''
+        
+        try {
+          // Handle special "unassigned" filter
+          const filterParams = {
+            search: filters.value.search || null,
+            priority: filters.value.priority || null,
+            creatorId: filters.value.creatorId || null
+          }
+          
+          // Handle assignee filter (including "unassigned")
+          if (filters.value.assigneeId === 'unassigned') {
+            // For unassigned, we'll filter client-side since backend doesn't support this directly
+            const allTasks = await taskService.getAllTasks()
+            tasks.value = allTasks.filter(task => !task.assignee)
+          } else {
+            filterParams.assigneeId = filters.value.assigneeId || null
+            const fetchedTasks = await taskService.getTasksWithFilters(filterParams)
+            tasks.value = fetchedTasks
+          }
+          
+          console.log('✅ Filtered tasks loaded:', tasks.value.length, 'tasks')
+        } catch (err) {
+          error.value = `Failed to load filtered tasks: ${err.message}`
+          console.error('❌ Failed to load filtered tasks:', err)
+        } finally {
+          loading.value = false
+        }
+      }
+
+      const applyQuickFilter = (filterType) => {
+        // Reset filter values without calling loadTasks()
+        filters.value = {
+          search: '',
+          assigneeId: '',
+          priority: '',
+          creatorId: ''
+        }
+        
+        activeQuickFilter.value = filterType
+        
+        switch (filterType) {
+          case 'my-tasks':
+            if (currentUser.value) {
+              filters.value.assigneeId = currentUser.value.id.toString()
+            }
+            break
+          case 'unassigned':
+            filters.value.assigneeId = 'unassigned'
+            break
+          case 'high-priority':
+            filters.value.priority = 'HIGH'
+            break
+        }
+        
+        applyFilters()
+      }
+
+      const clearFilters = () => {
+        filters.value = {
+          search: '',
+          assigneeId: '',
+          priority: '',
+          creatorId: ''
+        }
+        activeQuickFilter.value = ''
+        loadTasks()
+      }
+
+      const loadUsers = async () => {
+        try {
+          const { userService } = await import('../services/userService')
+          users.value = await userService.getAllUsers()
+        } catch (err) {
+          console.error('Failed to load users:', err)
+        }
+      }
 
       const loadTasks = async () => {
         loading.value = true
@@ -281,6 +490,10 @@
       const editTask = (task) => {
         selectedTask.value = task
         showTaskForm.value = true
+      }
+
+      const viewTaskDetail = (task) => {
+        router.push(`/tasks/${task.id}`)
       }
 
       const closeTaskForm = () => {
@@ -442,11 +655,13 @@
 
       onMounted(() => {
         loadCurrentUser()
+        loadUsers()
         loadTasks()
       })
 
       return {
         tasks,
+        users,
         todoTasks,
         inProgressTasks,
         doneTasks,
@@ -457,6 +672,7 @@
         loadTasks,
         createTask,
         editTask,
+        viewTaskDetail,
         closeTaskForm,
         handleTaskSubmit,
         deleteTask,
@@ -468,7 +684,16 @@
         handleDragEnd,
         handleDragEnter,
         handleDragLeave,
-        handleDrop
+        handleDrop,
+        // Filter related
+        filters,
+        activeQuickFilter,
+        hasActiveFilters,
+        getUserName,
+        applyFilters,
+        debouncedApplyFilters,
+        applyQuickFilter,
+        clearFilters
       }
     },
   }
@@ -755,6 +980,174 @@
     font-style: italic;
     pointer-events: none;
     user-select: none;
+  }
+
+  /* Filter Section Styles */
+  .filter-section {
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .filter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .search-box {
+    flex: 1;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+  }
+
+  .filter-dropdowns {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-select {
+    padding: 0.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.875rem;
+    min-width: 150px;
+    transition: border-color 0.2s;
+  }
+
+  .filter-select:focus {
+    outline: none;
+    border-color: #3182ce;
+  }
+
+  .quick-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .quick-filter-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    color: #4a5568;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .quick-filter-btn:hover {
+    border-color: #cbd5e0;
+    background: #f7fafc;
+  }
+
+  .quick-filter-btn.active {
+    background: #3182ce;
+    color: white;
+    border-color: #3182ce;
+  }
+
+  .clear-filters-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e53e3e;
+    border-radius: 6px;
+    background: white;
+    color: #e53e3e;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-filters-btn:hover {
+    background: #e53e3e;
+    color: white;
+  }
+
+  .active-filters {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .filter-label {
+    font-weight: 600;
+    color: #4a5568;
+    margin-right: 0.5rem;
+  }
+
+  .filter-tag {
+    background: #ebf8ff;
+    color: #2d3748;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .filter-tag button {
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .filter-tag button:hover {
+    background: #cbd5e0;
+    color: #2d3748;
+  }
+
+  /* Responsive Design */
+  @media (min-width: 768px) {
+    .filter-controls {
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 300px;
+    }
+
+    .filter-dropdowns {
+      flex: none;
+    }
+
+    .quick-filters {
+      flex: none;
+    }
   }
 
   .board-actions {

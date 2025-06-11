@@ -34,6 +34,72 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
     
+    public List<TaskResponse> getAllTasksWithFilters(Long assigneeId, String priority, String status, String search, Long creatorId) {
+        return taskRepository.findAll().stream()
+                .filter(task -> {
+                    // Filter by assignee - only filter if assigneeId is specified
+                    if (assigneeId != null) {
+                        // If task has no assignee, exclude it when looking for specific assignee
+                        if (task.getAssignee() == null) {
+                            return false;
+                        }
+                        // If task has assignee but doesn't match the filter, exclude it
+                        if (!task.getAssignee().getId().equals(assigneeId)) {
+                            return false;
+                        }
+                    }
+                    
+                    // Filter by creator - only filter if creatorId is specified
+                    if (creatorId != null) {
+                        if (task.getCreator() == null || !task.getCreator().getId().equals(creatorId)) {
+                            return false;
+                        }
+                    }
+                    
+                    // Filter by priority - only filter if priority is specified
+                    if (priority != null && !priority.isEmpty()) {
+                        try {
+                            Task.TaskPriority taskPriority = Task.TaskPriority.valueOf(priority.toUpperCase());
+                            if (!task.getPriority().equals(taskPriority)) {
+                                return false;
+                            }
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Invalid priority filter: {}", priority);
+                            return false;
+                        }
+                    }
+                    
+                    // Filter by status - only filter if status is specified
+                    if (status != null && !status.isEmpty()) {
+                        try {
+                            Task.TaskStatus taskStatus = Task.TaskStatus.valueOf(status.toUpperCase());
+                            if (!task.getStatus().equals(taskStatus)) {
+                                return false;
+                            }
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Invalid status filter: {}", status);
+                            return false;
+                        }
+                    }
+                    
+                    // Search in title and description - only filter if search is specified
+                    if (search != null && !search.trim().isEmpty()) {
+                        String searchLower = search.toLowerCase().trim();
+                        boolean titleMatch = task.getTitle() != null && 
+                                           task.getTitle().toLowerCase().contains(searchLower);
+                        boolean descMatch = task.getDescription() != null && 
+                                          task.getDescription().toLowerCase().contains(searchLower);
+                        if (!titleMatch && !descMatch) {
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                })
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+    
     public TaskResponse getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));

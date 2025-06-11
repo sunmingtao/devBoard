@@ -11,6 +11,25 @@ export const taskService = {
     }
   },
 
+  // Get tasks with filters
+  getTasksWithFilters: async (filters = {}) => {
+    try {
+      const params = new URLSearchParams()
+      
+      if (filters.assigneeId) params.append('assigneeId', filters.assigneeId)
+      if (filters.priority) params.append('priority', filters.priority)
+      if (filters.status) params.append('status', filters.status)
+      if (filters.search) params.append('search', filters.search)
+      if (filters.creatorId) params.append('creatorId', filters.creatorId)
+      
+      const url = params.toString() ? `/tasks?${params.toString()}` : '/tasks'
+      const response = await api.get(url)
+      return response.data
+    } catch (error) {
+      throw new Error(`Failed to fetch filtered tasks: ${error.message}`)
+    }
+  },
+
   // Get task by ID
   getTaskById: async (id) => {
     try {
@@ -68,6 +87,46 @@ export const taskService = {
       return response.data
     } catch (error) {
       throw new Error(`Failed to fetch tasks with priority ${priority}: ${error.message}`)
+    }
+  },
+
+  // Get task detail with comments
+  getTaskDetail: async (id) => {
+    try {
+      const response = await api.get(`/tasks/${id}/detail`)
+      return response.data
+    } catch (error) {
+      throw new Error(`Failed to fetch task detail ${id}: ${error.message}`)
+    }
+  },
+
+  // Add comment to task
+  addComment: async (taskId, comment) => {
+    try {
+      const response = await api.post(`/tasks/${taskId}/comments`, comment)
+      return response.data
+    } catch (error) {
+      throw new Error(`Failed to add comment to task ${taskId}: ${error.message}`)
+    }
+  },
+
+  // Get comments for task
+  getTaskComments: async (taskId) => {
+    try {
+      const response = await api.get(`/tasks/${taskId}/comments`)
+      return response.data
+    } catch (error) {
+      throw new Error(`Failed to fetch comments for task ${taskId}: ${error.message}`)
+    }
+  },
+
+  // Delete comment
+  deleteComment: async (commentId) => {
+    try {
+      await api.delete(`/comments/${commentId}`)
+      return true
+    } catch (error) {
+      throw new Error(`Failed to delete comment ${commentId}: ${error.message}`)
     }
   },
 

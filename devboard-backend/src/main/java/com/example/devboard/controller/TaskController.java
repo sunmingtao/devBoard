@@ -31,10 +31,20 @@ public class TaskController {
     private final TaskService taskService;
     
     @GetMapping
-    @Operation(summary = "Get all tasks", description = "Retrieve a list of all tasks in the system")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved all tasks")
-    public List<TaskResponse> getAllTasks() {
-        return taskService.getAllTasks();
+    @Operation(summary = "Get all tasks with optional filtering", description = "Retrieve tasks with optional filters")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved filtered tasks")
+    public List<TaskResponse> getAllTasks(
+            @Parameter(description = "Filter by assignee user ID")
+            @RequestParam(required = false) Long assigneeId,
+            @Parameter(description = "Filter by task priority (HIGH, MEDIUM, LOW)")
+            @RequestParam(required = false) String priority,
+            @Parameter(description = "Filter by task status (TODO, IN_PROGRESS, DONE)")
+            @RequestParam(required = false) String status,
+            @Parameter(description = "Search in task title and description")
+            @RequestParam(required = false) String search,
+            @Parameter(description = "Filter by creator user ID")
+            @RequestParam(required = false) Long creatorId) {
+        return taskService.getAllTasksWithFilters(assigneeId, priority, status, search, creatorId);
     }
     
     @GetMapping("/{id}")

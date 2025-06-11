@@ -937,6 +937,129 @@ gh issue close 1
 lsof -ti:8080 | xargs kill -9
 ```
 
+**What this command does**:
+- `lsof -ti:8080` - List processes using port 8080, output only process IDs
+- `|` - Pipe the process IDs to the next command
+- `xargs kill -9` - Force kill each process ID
+
+**Use case**: When you get "Port already in use" errors during development.
+
+---
+
+## Testing Complex Filter Logic with JUnit 5
+
+### The Problem: Complex Boolean Logic
+When implementing filtering logic, especially with multiple optional parameters, the conditional logic can become complex and error-prone:
+
+```java
+// Original BUGGY logic
+if (assigneeId != null) {
+    if (task.getAssignee() == null || !task.getAssignee().getId().equals(assigneeId)) {
+        return false;  // BUG: This excludes unassigned tasks when no filter applied!
+    }
+}
+```
+
+**The Bug**: When filtering by assignee, tasks without assignees would be incorrectly excluded even when the filter shouldn't apply.
+
+### The Solution: Clear Logic + Comprehensive Tests
+
+**Fixed Logic**:
+```java
+// Filter by assignee - only filter if assigneeId is specified
+if (assigneeId != null) {
+    // If task has no assignee, exclude it when looking for specific assignee
+    if (task.getAssignee() == null) {
+        return false;
+    }
+    // If task has assignee but doesn't match the filter, exclude it
+    if (!task.getAssignee().getId().equals(assigneeId)) {
+        return false;
+    }
+}
+// If assigneeId is null, don't filter by assignee at all
+```
+
+### Comprehensive JUnit Test Coverage
+
+**Created 14 test scenarios covering**:
+
+1. **No Filters** - Returns all tasks
+2. **Single Filters**:
+   - Filter by assignee (includes/excludes correctly)
+   - Filter by priority  
+   - Filter by status
+   - Filter by creator
+   - Search in title/description
+3. **Edge Cases**:
+   - Invalid priority/status values
+   - Case-insensitive search
+   - Whitespace-only search
+   - Tasks without assignees
+4. **Combined Filters** - Multiple filters together
+5. **Boundary Conditions** - Empty results, no matches
+
+**Key Testing Patterns**:
+
+```java
+@Test
+void getAllTasksWithFilters_FilterByAssignee_ExcludesTasksWithoutAssignee() {
+    // Arrange
+    List<Task> allTasks = Arrays.asList(taskWithAssignee, taskWithoutAssignee, taskTodo);
+    when(taskRepository.findAll()).thenReturn(allTasks);
+    when(commentRepository.countByTaskId(1L)).thenReturn(0L);
+
+    // Act - Filter by user2 as assignee
+    List<TaskResponse> result = taskService.getAllTasksWithFilters(2L, null, null, null, null);
+
+    // Assert - Should only return taskWithAssignee, excluding tasks without assignee
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getId()).isEqualTo(1L);
+}
+```
+
+### Testing Best Practices Applied
+
+1. **Descriptive Test Names**: 
+   - `getAllTasksWithFilters_FilterByAssignee_ExcludesTasksWithoutAssignee`
+   - Clear what's being tested and expected outcome
+
+2. **Arrange-Act-Assert Pattern**:
+   - **Arrange**: Set up test data and mocks
+   - **Act**: Call the method under test  
+   - **Assert**: Verify expected behavior
+
+3. **Test Data Builders**:
+   ```java
+   taskWithAssignee = Task.builder()
+       .id(1L)
+       .title("Task with Assignee")
+       .assignee(user2)
+       .build();
+   ```
+
+4. **Edge Case Coverage**:
+   - Null values, empty strings, invalid inputs
+   - Boundary conditions (empty results)
+   - Error conditions (invalid enum values)
+
+5. **Mockito Best Practices**:
+   - Only mock what's actually used (avoid unnecessary stubbings)
+   - Use `@InjectMocks` for dependency injection
+   - Verify behavior, not implementation
+
+### Why This Approach Works
+
+✅ **Catches Bugs Early**: Tests caught the original logic error immediately
+✅ **Prevents Regressions**: Future changes won't break existing behavior  
+✅ **Documents Behavior**: Tests serve as executable documentation
+✅ **Builds Confidence**: Comprehensive coverage means safer refactoring
+✅ **Faster Development**: Quick feedback loop with automated testing
+
+### Key Takeaway
+
+**Complex filtering logic is a perfect candidate for unit testing**. The boolean combinations of optional parameters create many code paths that are easy to get wrong but critical to get right. Comprehensive test coverage pays dividends by catching subtle bugs and enabling confident refactoring.
+
 ---
 
 ## Unix/Linux Command Tips
