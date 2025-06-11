@@ -8,6 +8,7 @@ import com.example.devboard.entity.User;
 import com.example.devboard.repository.TaskRepository;
 import com.example.devboard.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class TaskService {
     
     private final TaskRepository taskRepository;
@@ -59,15 +61,14 @@ public class TaskService {
     
     public TaskResponse updateTask(Long id, TaskUpdateRequest request, Long userId) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.error("Task not found with id: {}", id);
+                    return new RuntimeException("Task not found with id: " + id);
+                });
         
-        // Check if user has permission to update (creator or assignee)
-        boolean isCreator = task.getCreator() != null && task.getCreator().getId().equals(userId);
-        boolean isAssignee = task.getAssignee() != null && task.getAssignee().getId().equals(userId);
+        log.info("User {} updating task {} - '{}'", userId, id, task.getTitle());
         
-        if (!isCreator && !isAssignee) {
-            throw new RuntimeException("You don't have permission to update this task");
-        }
+        // New permission logic: Any authenticated user can update any task
         
         // Update fields if provided
         if (request.getTitle() != null) {
@@ -94,13 +95,31 @@ public class TaskService {
     
     public void deleteTask(Long id, Long userId) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.error("Task not found with id: {}", id);
+                    return new RuntimeException("Task not found with id: " + id);
+                });
         
-        // Only creator can delete
-        if (task.getCreator() == null || !task.getCreator().getId().equals(userId)) {
-            throw new RuntimeException("Only the creator can delete this task");
+        // Get user to check if admin
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("User not found with id: {}", userId);
+                    return new RuntimeException("User not found");
+                });
+        
+        // Only creator or admin can delete
+        boolean isCreator = task.getCreator() != null && task.getCreator().getId().equals(userId);
+        boolean isAdmin = user.getRole() == User.UserRole.ADMIN;
+        
+        if (!isCreator && !isAdmin) {
+            log.warn("User {} attempted to delete task {} - permission denied. Creator: {}, User role: {}", 
+                    userId, id, 
+                    task.getCreator() != null ? task.getCreator().getId() : "null", 
+                    user.getRole());
+            throw new RuntimeException("Only the creator or admin can delete this task");
         }
         
+        log.info("User {} deleting task {} - '{}'", userId, id, task.getTitle());
         taskRepository.delete(task);
     }
     

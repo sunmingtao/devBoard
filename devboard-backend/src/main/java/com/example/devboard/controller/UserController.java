@@ -12,6 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -53,5 +56,25 @@ public class UserController {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("Error updating profile: " + e.getMessage()));
         }
+    }
+    
+    @GetMapping
+    public ResponseEntity<List<UserProfileResponse>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        
+        List<UserProfileResponse> userResponses = users.stream()
+                .map(user -> UserProfileResponse.builder()
+                        .id(user.getId())
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .nickname(user.getNickname())
+                        .avatar(user.getAvatar())
+                        .role(user.getRole().name())
+                        .createdAt(user.getCreatedAt())
+                        .updatedAt(user.getUpdatedAt())
+                        .build())
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(userResponses);
     }
 }

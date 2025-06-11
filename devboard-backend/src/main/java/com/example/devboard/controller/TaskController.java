@@ -6,6 +6,7 @@ import com.example.devboard.dto.TaskUpdateRequest;
 import com.example.devboard.service.TaskService;
 import com.example.devboard.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Task Management", description = "APIs for managing development tasks")
 public class TaskController {
     
@@ -82,6 +84,7 @@ public class TaskController {
             TaskResponse updatedTask = taskService.updateTask(id, request, userPrincipal.getId());
             return ResponseEntity.ok(updatedTask);
         } catch (RuntimeException e) {
+            log.error("Failed to update task {}: {}", id, e.getMessage(), e);
             if (e.getMessage().contains("not found")) {
                 return ResponseEntity.notFound().build();
             } else if (e.getMessage().contains("permission")) {
@@ -106,9 +109,10 @@ public class TaskController {
             taskService.deleteTask(id, userPrincipal.getId());
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
+            log.error("Failed to delete task {}: {}", id, e.getMessage(), e);
             if (e.getMessage().contains("not found")) {
                 return ResponseEntity.notFound().build();
-            } else if (e.getMessage().contains("creator")) {
+            } else if (e.getMessage().contains("creator") || e.getMessage().contains("admin")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             return ResponseEntity.badRequest().build();
