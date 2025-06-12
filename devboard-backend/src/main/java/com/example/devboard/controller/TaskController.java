@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -124,12 +125,13 @@ public class TaskController {
     }
     
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a task", description = "Delete a task by its ID")
+    @Operation(summary = "Delete a task", description = "Delete a task by its ID (creator or admin only)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
         @ApiResponse(responseCode = "404", description = "Task not found"),
-        @ApiResponse(responseCode = "403", description = "Forbidden - only creator can delete")
+        @ApiResponse(responseCode = "403", description = "Forbidden - only creator or admin can delete")
     })
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isTaskCreator(#id, authentication.name)")
     public ResponseEntity<Void> deleteTask(
             @Parameter(description = "ID of the task to delete", required = true)
             @PathVariable Long id,
@@ -143,6 +145,29 @@ public class TaskController {
                 return ResponseEntity.notFound().build();
             } else if (e.getMessage().contains("creator") || e.getMessage().contains("admin")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @DeleteMapping("/admin/{id}")
+    @Operation(summary = "Admin delete any task", description = "Admin can delete any task regardless of creator")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Task deleted successfully by admin"),
+        @ApiResponse(responseCode = "404", description = "Task not found"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - admin access required")
+    })
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> adminDeleteTask(
+            @Parameter(description = "ID of the task to delete", required = true)
+            @PathVariable Long id) {
+        try {
+            taskService.adminDeleteTask(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            log.error("Admin failed to delete task {}: {}", id, e.getMessage(), e);
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.notFound().build();
             }
             return ResponseEntity.badRequest().build();
         }

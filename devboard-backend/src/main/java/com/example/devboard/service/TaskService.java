@@ -276,4 +276,20 @@ public class TaskService {
                 .commentCount(commentRepository.countByTaskId(task.getId()))
                 .build();
     }
+    
+    // Permission checking method for @PreAuthorize
+    public boolean isTaskCreator(Long taskId, String username) {
+        return taskRepository.findById(taskId)
+                .map(task -> task.getCreator().getUsername().equals(username))
+                .orElse(false);
+    }
+    
+    // Admin-only task deletion
+    public void adminDeleteTask(Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+        
+        log.info("Admin deleting task: {} ({})", task.getId(), task.getTitle());
+        taskRepository.delete(task);
+    }
 }

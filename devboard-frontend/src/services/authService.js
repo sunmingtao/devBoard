@@ -39,9 +39,18 @@ export const authService = {
     localStorage.removeItem('user')
   },
 
-  // Check if user is logged in
+  // Check if user is logged in and token is not expired
   isAuthenticated() {
-    return !!localStorage.getItem('token')
+    const token = localStorage.getItem('token')
+    if (!token) return false
+    
+    // Check if token is expired
+    if (this.isTokenExpired(token)) {
+      this.logout() // Auto logout if expired
+      return false
+    }
+    
+    return true
   },
 
   // Get stored token
@@ -53,6 +62,51 @@ export const authService = {
   getUser() {
     const userStr = localStorage.getItem('user')
     return userStr ? JSON.parse(userStr) : null
+  },
+
+  // Decode JWT token to get payload
+  decodeToken(token) {
+    try {
+      const base64Url = token.split('.')[1]
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      }).join(''))
+      return JSON.parse(jsonPayload)
+    } catch (error) {
+      console.error('Failed to decode token:', error)
+      return null
+    }
+  },
+
+  // Check if token is expired
+  isTokenExpired(token) {
+    if (!token) return true
+    
+    const decoded = this.decodeToken(token)
+    if (!decoded || !decoded.exp) return true
+    
+    const currentTime = Date.now() / 1000
+    return decoded.exp < currentTime
+  },
+
+  // Get time until token expires (in minutes)
+  getTokenExpiryTime(token = null) {
+    const tokenToCheck = token || this.getToken()
+    if (!tokenToCheck) return 0
+    
+    const decoded = this.decodeToken(tokenToCheck)
+    if (!decoded || !decoded.exp) return 0
+    
+    const currentTime = Date.now() / 1000
+    const timeLeft = decoded.exp - currentTime
+    return Math.max(0, Math.floor(timeLeft / 60)) // Return minutes
+  },
+
+  // Check if token will expire soon (within 5 minutes)
+  isTokenExpiringSoon(token = null) {
+    const minutesLeft = this.getTokenExpiryTime(token)
+    return minutesLeft <= 5 && minutesLeft > 0
   },
 }
 

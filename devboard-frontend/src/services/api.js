@@ -42,9 +42,45 @@ api.interceptors.response.use(
     
     if (error.response?.status === 401) {
       console.error('🔐 Unauthorized - redirecting to login')
+      
+      // Clear auth data
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      
+      // Show user-friendly message based on context
+      const currentPath = window.location.pathname
+      let message = 'Your session has expired. Please log in again.'
+      
+      if (currentPath.includes('/admin')) {
+        message = 'Admin access required. Please log in with admin credentials.'
+      } else if (error.config?.url?.includes('/admin/')) {
+        message = 'Admin privileges required for this action.'
+      }
+      
+      // Dispatch custom event for other components to handle
+      window.dispatchEvent(new CustomEvent('auth-error', {
+        detail: { 
+          status: 401, 
+          message: message,
+          redirectTo: '/login'
+        }
+      }))
+      
+      // Small delay to allow components to handle the event
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 100)
+    } else if (error.response?.status === 403) {
+      console.error('🚫 Forbidden - insufficient permissions')
+      
+      // Dispatch custom event for permission errors
+      window.dispatchEvent(new CustomEvent('auth-error', {
+        detail: { 
+          status: 403, 
+          message: 'You do not have permission to perform this action.',
+          redirectTo: null // Don't redirect, just show error
+        }
+      }))
     } else if (error.response?.status === 404) {
       console.error('🔍 Resource not found')
     } else if (error.response?.status >= 500) {

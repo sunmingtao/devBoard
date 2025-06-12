@@ -94,6 +94,26 @@
         updateAuthInfo()
       }
 
+      // Check token expiry and warn user
+      const checkTokenExpiry = () => {
+        if (!isAuthenticated.value) return
+        
+        const token = authService.getToken()
+        if (authService.isTokenExpiringSoon(token)) {
+          const minutesLeft = authService.getTokenExpiryTime(token)
+          console.warn(`Token expires in ${minutesLeft} minutes`)
+          
+          // Dispatch warning event
+          window.dispatchEvent(new CustomEvent('auth-error', {
+            detail: { 
+              status: 'warning', 
+              message: `Your session will expire in ${minutesLeft} minute(s). Please save your work.`,
+              redirectTo: null
+            }
+          }))
+        }
+      }
+
       // Initialize auth info on mount
       onMounted(() => {
         updateAuthInfo()
@@ -103,6 +123,14 @@
         
         // Listen for custom logout events from same tab
         window.addEventListener('logout', handleLogoutEvent)
+        
+        // Check token expiry every minute
+        const tokenCheckInterval = setInterval(checkTokenExpiry, 60000)
+        
+        // Cleanup interval on unmount
+        onUnmounted(() => {
+          clearInterval(tokenCheckInterval)
+        })
       })
 
       // Cleanup event listeners on unmount

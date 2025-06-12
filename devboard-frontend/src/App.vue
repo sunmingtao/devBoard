@@ -4,16 +4,19 @@
     <main class="main-content">
       <router-view />
     </main>
+    <AuthNotification />
   </div>
 </template>
 
 <script>
   import Navigation from './components/Navigation.vue'
+  import AuthNotification from './components/AuthNotification.vue'
 
   export default {
     name: 'App',
     components: {
       Navigation,
+      AuthNotification,
     },
   }
 </script>
