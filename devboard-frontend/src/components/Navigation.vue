@@ -35,6 +35,15 @@
           👤 Profile
         </router-link>
         <router-link
+          v-if="isAuthenticated && isAdmin"
+          to="/admin"
+          class="nav-link admin-link"
+          :class="{ active: $route.name === 'AdminDashboard' }"
+          @click="closeMenu"
+        >
+          🛠️ Admin
+        </router-link>
+        <router-link
           to="/about"
           class="nav-link"
           :class="{ active: $route.name === 'About' }"
@@ -106,12 +115,21 @@
       // Authentication state
       const isAuthenticated = ref(authService.isAuthenticated())
       const username = ref('')
+      const currentUser = ref(null)
+      
+      // Check if current user is admin
+      const isAdmin = computed(() => {
+        return currentUser.value?.role === 'ADMIN'
+      })
       
       // Update username when authenticated
       const updateUserInfo = () => {
         if (isAuthenticated.value) {
           const user = authService.getUser()
           username.value = user?.username || ''
+          currentUser.value = user
+        } else {
+          currentUser.value = null
         }
       }
       
@@ -137,6 +155,10 @@
         isAuthenticated.value = false
         username.value = ''
         closeMenu()
+        
+        // Dispatch custom logout event for other components to listen
+        window.dispatchEvent(new Event('logout'))
+        
         router.push('/')
       }
 
@@ -144,6 +166,7 @@
         isMenuOpen,
         isAuthenticated,
         username,
+        isAdmin,
         toggleMenu,
         closeMenu,
         handleLogout,
@@ -337,5 +360,21 @@
     .nav-toggle {
       display: flex;
     }
+  }
+
+  /* Admin link special styling */
+  .admin-link {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .admin-link:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .admin-link.active {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.5);
   }
 </style>

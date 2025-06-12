@@ -52,7 +52,7 @@
 </template>
 
 <script>
-  import { ref, onMounted, watch } from 'vue'
+  import { ref, onMounted, onUnmounted, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import ApiTest from '../components/ApiTest.vue'
   import Counter from '../components/Counter.vue'
@@ -82,8 +82,34 @@
       // Watch for route changes to update auth state
       watch(() => route.path, updateAuthInfo)
 
+      // Listen for storage changes (handles logout from any component)
+      const handleStorageChange = (e) => {
+        if (e.key === 'token' || e.key === 'user') {
+          updateAuthInfo()
+        }
+      }
+
+      // Also listen for custom logout events
+      const handleLogoutEvent = () => {
+        updateAuthInfo()
+      }
+
       // Initialize auth info on mount
-      onMounted(updateAuthInfo)
+      onMounted(() => {
+        updateAuthInfo()
+        
+        // Listen for localStorage changes (works across tabs too)
+        window.addEventListener('storage', handleStorageChange)
+        
+        // Listen for custom logout events from same tab
+        window.addEventListener('logout', handleLogoutEvent)
+      })
+
+      // Cleanup event listeners on unmount
+      onUnmounted(() => {
+        window.removeEventListener('storage', handleStorageChange)
+        window.removeEventListener('logout', handleLogoutEvent)
+      })
 
       return {
         isAuthenticated,
@@ -97,7 +123,8 @@
   .home {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1rem 2rem 2rem 2rem;
+    margin-top: 1rem;
   }
 
   .composition-api-demo {
@@ -111,10 +138,11 @@
   .hero {
     text-align: center;
     padding: 4rem 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     color: white;
     border-radius: 1rem;
     margin-bottom: 3rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   }
 
   .hero h1 {

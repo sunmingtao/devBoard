@@ -19,4 +19,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     // Migration helper method
     Optional<User> findByRole(User.UserRole role);
+    
+    // Admin service methods
+    long countByRole(User.UserRole role);
 }

@@ -86,6 +86,188 @@ spring:
 
 ---
 
+## JavaScript Module Exports: Default vs Named
+
+### Understanding Export Types
+
+JavaScript ES6 modules support two main types of exports that often cause confusion: **default exports** and **named exports**. Understanding the difference is crucial for avoiding import errors.
+
+#### Default Export
+
+**What it is**: A module can have ONE default export, which is the main thing that module exports.
+
+**How to export**:
+```javascript
+// api.js
+const api = axios.create({ baseURL: 'http://localhost:8080/api' })
+export default api  // Default export
+
+// Alternative syntax
+export default axios.create({ baseURL: 'http://localhost:8080/api' })
+```
+
+**How to import**:
+```javascript
+// ✅ Correct - no curly braces for default import
+import api from './api'
+
+// ✅ You can name it whatever you want
+import myApi from './api'
+import apiClient from './api'
+```
+
+#### Named Export
+
+**What it is**: A module can have MULTIPLE named exports, each with a specific name.
+
+**How to export**:
+```javascript
+// userService.js
+export const getUser = () => { /* ... */ }      // Named export
+export const updateUser = () => { /* ... */ }    // Named export
+export const deleteUser = () => { /* ... */ }    // Named export
+
+// Alternative: export multiple at once
+const getUser = () => { /* ... */ }
+const updateUser = () => { /* ... */ }
+export { getUser, updateUser }  // Named exports
+```
+
+**How to import**:
+```javascript
+// ✅ Correct - use curly braces for named imports
+import { getUser, updateUser } from './userService'
+
+// ✅ Import specific functions
+import { deleteUser } from './userService'
+
+// ✅ Import all as namespace
+import * as userService from './userService'
+```
+
+#### Mixed Exports (Default + Named)
+
+A module can have BOTH default and named exports:
+
+```javascript
+// authService.js
+const authService = {
+  login: () => { /* ... */ },
+  logout: () => { /* ... */ }
+}
+
+export default authService  // Default export
+export const AUTH_TOKEN_KEY = 'token'  // Named export
+export const isAuthenticated = () => !!localStorage.getItem('token')  // Named export
+```
+
+**How to import mixed exports**:
+```javascript
+// Import default and named in one line
+import authService, { AUTH_TOKEN_KEY, isAuthenticated } from './authService'
+
+// Or separately
+import authService from './authService'
+import { AUTH_TOKEN_KEY } from './authService'
+```
+
+### Common Mistakes and How to Fix Them
+
+#### Mistake 1: Wrong Import Syntax for Default Export
+```javascript
+// ❌ Wrong - trying to destructure a default export
+import { api } from './api'  // Error if api.js uses export default
+
+// ✅ Correct
+import api from './api'
+```
+
+#### Mistake 2: Wrong Import Syntax for Named Export
+```javascript
+// ❌ Wrong - no curly braces for named export
+import getUser from './userService'  // Error if using named exports
+
+// ✅ Correct
+import { getUser } from './userService'
+```
+
+#### Mistake 3: Mixing Up Export Syntax
+```javascript
+// ❌ Wrong - can't have multiple default exports
+export default const api = axios.create()  // Syntax error
+export default function helper() {}        // Error: duplicate default
+
+// ✅ Correct - only one default per module
+export default api
+export { helper }  // Make it a named export instead
+```
+
+### Best Practices
+
+1. **Consistency**: Choose one pattern per module type
+   - Services/Utilities: Often use default export for the main service object
+   - Constants/Helpers: Often use named exports for multiple utilities
+   - Components: Usually use default export for the component
+
+2. **Clear Intent**: Default export = "This is THE main thing from this module"
+   ```javascript
+   // api.js - the main thing is the configured axios instance
+   export default axios.create({ /* config */ })
+   
+   // Button.vue - the main thing is the Button component
+   export default { name: 'Button', /* ... */ }
+   ```
+
+3. **Named Exports for Multiple Items**:
+   ```javascript
+   // constants.js - multiple related constants
+   export const API_URL = 'http://localhost:8080'
+   export const TIMEOUT = 5000
+   export const MAX_RETRIES = 3
+   ```
+
+4. **Avoid Mixing Unless Necessary**: It's clearer to use either all named or one default
+   ```javascript
+   // ✅ Good - clear intent
+   export default {
+     login,
+     logout,
+     register,
+     getCurrentUser
+   }
+   
+   // 🤔 Avoid unless there's a good reason
+   export default authService
+   export { login, logout }  // Why are these separate?
+   ```
+
+### Real-World Example from Our Bug
+
+**The Bug**: adminService.js tried to import api as a named export when it was actually a default export.
+
+```javascript
+// api.js
+const api = axios.create({ /* ... */ })
+export default api  // 👈 Default export
+
+// adminService.js
+import { api } from './api'  // ❌ Wrong - looking for named export
+import api from './api'       // ✅ Correct - importing default export
+```
+
+**Why it matters**: This is one of the most common errors in modern JavaScript development. The error message "doesn't provide an export named 'api'" is telling us that there's no `export { api }` or `export const api` in the source file.
+
+### Quick Reference
+
+| Export Type | Export Syntax | Import Syntax | Use When |
+|------------|---------------|---------------|----------|
+| Default | `export default api` | `import api from './api'` | Main/single export from module |
+| Named | `export const api = ...` | `import { api } from './api'` | Multiple exports from module |
+| Named | `export { api, helper }` | `import { api, helper } from './api'` | Exporting existing variables |
+| All Named | Multiple named exports | `import * as utils from './utils'` | Import everything as namespace |
+
+---
+
 ## Vue 3 & Vite Tips
 
 ### Creating Vue 3 Project with Vite
@@ -2000,6 +2182,616 @@ The emit() system enables clean component architecture where:
 - Parents control how they respond to child events
 - Components remain reusable and testable
 - Data flows predictably: props down, events up
+
+---
+
+## Vue 3 Component Lifecycle & Memory Management
+
+### Understanding onUnmounted() and Memory Leaks
+
+**What is onUnmounted()?**
+`onUnmounted()` is a Vue 3 Composition API lifecycle hook that runs when a component is destroyed/removed from the DOM. It's essential for **memory management** and **preventing memory leaks**.
+
+#### When is onUnmounted() Triggered?
+
+1. **Route Navigation** (Most Common):
+   ```javascript
+   router.push('/about')  // Current component unmounted
+   router.push('/tasks')  // Current component unmounted
+   ```
+
+2. **Conditional Rendering**:
+   ```vue
+   <Home v-if="showHome" />  <!-- Unmounted when showHome becomes false -->
+   ```
+
+3. **Dynamic Components**:
+   ```vue
+   <component :is="currentView" />  <!-- Unmounted when currentView changes -->
+   ```
+
+4. **Browser Tab Close/Refresh**: All components get unmounted
+
+#### The Memory Leak Problem
+
+**Without proper cleanup:**
+```javascript
+// ❌ BAD - Memory leak!
+onMounted(() => {
+  window.addEventListener('logout', handleLogoutEvent)
+  // Event listener stays in memory forever!
+})
+
+// What happens:
+// Visit 1: 1 event listener
+// Visit 2: 2 event listeners  
+// Visit 3: 3 event listeners
+// Memory usage keeps growing + duplicate event handling!
+```
+
+**Real-world impact:**
+- Memory usage grows with each navigation
+- Multiple event handlers fire for single events
+- Browser becomes sluggish over time
+- Potential crashes in long-running applications
+
+#### Proper Cleanup Pattern
+
+```javascript
+// ✅ GOOD - Proper memory management
+onMounted(() => {
+  window.addEventListener('logout', handleLogoutEvent)
+  window.addEventListener('storage', handleStorageChange)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('logout', handleLogoutEvent)
+  window.removeEventListener('storage', handleStorageChange)
+  // Clean slate for next component instance
+})
+```
+
+#### Types of Cleanup Required
+
+**1. Global Event Listeners:**
+```javascript
+onUnmounted(() => {
+  window.removeEventListener('logout', handleLogoutEvent)
+  window.removeEventListener('resize', handleResize)
+  document.removeEventListener('click', handleDocumentClick)
+})
+```
+
+**2. Timers and Intervals:**
+```javascript
+let timer = null
+
+onMounted(() => {
+  timer = setInterval(() => console.log('tick'), 1000)
+})
+
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)  // Prevent timer from running forever
+  }
+})
+```
+
+**3. WebSocket Connections:**
+```javascript
+let ws = null
+
+onMounted(() => {
+  ws = new WebSocket('ws://localhost:8080')
+})
+
+onUnmounted(() => {
+  if (ws) {
+    ws.close()  // Close connection to free resources
+  }
+})
+```
+
+**4. API Request Cancellation:**
+```javascript
+let controller = null
+
+onMounted(() => {
+  controller = new AbortController()
+  fetch('/api/data', { signal: controller.signal }).then(...)
+})
+
+onUnmounted(() => {
+  if (controller) {
+    controller.abort()  // Cancel pending requests
+  }
+})
+```
+
+#### Vue's Automatic vs Manual Cleanup
+
+**✅ Automatic Cleanup (Vue handles these):**
+- `watch()` watchers
+- `computed()` properties
+- `reactive()` objects
+- `ref()` references
+
+**⚠️ Manual Cleanup Required (We must handle these):**
+- `window.addEventListener()`
+- `setInterval()` / `setTimeout()`
+- `new WebSocket()`
+- `new EventSource()`
+- `document.addEventListener()`
+
+#### Best Practices
+
+1. **Always pair** `addEventListener` with `removeEventListener`
+2. **Store function references** for proper removal:
+   ```javascript
+   // ✅ Good - same function reference
+   const handler = () => {}
+   window.addEventListener('event', handler)
+   window.removeEventListener('event', handler)
+   
+   // ❌ Bad - different function references
+   window.addEventListener('event', () => {})
+   window.removeEventListener('event', () => {})  // Won't work!
+   ```
+3. **Use onUnmounted** for all cleanup in Composition API
+4. **Test navigation patterns** to verify no memory leaks
+5. **Use AbortController** for fetch requests
+6. **Debug with console logs** to verify cleanup runs
+
+#### Debugging Memory Leaks
+
+```javascript
+onMounted(() => {
+  console.log('🟢 Component mounted - adding listeners')
+  window.addEventListener('logout', handleLogoutEvent)
+})
+
+onUnmounted(() => {
+  console.log('🔴 Component unmounted - removing listeners')  
+  window.removeEventListener('logout', handleLogoutEvent)
+})
+```
+
+**Browser DevTools Check:**
+- Chrome DevTools → Memory tab
+- Take heap snapshot before navigation
+- Navigate away and back
+- Take another snapshot
+- Compare - should see no growth in event listeners
+
+#### Key Takeaway
+
+`onUnmounted()` is not optional - it's **essential for professional Vue.js applications**. Every global resource you acquire in `onMounted()` should be released in `onUnmounted()`. This ensures:
+- ✅ Constant memory usage
+- ✅ No duplicate event handlers
+- ✅ Smooth performance
+- ✅ Reliable long-running applications
+
+This pattern is fundamental to building scalable, production-ready Vue.js applications! 🧹✨
+
+---
+
+## Custom Events for Component Communication
+
+### Understanding Browser Custom Events
+
+Custom events are a powerful browser API feature that enables **decoupled communication** between different parts of your application, beyond standard events like `click`, `scroll`, `resize`.
+
+#### Basic Custom Event API
+
+```javascript
+// 1. Create a custom event
+const myEvent = new Event('my-custom-event')
+
+// 2. Dispatch (fire) the event
+window.dispatchEvent(myEvent)
+
+// 3. Listen for the event
+window.addEventListener('my-custom-event', (event) => {
+  console.log('Custom event received!')
+})
+```
+
+#### Real-World Example: Logout State Synchronization
+
+**The Problem:** When logout happens in Navigation component, other components (like Home page welcome message) don't update until page refresh.
+
+**Traditional Solutions and Their Issues:**
+- **Prop Drilling**: ❌ Messy, requires parent-child relationship
+- **State Management Store**: ⚖️ Overkill for simple notifications
+- **Direct Component Refs**: ❌ Creates tight coupling
+- **Route-based**: ❌ Doesn't work when staying on same page
+
+**Custom Event Solution:**
+
+**Step 1: Navigation Component Dispatches Event**
+```javascript
+// Navigation.vue - When logout button clicked
+const handleLogout = () => {
+  authService.logout()           // Clear localStorage
+  isAuthenticated.value = false  // Update local state
+  username.value = ''
+  closeMenu()
+  
+  // 🎯 DISPATCH CUSTOM EVENT
+  window.dispatchEvent(new Event('logout'))
+  
+  router.push('/')
+}
+```
+
+**Step 2: Home Component Listens for Event**
+```javascript
+// Home.vue - Setup listener
+const handleLogoutEvent = () => {
+  updateAuthInfo()  // Re-check auth state and update UI
+}
+
+onMounted(() => {
+  // 🎯 LISTEN FOR CUSTOM EVENT
+  window.addEventListener('logout', handleLogoutEvent)
+})
+
+onUnmounted(() => {
+  // Clean up listener (essential!)
+  window.removeEventListener('logout', handleLogoutEvent)
+})
+```
+
+#### Communication Flow
+
+```
+┌─────────────────┐    Dispatch     ┌─────────────────┐
+│ Navigation.vue  │─────'logout'────▶│   window        │
+│                 │     event       │   (global)      │
+│ [Logout Button] │                 │                 │
+└─────────────────┘                 └─────────────────┘
+                                             │
+                                             │ Receives
+                                             │ event
+                                             ▼
+                                    ┌─────────────────┐
+                                    │   Home.vue      │
+                                    │                 │
+                                    │ [Welcome Msg]   │
+                                    │ Updates UI!     │
+                                    └─────────────────┘
+```
+
+#### Advanced Custom Event Features
+
+**1. Events with Data:**
+```javascript
+// Dispatch with custom data
+const eventWithData = new CustomEvent('user-updated', {
+  detail: { 
+    userId: 123, 
+    username: 'john_doe',
+    role: 'admin'
+  }
+})
+window.dispatchEvent(eventWithData)
+
+// Listen and access data
+window.addEventListener('user-updated', (event) => {
+  console.log(event.detail.username) // 'john_doe'
+  console.log(event.detail.role)     // 'admin'
+})
+```
+
+**2. Multiple Listeners:**
+```javascript
+// Multiple components can listen to same event
+window.addEventListener('logout', updateNavigation)
+window.addEventListener('logout', updateSidebar)
+window.addEventListener('logout', updateUserProfile)
+window.addEventListener('logout', clearCache)
+```
+
+**3. Event Options:**
+```javascript
+const event = new CustomEvent('my-event', {
+  bubbles: true,    // Event bubbles up DOM tree
+  cancelable: true, // Event can be cancelled
+  detail: { data: 'custom payload' }
+})
+```
+
+#### Real-World Use Cases
+
+**Shopping Cart Updates:**
+```javascript
+// Product component
+addToCart() {
+  cart.add(product)
+  window.dispatchEvent(new CustomEvent('cart-updated', {
+    detail: { itemCount: cart.length }
+  }))
+}
+
+// Header component  
+window.addEventListener('cart-updated', (e) => {
+  cartBadge.textContent = e.detail.itemCount
+})
+```
+
+**Theme Changes:**
+```javascript
+// Theme switcher
+switchTheme() {
+  document.body.className = newTheme
+  window.dispatchEvent(new CustomEvent('theme-changed', {
+    detail: { theme: newTheme }
+  }))
+}
+
+// All components listening
+window.addEventListener('theme-changed', (e) => {
+  updateComponentColors(e.detail.theme)
+})
+```
+
+**Global Notifications:**
+```javascript
+// Any component can show notifications
+showNotification() {
+  window.dispatchEvent(new CustomEvent('show-notification', {
+    detail: { 
+      message: 'Task saved successfully!',
+      type: 'success'
+    }
+  }))
+}
+```
+
+#### Benefits of Custom Events
+
+✅ **Decoupled**: Components don't need to know about each other  
+✅ **Scalable**: Easy to add more listeners  
+✅ **Immediate**: No polling or delays  
+✅ **Cross-tab**: Can work across browser tabs  
+✅ **Clean**: Easy to understand and maintain  
+✅ **Performance**: No unnecessary re-renders  
+✅ **Testable**: Easy to mock and test events  
+✅ **Universal**: Works with any framework or vanilla JS
+
+#### Browser Support
+
+Custom events are supported in all modern browsers:
+- Chrome/Edge: Full support
+- Firefox: Full support  
+- Safari: Full support
+- IE11+: Basic support
+
+#### Best Practices
+
+1. **Use descriptive event names**: `'user-logged-out'` vs `'logout'`
+2. **Namespace events**: `'app:user:logout'` for complex apps
+3. **Always clean up listeners**: Use `onUnmounted()` in Vue
+4. **Use CustomEvent with detail**: For passing data
+5. **Document your events**: What they mean and when they fire
+6. **Consider event frequency**: Don't spam high-frequency events
+7. **Test cross-component communication**: Ensure events work as expected
+
+#### When to Use Custom Events vs Other Solutions
+
+**Use Custom Events When:**
+- Simple notifications between unrelated components
+- Global state changes (theme, auth, cart)
+- Cross-tab communication needs
+- Event-driven architecture
+- Minimal dependencies desired
+
+**Consider Alternatives When:**
+- Complex state management needed (use Pinia/Vuex)
+- Parent-child communication (use props/emit)
+- Frequent data updates (use reactive stores)
+- Type safety critical (use TypeScript + stores)
+
+Custom events are a powerful, lightweight solution for component communication that every Vue.js developer should understand! 🎯
+
+---
+
+## Vue 3 watch() Function Deep Dive
+
+### What is watch()?
+
+`watch()` is a Vue 3 Composition API function that lets you **reactively execute side effects** when reactive data changes. Unlike `computed()` which returns a value, `watch()` is used for side effects like API calls, DOM manipulation, or logging.
+
+#### Basic Syntax
+
+```javascript
+import { watch, ref, reactive } from 'vue'
+
+watch(source, callback, options?)
+```
+
+#### What Can Be Watched vs What Cannot
+
+**✅ CAN watch (reactive sources):**
+```javascript
+const count = ref(0)                    // ref
+const user = reactive({ name: 'John' }) // reactive object  
+const doubled = computed(() => count.value * 2) // computed
+const props = defineProps(['task'])     // props
+
+watch(count, (newVal) => console.log('count changed'))
+watch(user, (newUser) => console.log('user changed'))
+watch(doubled, (newVal) => console.log('doubled changed'))
+```
+
+**❌ CANNOT watch (plain variables):**
+```javascript
+let a = 1           // Plain variable
+let name = 'John'   // Plain string
+let isActive = true // Plain boolean
+
+// ❌ These will NOT work - plain variables are not reactive
+watch(a, callback)        // ERROR!
+watch(name, callback)     // ERROR!
+watch(isActive, callback) // ERROR!
+```
+
+#### Key Rule: Reactive Objects vs Properties
+
+**Watching entire reactive object:**
+```javascript
+const user = reactive({
+  name: 'John',
+  age: 25
+})
+
+// ✅ Watch entire object - works directly
+watch(user, (newUser) => {
+  console.log('User object changed:', newUser)
+})
+```
+
+**Watching object properties:**
+```javascript
+// ❌ This doesn't work - extracts primitive value
+watch(user.name, (newName) => {
+  console.log('This will never run!')
+})
+
+// ✅ This works - uses getter function to maintain reactivity
+watch(() => user.name, (newName) => {
+  console.log('Name changed:', newName)
+})
+```
+
+#### Why the Difference?
+
+When you access `user.name`, you extract a **primitive value** (`'John'`) which loses its reactive connection. The getter function `() => user.name` maintains the **reactive connection** because Vue can track what reactive properties are accessed during function execution.
+
+```javascript
+// Direct access breaks reactivity chain
+const nameValue = user.name  // nameValue = 'John' (plain string)
+
+// Getter function preserves reactivity chain  
+const nameGetter = () => user.name  // Function that accesses reactive property
+```
+
+#### Simple Examples
+
+**Example 1: Authentication State Watcher**
+```javascript
+// Home.vue - Update welcome message on auth changes
+import { ref, watch } from 'vue'
+
+export default {
+  setup() {
+    const isAuthenticated = ref(false)
+    const username = ref('')
+
+    // Watch authentication state
+    watch(isAuthenticated, (authenticated) => {
+      if (authenticated) {
+        document.title = `Welcome ${username.value}!`
+      } else {
+        document.title = 'DevBoard'
+        username.value = ''
+      }
+    })
+
+    return { isAuthenticated, username }
+  }
+}
+```
+
+**Example 2: Form Auto-save**
+```javascript
+// TaskForm.vue - Auto-save form data
+import { reactive, watch } from 'vue'
+
+export default {
+  setup() {
+    const formData = reactive({
+      title: '',
+      description: '',
+      priority: 'MEDIUM'
+    })
+
+    // Watch entire form object
+    watch(formData, (newFormData) => {
+      // Side effect: Auto-save to localStorage
+      localStorage.setItem('taskDraft', JSON.stringify(newFormData))
+    }, { deep: true }) // deep: true to watch nested changes
+
+    // Watch specific property
+    watch(() => formData.title, (newTitle) => {
+      // Side effect: Update document title
+      document.title = newTitle ? `Editing: ${newTitle}` : 'New Task'
+    })
+
+    return { formData }
+  }
+}
+```
+
+**Example 3: Multiple Sources**
+```javascript
+// Watch multiple reactive sources
+const firstName = ref('John')
+const lastName = ref('Doe')
+
+watch([firstName, lastName], ([newFirst, newLast], [oldFirst, oldLast]) => {
+  console.log(`Name changed: ${oldFirst} ${oldLast} → ${newFirst} ${newLast}`)
+  
+  // Side effect: Update full name display
+  updateUserProfile(`${newFirst} ${newLast}`)
+})
+```
+
+#### Watch Options
+
+```javascript
+watch(source, callback, {
+  immediate: true,    // Run immediately on mount
+  deep: true,         // Watch nested object changes  
+  flush: 'post'       // Run after DOM updates
+})
+```
+
+#### watch() vs computed() vs watchEffect()
+
+| Feature | `watch()` | `computed()` | `watchEffect()` |
+|---------|-----------|--------------|-----------------|
+| **Purpose** | Side effects | Derived values | Auto-tracked effects |
+| **Returns** | Stop function | Computed ref | Stop function |
+| **When to use** | API calls, DOM updates | Calculations, filtering | Multiple dependencies |
+| **Dependencies** | Explicit | Automatic | Automatic |
+
+#### Best Practices
+
+1. **Use watch() for side effects**, not for derived values (use computed() instead)
+2. **Use getter functions** `() => obj.property` for object properties
+3. **Use deep: true** carefully - it can be expensive for large objects
+4. **Debounce expensive operations** like API calls
+5. **Clean up watchers** with `onUnmounted()` if manually stopped
+
+#### Common Pattern: Converting Plain Variables
+
+```javascript
+// ❌ Plain variables (not watchable)
+let isLoading = false
+let errorMessage = ''
+
+// ✅ Reactive variables (watchable)
+const isLoading = ref(false)
+const errorMessage = ref('')
+
+watch(isLoading, (loading) => {
+  // Side effect: Show/hide loading spinner
+  document.body.classList.toggle('loading', loading)
+})
+```
+
+**Key Takeaway**: Vue's `watch()` only works with reactive sources because it needs change notifications. Always use `ref()`, `reactive()`, or `computed()` for data you want to watch! 🎯
 
 ---
 

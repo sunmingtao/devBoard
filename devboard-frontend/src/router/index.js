@@ -2,9 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import About from '../views/About.vue'
 import TaskBoard from '../views/TaskBoard.vue'
+import TaskDetail from '../views/TaskDetail.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Profile from '../views/Profile.vue'
+import AdminDashboard from '../views/AdminDashboard.vue'
 
 const routes = [
   {
@@ -33,6 +35,15 @@ const routes = [
     },
   },
   {
+    path: '/tasks/:id',
+    name: 'TaskDetail',
+    component: TaskDetail,
+    meta: {
+      title: 'DevBoard - Task Detail',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/login',
     name: 'Login',
     component: Login,
@@ -57,6 +68,16 @@ const routes = [
       requiresAuth: true,
     },
   },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: {
+      title: 'DevBoard - Admin Dashboard',
+      requiresAuth: true,
+      requiresAdmin: true,
+    },
+  },
 ]
 
 const router = createRouter({
@@ -64,7 +85,7 @@ const router = createRouter({
   routes,
 })
 
-// Navigation guard for authentication
+// Navigation guard for authentication and authorization
 router.beforeEach((to, from, next) => {
   // Update page title
   document.title = to.meta.title || 'DevBoard'
@@ -75,9 +96,33 @@ router.beforeEach((to, from, next) => {
     if (!token) {
       // Redirect to login if not authenticated
       next('/login')
-    } else {
-      next()
+      return
     }
+    
+    // Check if route requires admin role
+    if (to.meta.requiresAdmin) {
+      const userStr = localStorage.getItem('user')
+      if (!userStr) {
+        next('/login')
+        return
+      }
+      
+      try {
+        const user = JSON.parse(userStr)
+        if (user.role !== 'ADMIN') {
+          // Redirect to home if not admin
+          alert('Access denied: Admin role required')
+          next('/')
+          return
+        }
+      } catch (error) {
+        console.error('Failed to parse user data:', error)
+        next('/login')
+        return
+      }
+    }
+    
+    next()
   } else {
     next()
   }
