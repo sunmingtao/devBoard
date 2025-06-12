@@ -1,59 +1,95 @@
-✅ Week 4：任务系统进阶 + 后台管理初步搭建
+✅ Week 5：模块拆分 + Docker 容器化部署
 
-🎯 目标：完善任务系统功能，实现任务指派、筛选、详情页等；为管理员用户搭建后台管理页面雏形。
+🎯 目标：将项目初步拆分为多个模块 / 服务，并使用 Docker 实现本地容器化运行环境。
 🗓 日常任务分解：
-🔹 Day 1：任务详情页 + 评论功能
+🔹 Day 1：后端模块化（Spring Boot 多模块结构）
 
-创建 TaskDetail.vue 页面
+将项目拆分为至少两个模块：
 
-点击任务列表项跳转到详情页（携带 taskId）
+    devboard-api（主服务）
 
-后端新增接口：GET /api/tasks/{id} 返回单个任务详情
+    devboard-auth（认证/用户管理服务）
 
-添加评论表（Comment 实体，字段：id, task_id, user_id, content, create_time）
+使用 Maven 多模块管理结构（父项目管理依赖）
 
-    前端实现评论显示、发表评论功能（评论后刷新）
+保持现有功能运行（测试登录、任务接口不出错）
 
-🔹 Day 2：任务指派 + 用户下拉列表
+    每个模块保留自己的 application.yml，统一端口配置
 
-后端新增接口：GET /api/users/list（返回所有用户，用于任务指派）
+🔹 Day 2：配置统一接口响应结构 + 全局异常处理
 
-修改 Task 实体，支持指定 assignee（任务负责人）
+实现统一返回体格式，如：
 
-前端任务表单添加下拉菜单，选择指派用户
+{
+  "code": 0,
+  "message": "success",
+  "data": {...}
+}
 
-    任务列表页显示负责人（assignee name）
+使用 @ControllerAdvice 实现统一异常处理
 
-✅ Day 3：智能任务筛选系统（替代分页，更符合行业标准）
+    处理常见异常（如验证失败、未授权、资源不存在）
 
-后端支持多维度筛选查询：assigneeId, priority, status, search, creatorId
+🔹 Day 3：Docker 基础部署（MySQL + 后端）
 
-前端实现完整筛选界面：搜索框、下拉菜单、快速筛选按钮
+编写 Dockerfile 构建后端 jar 镜像
 
-    快速筛选：我的任务、未分配任务、高优先级任务
+使用 docker-compose.yml 启动：
 
-🔹 Day 4–5：后台管理首页（仅管理员可访问）
+    MySQL 数据库容器
 
-后端添加接口：GET /api/admin/users（管理员权限）
+    后端 API 服务容器
 
-前端创建 AdminDashboard.vue 页面（展示用户列表、任务数等）
+配置容器间通信，Spring Boot 连接 MySQL 容器
 
-添加权限校验：只有管理员能进入 admin 页面
+    验证接口可用，前后端仍可联调
 
-    用户管理功能预留（如禁用用户、重置密码等，仅展示不实现）
+🔹 Day 4：前端 Docker 化
 
-🔹 Day 6：权限控制增强（前后端）
+为 Vue3 项目添加 Dockerfile
 
-后端基于 Role 校验接口访问（@PreAuthorize 或自定义注解）
+    构建静态文件（使用 npm run build）
 
-前端路由中根据用户角色判断是否展示后台入口
+    用 nginx 或 http-server 作为容器启动入口
 
-    优化 token 失效处理（如 401 自动跳转登录）
+将前端也加入 docker-compose.yml
 
-🔹 Day 7：本周总结 & GitHub 更新
+    验证前端容器启动成功，并能访问后端接口
 
-整理代码，分支名：feature/task-enhanced 或 week4
+🔹 Day 5：配置环境变量 + 构建优化
 
-编写进度日志（功能、难点、收获、疑问）
+区分开发 / 生产环境配置（端口、数据库地址、token 过期时间等）
 
-更新 README，加入模块结构说明或截图
+Vue 项目中使用 .env.production 管理接口地址
+
+后端支持 application-dev.yml 和 application-prod.yml
+
+    精简前端容器镜像体积（使用 node:alpine）
+
+🔹 Day 6–7：总结 + 部署脚本 + GitHub 更新
+
+编写本地一键启动脚本：docker-compose up --build
+
+添加 .dockerignore，避免上传多余内容
+
+更新 GitHub README：
+
+    添加 Docker 启动方法
+
+    描述模块结构与容器布局
+
+    编写周报 / issue，总结本周学到的内容和部署经验
+
+📦 本周产出清单
+模块	功能
+后端结构	Maven 多模块管理、模块职责划分
+接口结构	统一响应体格式、全局异常处理
+Docker 容器化	后端 + MySQL + 前端容器
+脚本与部署文档	docker-compose.yml、README 更新
+🛠️ 推荐工具 / 学习资料
+目的	推荐
+多模块结构	Spring Boot official docs + Maven parent pom
+统一返回格式/异常	ResponseEntity, @RestControllerAdvice
+Docker 化部署	官方文档 + docker-compose 实战
+容器间网络通信	docker-compose 默认网络
+生产镜像优化	使用多阶段构建（Node 构建 + Nginx 运行）
