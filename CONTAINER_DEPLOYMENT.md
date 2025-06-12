@@ -431,4 +431,106 @@ docker exec devboard-backend-container ping host.docker.internal
 
 ---
 
+## 🚀 Week 5 Day 3 - Docker Compose Multi-Container Setup
+
+### What We Accomplished Today
+
+✅ **Complete docker-compose.yml Configuration**
+- MySQL 8.0 database container with health checks
+- Spring Boot backend container with automatic build
+- Custom Docker network for container communication
+- Environment-based configuration
+- Container dependencies (backend waits for MySQL)
+
+✅ **Docker Networking Setup**
+```yaml
+networks:
+  devboard-network:
+    driver: bridge
+```
+- Containers communicate by service name (mysql, backend)
+- Isolated network for security
+- No need for host.docker.internal
+
+✅ **Container Configuration**
+```yaml
+backend:
+  environment:
+    SPRING_PROFILES_ACTIVE: mysql
+    SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+```
+- Backend connects to MySQL using service name
+- MySQL profile activated automatically
+- Database credentials passed via environment
+
+✅ **.dockerignore for Optimized Builds**
+- Excludes unnecessary files from Docker context
+- Faster builds and smaller images
+- Only includes essential runtime files
+
+### How to Run Everything
+
+```bash
+# Start all services
+docker compose up --build
+
+# Start in background
+docker compose up -d --build
+
+# View logs
+docker compose logs -f backend
+docker compose logs -f mysql
+
+# Stop everything
+docker compose down
+
+# Stop and remove volumes (clean slate)
+docker compose down -v
+```
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────┐
+│              Docker Host                        │
+├─────────────────────┬───────────────────────────┤
+│   MySQL Container   │    Backend Container      │
+│   (devboard-mysql)  │    (devboard-backend)     │
+├─────────────────────┼───────────────────────────┤
+│ Port: 3307→3306     │ Port: 8080→8080          │
+│ User: devboard_user │ Profile: mysql           │
+│ Pass: devboard_pass │ Connects to: mysql:3306  │
+│ DB: devboard        │ Built from: Dockerfile   │
+└─────────────────────┴───────────────────────────┘
+         ↑                        ↓
+         └────── Network: devboard-network ──────┘
+```
+
+### Testing the Setup
+
+```bash
+# 1. Start containers
+docker compose up --build
+
+# 2. Test backend health
+curl http://localhost:8080/api/hello | python3 -m json.tool
+
+# 3. Test database connection
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}' | python3 -m json.tool
+
+# 4. Check MySQL directly
+docker exec -it devboard-mysql mysql -u devboard_user -pdevboard_pass -e "USE devboard; SHOW TABLES;"
+```
+
+### Key Learnings
+
+1. **Service Names as Hostnames**: In Docker networks, service names (like `mysql`) automatically resolve to container IPs
+2. **Health Checks Matter**: Using `depends_on` with `condition: service_healthy` ensures MySQL is ready before backend starts
+3. **Environment Over Hardcoding**: All configuration via environment variables for flexibility
+4. **Single Command Deployment**: `docker compose up` brings up entire stack
+
+---
+
 *This guide will be updated as we progress through each day of Week 5.*

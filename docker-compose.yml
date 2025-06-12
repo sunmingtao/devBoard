@@ -15,6 +15,33 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - devboard-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build: ./devboard-backend
+    container_name: devboard-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: devboard_user
+      SPRING_DATASOURCE_PASSWORD: devboard_pass
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - devboard-network
+
+networks:
+  devboard-network:
+    driver: bridge
 
 volumes:
   mysql_data:
