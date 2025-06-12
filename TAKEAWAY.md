@@ -2795,4 +2795,61 @@ watch(isLoading, (loading) => {
 
 ---
 
+## 🛠️ Useful Development Commands
+
+### API Testing with Pretty JSON
+```bash
+# Test API endpoints with formatted output
+curl -s http://localhost:8080/api/hello | python3 -m json.tool
+
+# Test with authentication
+curl -s -H "Authorization: Bearer TOKEN" http://localhost:8080/api/tasks | python3 -m json.tool
+
+# Test POST requests
+curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}' | python3 -m json.tool
+```
+
+**Explanation:**
+- `curl -s` = Silent mode (no progress bars)
+- `| python3 -m json.tool` = Pretty-print JSON with proper indentation
+- Alternative: `| jq` (if you have jq installed)
+
+### Process Management
+```bash
+# Kill Spring Boot development server gracefully
+pkill -f "spring-boot:run"
+
+# Kill process using specific port (force kill)
+lsof -ti:8080 | xargs kill -9
+
+# Kill all Java processes
+pkill java
+
+# Kill processes by pattern
+pkill -f "devboard"
+```
+
+**Explanation:**
+- `pkill -f` = Kill processes by full command line pattern
+- `lsof -ti:PORT` = Find process IDs using specific port
+- `xargs kill -9` = Force kill the processes
+
+### HTTP Method vs Options
+```bash
+# These are all identical GET requests:
+curl http://localhost:8080/api/hello                    # Default GET
+curl -X GET http://localhost:8080/api/hello            # Explicit GET  
+curl -s http://localhost:8080/api/hello                # Silent GET
+curl -s -X GET http://localhost:8080/api/hello         # Silent + Explicit GET
+
+# Different HTTP methods:
+curl -X POST http://localhost:8080/api/auth/login      # POST request
+curl -X PUT http://localhost:8080/api/tasks/1          # PUT request  
+curl -X DELETE http://localhost:8080/api/tasks/1       # DELETE request
+```
+
+---
+
 *This file contains useful tips and learnings discovered during the DevBoard project development.*

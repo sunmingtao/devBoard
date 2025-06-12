@@ -1,21 +1,22 @@
 package com.example.devboard.controller;
 
+import com.example.devboard.common.ApiResponse;
+import com.example.devboard.common.ErrorCode;
 import com.example.devboard.dto.TaskCreateRequest;
 import com.example.devboard.dto.TaskResponse;
 import com.example.devboard.dto.TaskUpdateRequest;
 import com.example.devboard.dto.TaskDetailResponse;
+import com.example.devboard.exception.BusinessException;
 import com.example.devboard.service.TaskService;
 import com.example.devboard.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -33,8 +34,8 @@ public class TaskController {
     
     @GetMapping
     @Operation(summary = "Get all tasks with optional filtering", description = "Retrieve tasks with optional filters")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved filtered tasks")
-    public List<TaskResponse> getAllTasks(
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved filtered tasks")
+    public ApiResponse<List<TaskResponse>> getAllTasks(
             @Parameter(description = "Filter by assignee user ID")
             @RequestParam(required = false) Long assigneeId,
             @Parameter(description = "Filter by task priority (HIGH, MEDIUM, LOW)")
@@ -45,148 +46,117 @@ public class TaskController {
             @RequestParam(required = false) String search,
             @Parameter(description = "Filter by creator user ID")
             @RequestParam(required = false) Long creatorId) {
-        return taskService.getAllTasksWithFilters(assigneeId, priority, status, search, creatorId);
+        List<TaskResponse> tasks = taskService.getAllTasksWithFilters(assigneeId, priority, status, search, creatorId);
+        return ApiResponse.success(tasks);
     }
     
     @GetMapping("/{id}")
     @Operation(summary = "Get task by ID", description = "Retrieve a specific task by its ID")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Task found"),
-        @ApiResponse(responseCode = "404", description = "Task not found")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Task found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Task not found")
     })
-    public ResponseEntity<TaskResponse> getTaskById(
+    public ApiResponse<TaskResponse> getTaskById(
             @Parameter(description = "ID of the task to retrieve", required = true)
             @PathVariable Long id) {
-        try {
-            TaskResponse task = taskService.getTaskById(id);
-            return ResponseEntity.ok(task);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        TaskResponse task = taskService.getTaskById(id);
+        return ApiResponse.success(task);
     }
     
     @GetMapping("/{id}/detail")
     @Operation(summary = "Get task detail with comments", description = "Retrieve a task with all its comments")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Task detail found"),
-        @ApiResponse(responseCode = "404", description = "Task not found")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Task detail found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Task not found")
     })
-    public ResponseEntity<TaskDetailResponse> getTaskDetail(
+    public ApiResponse<TaskDetailResponse> getTaskDetail(
             @Parameter(description = "ID of the task to retrieve", required = true)
             @PathVariable Long id) {
-        try {
-            TaskDetailResponse taskDetail = taskService.getTaskDetail(id);
-            return ResponseEntity.ok(taskDetail);
-        } catch (RuntimeException e) {
-            log.error("Failed to get task detail {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
+        TaskDetailResponse taskDetail = taskService.getTaskDetail(id);
+        return ApiResponse.success(taskDetail);
     }
     
     @PostMapping
     @Operation(summary = "Create a new task", description = "Create a new task with the provided details")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Task created successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid task data")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Task created successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid task data")
     })
-    public ResponseEntity<TaskResponse> createTask(
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<TaskResponse> createTask(
             @Parameter(description = "Task details to create", required = true)
             @Valid @RequestBody TaskCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         TaskResponse createdTask = taskService.createTask(request, userPrincipal.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+        return ApiResponse.success("Task created successfully", createdTask);
     }
     
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing task", description = "Update a task with new details")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Task updated successfully"),
-        @ApiResponse(responseCode = "404", description = "Task not found"),
-        @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Task updated successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Task not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
-    public ResponseEntity<TaskResponse> updateTask(
+    public ApiResponse<TaskResponse> updateTask(
             @Parameter(description = "ID of the task to update", required = true)
             @PathVariable Long id,
             @Parameter(description = "Updated task details", required = true)
             @Valid @RequestBody TaskUpdateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        try {
-            TaskResponse updatedTask = taskService.updateTask(id, request, userPrincipal.getId());
-            return ResponseEntity.ok(updatedTask);
-        } catch (RuntimeException e) {
-            log.error("Failed to update task {}: {}", id, e.getMessage(), e);
-            if (e.getMessage().contains("not found")) {
-                return ResponseEntity.notFound().build();
-            } else if (e.getMessage().contains("permission")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            return ResponseEntity.badRequest().build();
-        }
+        TaskResponse updatedTask = taskService.updateTask(id, request, userPrincipal.getId());
+        return ApiResponse.success("Task updated successfully", updatedTask);
     }
     
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a task", description = "Delete a task by its ID (creator or admin only)")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Task not found"),
-        @ApiResponse(responseCode = "403", description = "Forbidden - only creator or admin can delete")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Task deleted successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Task not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - only creator or admin can delete")
     })
     @PreAuthorize("hasRole('ADMIN') or @taskService.isTaskCreator(#id, authentication.name)")
-    public ResponseEntity<Void> deleteTask(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ApiResponse<?> deleteTask(
             @Parameter(description = "ID of the task to delete", required = true)
             @PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        try {
-            taskService.deleteTask(id, userPrincipal.getId());
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            log.error("Failed to delete task {}: {}", id, e.getMessage(), e);
-            if (e.getMessage().contains("not found")) {
-                return ResponseEntity.notFound().build();
-            } else if (e.getMessage().contains("creator") || e.getMessage().contains("admin")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            return ResponseEntity.badRequest().build();
-        }
+        taskService.deleteTask(id, userPrincipal.getId());
+        return ApiResponse.success("Task deleted successfully");
     }
     
     @DeleteMapping("/admin/{id}")
     @Operation(summary = "Admin delete any task", description = "Admin can delete any task regardless of creator")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Task deleted successfully by admin"),
-        @ApiResponse(responseCode = "404", description = "Task not found"),
-        @ApiResponse(responseCode = "403", description = "Forbidden - admin access required")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Task deleted successfully by admin"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Task not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - admin access required")
     })
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> adminDeleteTask(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ApiResponse<?> adminDeleteTask(
             @Parameter(description = "ID of the task to delete", required = true)
             @PathVariable Long id) {
-        try {
-            taskService.adminDeleteTask(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            log.error("Admin failed to delete task {}: {}", id, e.getMessage(), e);
-            if (e.getMessage().contains("not found")) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.badRequest().build();
-        }
+        taskService.adminDeleteTask(id);
+        return ApiResponse.success("Task deleted successfully by admin");
     }
     
     @GetMapping("/status/{status}")
     @Operation(summary = "Get tasks by status", description = "Retrieve all tasks with a specific status")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved tasks")
-    public List<TaskResponse> getTasksByStatus(
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved tasks")
+    public ApiResponse<List<TaskResponse>> getTasksByStatus(
             @Parameter(description = "Task status to filter by (TODO, IN_PROGRESS, DONE)", required = true)
             @PathVariable String status) {
-        return taskService.getTasksByStatus(status);
+        List<TaskResponse> tasks = taskService.getTasksByStatus(status);
+        return ApiResponse.success(tasks);
     }
     
     @GetMapping("/my")
     @Operation(summary = "Get my tasks", description = "Retrieve all tasks where user is creator or assignee")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved user's tasks")
-    public List<TaskResponse> getMyTasks(
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved user's tasks")
+    public ApiResponse<List<TaskResponse>> getMyTasks(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        return taskService.getMyTasks(userPrincipal.getId());
+        List<TaskResponse> tasks = taskService.getMyTasks(userPrincipal.getId());
+        return ApiResponse.success(tasks);
     }
 }

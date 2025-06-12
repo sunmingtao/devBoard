@@ -1,5 +1,6 @@
 package com.example.devboard.service;
 
+import com.example.devboard.common.ErrorCode;
 import com.example.devboard.dto.TaskCreateRequest;
 import com.example.devboard.dto.TaskResponse;
 import com.example.devboard.dto.TaskUpdateRequest;
@@ -7,6 +8,7 @@ import com.example.devboard.dto.TaskDetailResponse;
 import com.example.devboard.dto.CommentResponse;
 import com.example.devboard.entity.Task;
 import com.example.devboard.entity.User;
+import com.example.devboard.exception.BusinessException;
 import com.example.devboard.repository.TaskRepository;
 import com.example.devboard.repository.UserRepository;
 import com.example.devboard.repository.CommentRepository;
@@ -102,7 +104,7 @@ public class TaskService {
     
     public TaskResponse getTaskById(Long id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> new BusinessException(ErrorCode.TASK_NOT_FOUND, "Task not found with id: " + id));
         return convertToResponse(task);
     }
     
@@ -110,7 +112,7 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Task not found with id: {}", id);
-                    return new RuntimeException("Task not found with id: " + id);
+                    return new BusinessException(ErrorCode.TASK_NOT_FOUND, "Task not found with id: " + id);
                 });
         
         TaskResponse taskResponse = convertToResponse(task);
@@ -139,7 +141,7 @@ public class TaskService {
     
     public TaskResponse createTask(TaskCreateRequest request, Long creatorId) {
         User creator = userRepository.findById(creatorId)
-                .orElseThrow(() -> new RuntimeException("Creator not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Creator not found"));
         
         Task task = Task.builder()
                 .title(request.getTitle())
@@ -152,7 +154,7 @@ public class TaskService {
         // Set assignee if provided
         if (request.getAssigneeId() != null) {
             User assignee = userRepository.findById(request.getAssigneeId())
-                    .orElseThrow(() -> new RuntimeException("Assignee not found"));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Assignee not found"));
             task.setAssignee(assignee);
         }
         
@@ -164,7 +166,7 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Task not found with id: {}", id);
-                    return new RuntimeException("Task not found with id: " + id);
+                    return new BusinessException(ErrorCode.TASK_NOT_FOUND, "Task not found with id: " + id);
                 });
         
         log.info("User {} updating task {} - '{}'", userId, id, task.getTitle());
@@ -186,7 +188,7 @@ public class TaskService {
         }
         if (request.getAssigneeId() != null) {
             User assignee = userRepository.findById(request.getAssigneeId())
-                    .orElseThrow(() -> new RuntimeException("Assignee not found"));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Assignee not found"));
             task.setAssignee(assignee);
         }
         
@@ -198,14 +200,14 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Task not found with id: {}", id);
-                    return new RuntimeException("Task not found with id: " + id);
+                    return new BusinessException(ErrorCode.TASK_NOT_FOUND, "Task not found with id: " + id);
                 });
         
         // Get user to check if admin
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.error("User not found with id: {}", userId);
-                    return new RuntimeException("User not found");
+                    return new BusinessException(ErrorCode.USER_NOT_FOUND, "User not found");
                 });
         
         // Only creator or admin can delete
@@ -217,7 +219,7 @@ public class TaskService {
                     userId, id, 
                     task.getCreator() != null ? task.getCreator().getId() : "null", 
                     user.getRole());
-            throw new RuntimeException("Only the creator or admin can delete this task");
+            throw new BusinessException(ErrorCode.TASK_ACCESS_DENIED, "Only the creator or admin can delete this task");
         }
         
         log.info("User {} deleting task {} - '{}'", userId, id, task.getTitle());
@@ -287,7 +289,7 @@ public class TaskService {
     // Admin-only task deletion
     public void adminDeleteTask(Long taskId) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.TASK_NOT_FOUND, "Task not found"));
         
         log.info("Admin deleting task: {} ({})", task.getId(), task.getTitle());
         taskRepository.delete(task);

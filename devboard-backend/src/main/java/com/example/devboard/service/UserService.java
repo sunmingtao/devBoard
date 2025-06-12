@@ -1,10 +1,12 @@
 package com.example.devboard.service;
 
+import com.example.devboard.common.ErrorCode;
 import com.example.devboard.dto.JwtResponse;
 import com.example.devboard.dto.LoginRequest;
 import com.example.devboard.dto.SignupRequest;
 import com.example.devboard.dto.UserProfileUpdateRequest;
 import com.example.devboard.entity.User;
+import com.example.devboard.exception.BusinessException;
 import com.example.devboard.repository.UserRepository;
 import com.example.devboard.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +29,12 @@ public class UserService {
     public User registerUser(SignupRequest signupRequest) {
         // Check if username exists
         if (userRepository.existsByUsername(signupRequest.getUsername())) {
-            throw new RuntimeException("Error: Username is already taken!");
+            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS, "Username is already taken!");
         }
         
         // Check if email exists
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
-            throw new RuntimeException("Error: Email is already in use!");
+            throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS, "Email is already in use!");
         }
         
         // Create new user account
@@ -49,11 +51,11 @@ public class UserService {
     public JwtResponse authenticateUser(LoginRequest loginRequest) {
         // Find user by username
         User user = userRepository.findByUsername(loginRequest.getUsername())
-                .orElseThrow(() -> new RuntimeException("Error: User not found!"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "User not found!"));
         
         // Check password
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Error: Invalid password!");
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, "Invalid password!");
         }
         
         // Generate JWT token
@@ -73,7 +75,7 @@ public class UserService {
     
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "User not found with username: " + username));
     }
     
     public Optional<User> findById(Long id) {
@@ -83,12 +85,12 @@ public class UserService {
     @Transactional
     public User updateUserProfile(Long userId, UserProfileUpdateRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "User not found with id: " + userId));
         
         // Check if email is being changed and if it's already taken by another user
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("Error: Email is already in use!");
+                throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS, "Email is already in use!");
             }
             user.setEmail(request.getEmail());
         }
