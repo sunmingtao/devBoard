@@ -57,7 +57,7 @@ jobs:
 
       # Step 3: Cache Maven dependencies
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -81,7 +81,7 @@ jobs:
 
       # Step 6: Upload JAR artifact
       - name: Upload JAR
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-jar
           path: devboard-backend/target/*.jar
@@ -101,7 +101,7 @@ jobs:
 
       # Step 2: Download JAR artifact
       - name: Download JAR
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: backend-jar
           path: devboard-backend/target
