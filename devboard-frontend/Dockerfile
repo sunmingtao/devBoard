@@ -1,50 +1,85 @@
 # Frontend Dockerfile for Vue3 Application
-# Two-stage build: Build with Node.js, serve with Nginx
+# Optimized multi-stage build: Build with Node.js, serve with Nginx
 
 # =====================================
 # Stage 1: BUILD STAGE
 # =====================================
-# Use Node.js 18 Alpine (lightweight Linux)
+# Use Node.js 18 Alpine (lightweight Linux) - ~170MB vs ~900MB for regular node
 FROM node:18-alpine AS build-stage
 
 # Set working directory inside container
 WORKDIR /app
 
+# Add build arguments for environment-specific optimization
+ARG NODE_ENV=production
+ARG VITE_APP_ENVIRONMENT=production
+
+# Install only necessary build dependencies
+RUN apk add --no-cache git
+
 # Copy package files first (for better Docker layer caching)
 # This way, dependencies are only reinstalled if package.json changes
 COPY package*.json ./
 
-# Install dependencies (including devDependencies for build tools like Vite)
-# npm ci is faster and more reliable for production than npm install
-RUN npm ci
+# Install dependencies including devDependencies for build
+# Use npm install to get all dependencies needed for build
+RUN npm cache clean --force && \
+    npm install --include=dev --no-audit --no-fund
 
-# Copy all source code
+# Copy source code (exclude unnecessary files via .dockerignore)
 COPY . .
 
-# Build the application for production
-# This creates the dist/ directory with optimized static files
-RUN npm run build
+# Build the application for production with environment optimization
+# Environment variables are available during build
+ENV NODE_ENV=${NODE_ENV}
+ENV VITE_APP_ENVIRONMENT=${VITE_APP_ENVIRONMENT}
+
+# Production build with optimizations
+RUN npm run build && \
+    # Clean up source files and dependencies after build
+    rm -rf src/ public/ node_modules/ && \
+    # Verify build output exists
+    ls -la dist/
 
 # =====================================
 # Stage 2: PRODUCTION STAGE  
 # =====================================
-# Use lightweight Nginx Alpine image for serving static files
+# Use nginx:alpine - smallest Nginx image (~22MB)
 FROM nginx:alpine AS production-stage
 
-# Remove default Nginx website
-RUN rm -rf /usr/share/nginx/html/*
+# Install dumb-init for proper signal handling (optional but recommended)
+RUN apk add --no-cache dumb-init
 
-# Copy built Vue application from build stage
-# Copy from /app/dist (Vite output) to Nginx html directory
+# Remove default Nginx content and config
+RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
+
+# Copy built Vue application from build stage (only dist folder)
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# Create custom Nginx configuration for Vue Router (SPA)
-# This ensures that all routes are handled by index.html
+# Copy optimized Nginx configuration
 COPY --from=build-stage /app/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Create non-root user for security (nginx user already exists, just modify permissions)
+# The nginx:alpine image already has nginx user, so we just need to set permissions
+
+# Set proper permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
+
+# Switch to non-root user
+USER nginx
 
 # Expose port 80 (standard HTTP port)
 EXPOSE 80
 
-# Start Nginx server
-# daemon off ensures Nginx runs in foreground (required for Docker)
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+
+# Start Nginx with dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["nginx", "-g", "daemon off;"]

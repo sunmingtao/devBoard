@@ -1,32 +1,56 @@
 import axios from 'axios'
 
-// Create axios instance with base configuration
-const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+// Environment-based configuration
+const config = {
+  // Use environment variable or fallback to localhost
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
   }
-})
+}
+
+// Log configuration in development
+if (import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true') {
+  console.log('🔧 API Configuration:', {
+    baseURL: config.baseURL,
+    environment: import.meta.env.VITE_APP_ENVIRONMENT,
+    debugMode: import.meta.env.VITE_ENABLE_DEBUG_LOGS
+  })
+}
+
+// Create axios instance with environment-based configuration
+const api = axios.create(config)
+
+// Environment-aware logging
+const isDevelopment = import.meta.env.VITE_APP_ENVIRONMENT === 'development'
+const enableDebugLogs = import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true'
+const showApiResponses = import.meta.env.VITE_SHOW_API_RESPONSES === 'true'
 
 // Request interceptor
 api.interceptors.request.use(
   config => {
-    console.log('🚀 Making API request:', config.method?.toUpperCase(), config.url)
+    if (enableDebugLogs) {
+      console.log('🚀 Making API request:', config.method?.toUpperCase(), config.url)
+    }
     
     // Add auth token if available
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      console.log('🔑 Token added to request:', token.substring(0, 20) + '...')
-    } else {
+      if (enableDebugLogs) {
+        console.log('🔑 Token added to request:', token.substring(0, 20) + '...')
+      }
+    } else if (enableDebugLogs) {
       console.warn('⚠️ No token found in localStorage')
     }
     
     return config
   },
   error => {
-    console.error('❌ Request error:', error)
+    if (isDevelopment) {
+      console.error('❌ Request error:', error)
+    }
     return Promise.reject(error)
   }
 )
@@ -34,7 +58,12 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   response => {
-    console.log('✅ API response received:', response.status, response.config.url)
+    if (showApiResponses) {
+      console.log('✅ API response received:', response.status, response.config.url)
+      if (enableDebugLogs) {
+        console.log('📦 Response data:', response.data)
+      }
+    }
     return response
   },
   error => {

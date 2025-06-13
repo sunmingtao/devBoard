@@ -1,27 +1,86 @@
+# MySQL Database Environment Configuration
+# This profile is activated when SPRING_PROFILES_ACTIVE=mysql
+
 spring:
-  # MySQL Database Configuration
+  # MySQL Database Configuration (Container-friendly)
   datasource:
-    url: jdbc:mysql://localhost:3307/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    # Use environment variables with container-friendly defaults
+    url: ${DATABASE_URL:jdbc:mysql://mysql:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: devboard_user
-    password: devboard_pass
+    username: ${DATABASE_USERNAME:devboard_user}
+    password: ${DATABASE_PASSWORD:devboard_pass}
+    
+    # MySQL Connection pool configuration
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:15}
+      minimum-idle: ${DB_POOL_MIN_IDLE:3}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
   
-  # JPA Configuration
+  # JPA Configuration for MySQL
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}  # Can be overridden per environment
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: ${SHOW_SQL:false}  # Environment-configurable
     properties:
       hibernate:
-        format_sql: true
+        format_sql: ${FORMAT_SQL:false}
+        use_sql_comments: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
   
-  # Disable H2 Console
+  # Disable H2 Console (MySQL doesn't need it)
   h2:
     console:
       enabled: false
 
+  # Server configuration
+  server:
+    port: ${SERVER_PORT:8080}
+
+# MySQL-specific logging
+logging:
+  level:
+    com.example.devboard: ${LOG_LEVEL:INFO}
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    com.mysql.cj: WARN
+
+# Application configuration for MySQL environment
 devboard:
   app:
+    # JWT Configuration (environment-aware)
     jwtSecret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D6351665468576D5A7134}
-    jwtExpirationMs: ${JWT_EXPIRATION_MS:86400000}
+    jwtExpirationMs: ${JWT_EXPIRATION_MS:3600000}  # 1 hour default
+    
+    # CORS configuration for MySQL environment
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://frontend:5173}
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+      max-age: 3600
+
+  # Features for MySQL environment
+  features:
+    h2-console: false
+    debug-logging: ${ENABLE_DEBUG_LOGS:false}
+    dev-tools: false
+
+# Health check configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized

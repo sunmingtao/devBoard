@@ -1,0 +1,87 @@
+# Production environment configuration
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+  backend:
+    environment:
+      # Production Spring profile
+      SPRING_PROFILES_ACTIVE: prod
+      
+      # Production database configuration
+      DATABASE_URL: jdbc:mysql://mysql:3306/devboard_prod?useSSL=true&requireSSL=false&serverTimezone=UTC
+      DATABASE_USERNAME: devboard_prod_user
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-secure_prod_password}
+      
+      # Production JWT configuration (MUST be set via environment)
+      JWT_SECRET: ${JWT_SECRET}  # No default - MUST be provided
+      JWT_EXPIRATION_MS: 3600000  # 1 hour
+      
+      # Production CORS (restrict to your domain)
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://yourproductiondomain.com}
+      
+      # Production logging
+      LOG_LEVEL: INFO
+      
+    # Production resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    # Production restart policy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./devboard-frontend
+      args:
+        NODE_ENV: production
+        VITE_APP_ENVIRONMENT: production
+    
+    # Production resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+    
+    # Production restart policy
+    restart: unless-stopped
+
+  mysql:
+    environment:
+      # Production database configuration
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-secure_root_password}
+      MYSQL_DATABASE: devboard_prod
+      MYSQL_USER: devboard_prod_user
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-secure_prod_password}
+    
+    # Production MySQL configuration
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --innodb-buffer-pool-size=512M
+      --max-connections=200
+      --query-cache-type=1
+      --query-cache-size=64M
+      --slow-query-log=1
+      --slow-query-log-file=/var/lib/mysql/slow.log
+      --long-query-time=2
+    
+    # Production volumes for persistence
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+      - ./mysql-prod-config:/etc/mysql/conf.d:ro
+    
+    # Production restart policy
+    restart: unless-stopped
+
+volumes:
+  mysql_prod_data:
+    driver: local

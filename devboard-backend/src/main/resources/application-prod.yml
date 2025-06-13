@@ -1,0 +1,100 @@
+# Production Environment Configuration
+# This profile is activated when SPRING_PROFILES_ACTIVE=prod
+
+spring:
+  # Production Database Configuration
+  datasource:
+    # Production should use MySQL or PostgreSQL
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/devboard_prod?useSSL=true&requireSSL=true&serverTimezone=UTC}
+    username: ${DATABASE_USERNAME:devboard_prod_user}
+    password: ${DATABASE_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    
+    # Connection pool configuration for production
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+
+  # JPA Configuration for Production
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: validate  # Never auto-create/drop in production!
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: false  # Disable SQL logging in production
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  # Disable H2 console in production
+  h2:
+    console:
+      enabled: false
+
+  # Production server configuration
+  server:
+    port: ${SERVER_PORT:8080}
+    servlet:
+      context-path: /
+    compression:
+      enabled: true
+      mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
+    
+  # Production logging configuration
+  logging:
+    level:
+      com.example.devboard: INFO
+      org.springframework.web: WARN
+      org.hibernate: WARN
+      org.springframework.security: WARN
+    pattern:
+      console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file:
+      name: logs/devboard-prod.log
+      max-size: 100MB
+      max-history: 30
+
+# Production JWT and Security Configuration
+devboard:
+  app:
+    # CRITICAL: JWT secret MUST be set via environment variable in production
+    jwtSecret: ${JWT_SECRET:}  # No default for production!
+    jwtExpirationMs: ${JWT_EXPIRATION_MS:3600000}  # 1 hour (shorter for production)
+    
+    # CORS configuration for production
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:https://yourproductiondomain.com}
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+      max-age: 3600
+
+  # Production features
+  features:
+    h2-console: false
+    debug-logging: false
+    dev-tools: false
+    
+# Management and monitoring endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never  # Don't expose sensitive health details
+  info:
+    env:
+      enabled: true
