@@ -1,6 +1,7 @@
 # DevBoard - Developer Task Board System
 
 ![Backend CI/CD](https://github.com/sunmingtao/devBoard/workflows/Backend%20CI%2FCD/badge.svg)
+![Frontend CI/CD](https://github.com/sunmingtao/devBoard/workflows/Frontend%20CI%2FCD/badge.svg)
 
 A modern task management system built with Spring Boot and Vue.js for demonstrating full-stack development skills.
 

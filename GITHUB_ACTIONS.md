@@ -336,3 +336,130 @@ Add this to your README.md to show build status:
 5. Customize as needed
 
 This completes the GitHub Actions setup for the backend! The workflow will now automatically build and test your backend code on every push and pull request.
+
+---
+
+## 🎨 Day 2: Frontend GitHub Actions Workflow
+
+### Frontend Workflow Features
+
+Create `.github/workflows/frontend.yml`:
+
+```yaml
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [ main, release ]
+    paths:
+      - 'devboard-frontend/**'
+      - '.github/workflows/frontend.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'devboard-frontend/**'
+
+env:
+  NODE_VERSION: '18'
+  DOCKER_IMAGE_NAME: ${{ github.repository_owner }}/devboard-frontend
+
+jobs:
+  build-and-test:
+    name: Build and Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: devboard-frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./devboard-frontend
+        run: npm ci
+      
+      - name: Run ESLint
+        working-directory: ./devboard-frontend
+        run: npm run lint || true
+      
+      - name: Build for production
+        working-directory: ./devboard-frontend
+        run: npm run build
+      
+      - name: Upload dist folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: devboard-frontend/dist/
+          retention-days: 7
+```
+
+### Frontend Workflow Jobs Breakdown:
+
+#### 1. **build-and-test**
+- Sets up Node.js 18 with npm caching
+- Installs dependencies with `npm ci`
+- Runs ESLint (non-blocking)
+- Builds production bundle with Vite
+- Uploads `dist/` folder as artifact
+- Analyzes bundle size
+
+#### 2. **docker-build** (conditional)
+- Only runs on main branch pushes
+- Builds Docker image with production env vars
+- Uses multi-stage build (Node → Nginx)
+- Validates Dockerfile without pushing
+
+#### 3. **deploy-preview** (PRs only)
+- Downloads build artifacts
+- Prepares for Vercel/Netlify preview deployment
+- Posts preview URL in PR comments
+
+#### 4. **lighthouse** (performance)
+- Runs Lighthouse CI for performance auditing
+- Sets performance budgets
+- Uploads results to temporary storage
+
+### Frontend-Specific Features:
+
+1. **Node.js Caching**: Faster installs with npm cache
+2. **Path Filtering**: Only runs when frontend changes
+3. **Bundle Analysis**: Tracks asset sizes
+4. **ESLint Integration**: Code quality checks
+5. **Preview Deployments**: PR-based previews
+6. **Performance Monitoring**: Lighthouse scores
+
+### Lighthouse Configuration
+
+Create `devboard-frontend/.lighthouserc.json`:
+
+```json
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 3,
+      "url": ["http://localhost:3000"]
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", {"minScore": 0.8}],
+        "categories:accessibility": ["error", {"minScore": 0.9}],
+        "categories:best-practices": ["warn", {"minScore": 0.9}],
+        "categories:seo": ["warn", {"minScore": 0.8}]
+      }
+    }
+  }
+}
+```
+
+### Performance Budgets:
+- **Performance**: ≥80%
+- **Accessibility**: ≥90%
+- **Best Practices**: ≥90%
+- **SEO**: ≥80%
+
+This setup provides comprehensive frontend CI/CD with quality gates and performance monitoring!

@@ -1,0 +1,216 @@
+name: Frontend CI/CD
+
+# Triggers: When to run this workflow
+on:
+  push:
+    branches: [ main, release ]
+    paths:
+      - 'devboard-frontend/**'
+      - '.github/workflows/frontend.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'devboard-frontend/**'
+
+# Environment variables
+env:
+  NODE_VERSION: '18'
+  DOCKER_IMAGE_NAME: ${{ github.repository_owner }}/devboard-frontend
+
+jobs:
+  # Job 1: Build and Test
+  build-and-test:
+    name: Build and Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: devboard-frontend/package-lock.json
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        working-directory: ./devboard-frontend
+        run: npm ci
+
+      # Step 4: Run linting
+      - name: Run ESLint
+        working-directory: ./devboard-frontend
+        run: npm run lint || true  # Don't fail on lint warnings
+
+      # Step 5: Run tests (if any)
+      - name: Run tests
+        working-directory: ./devboard-frontend
+        run: |
+          # Add test command when tests are implemented
+          # npm test
+          echo "No tests configured yet"
+
+      # Step 6: Build production bundle
+      - name: Build for production
+        working-directory: ./devboard-frontend
+        run: |
+          npm run build
+          # Verify build output
+          ls -la dist/
+
+      # Step 7: Upload build artifacts
+      - name: Upload dist folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: devboard-frontend/dist/
+          retention-days: 7
+
+      # Step 8: Check bundle size
+      - name: Analyze bundle size
+        working-directory: ./devboard-frontend
+        run: |
+          echo "=== Bundle Size Analysis ==="
+          echo "Total dist size:"
+          du -sh dist/
+          echo ""
+          echo "Individual file sizes:"
+          find dist -type f -exec ls -lh {} \; | awk '{print $5, $9}'
+          echo ""
+          echo "File count:"
+          find dist -type f | wc -l
+
+  # Job 2: Build Docker Image (only on main branch)
+  docker-build:
+    name: Build Docker Image
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Extract metadata
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,prefix={{branch}}-
+
+      # Step 4: Build Docker image (without pushing)
+      # Note: Frontend uses multi-stage build with nginx
+      - name: Build Docker image (local only)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./devboard-frontend
+          push: false  # Just build, don't push
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+            VITE_APP_ENVIRONMENT=production
+
+      # Step 5: Verify image was built
+      - name: List Docker images
+        run: |
+          echo "Built image tags:"
+          echo "${{ steps.meta.outputs.tags }}"
+          echo ""
+          echo "Docker images in runner:"
+          docker images | grep devboard-frontend || echo "No frontend images found"
+
+  # Job 3: Deploy Preview (for PRs)
+  deploy-preview:
+    name: Deploy Preview
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Download artifacts
+      - name: Download dist folder
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: devboard-frontend/dist/
+
+      # Step 3: Deploy preview (placeholder for Vercel/Netlify)
+      - name: Deploy Preview
+        run: |
+          echo "=== Preview Deployment ==="
+          echo "PR #${{ github.event.pull_request.number }}"
+          echo "This is where we would deploy to Vercel/Netlify"
+          echo "Preview URL would be: https://devboard-pr-${{ github.event.pull_request.number }}.vercel.app"
+          
+          # In Day 3, we'll add actual deployment here:
+          # - name: Deploy to Vercel
+          #   uses: amondnet/vercel-action@v20
+          #   with:
+          #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # Job 4: Lighthouse Performance Check (optional)
+  lighthouse:
+    name: Lighthouse CI
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Download artifacts
+      - name: Download dist folder
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: devboard-frontend/dist/
+
+      # Step 3: Serve the app locally
+      - name: Serve app
+        working-directory: ./devboard-frontend
+        run: |
+          npm install -g serve
+          serve -s dist -p 3000 &
+          sleep 5  # Wait for server to start
+
+      # Step 4: Run Lighthouse
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            http://localhost:3000
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          # Performance budget
+          budgetPath: ./devboard-frontend/.lighthouserc.json
+
+      # Step 5: Comment results on PR (if applicable)
+      - name: Format Lighthouse results
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Lighthouse scores would be posted as PR comment"
