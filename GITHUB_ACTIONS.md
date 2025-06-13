@@ -74,7 +74,7 @@ on:
 
 # Environment variables available to all jobs
 env:
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
   MAVEN_OPTS: '-Xmx3072m'
   DOCKER_REGISTRY: docker.io
   DOCKER_IMAGE_NAME: ${{ github.repository_owner }}/devboard-backend
@@ -238,7 +238,7 @@ jobs:
 ### Jobs Breakdown:
 
 #### 1. **build-and-test**
-- Sets up Java 17
+- Sets up Java 21
 - Starts MySQL service container for tests
 - Runs Maven tests
 - Builds JAR file
@@ -292,7 +292,7 @@ git push origin main
 1. **Maven/Java Version Issues**
    ```yaml
    # Ensure correct Java version
-   java-version: '17'  # or '11' if needed
+   java-version: '21'  # Match your pom.xml java.version
    ```
 
 2. **Test Failures Due to Database**
