@@ -1,0 +1,64 @@
+# Test Environment Configuration
+# This profile is used by GitHub Actions for automated testing
+
+spring:
+  # Test Database Configuration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/devboard_test?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:devboard_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:devboard_pass}
+    
+    # Test connection pool (smaller for faster tests)
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 10000
+
+  # JPA Configuration for Testing
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: create-drop  # Always recreate schema for tests
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: false  # Disable SQL logging in tests for cleaner output
+    properties:
+      hibernate:
+        format_sql: false
+
+  # Disable H2 Console in tests
+  h2:
+    console:
+      enabled: false
+
+# Test JWT Configuration
+devboard:
+  app:
+    # Test JWT secret (consistent for testing)
+    jwtSecret: test_secret_key_for_github_actions_testing_only_404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    jwtExpirationMs: 3600000  # 1 hour for tests
+    
+    # Test CORS configuration
+    cors:
+      allowed-origins: http://localhost:3000,http://localhost:5173
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+
+# Test logging configuration
+logging:
+  level:
+    com.example.devboard: WARN  # Less verbose for tests
+    org.springframework.web: WARN
+    org.hibernate: WARN
+
+# Disable unnecessary features in test
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    db:
+      enabled: false  # Skip DB health check in tests

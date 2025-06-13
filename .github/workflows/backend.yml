@@ -1,0 +1,147 @@
+name: Backend CI/CD
+
+# Triggers: When to run this workflow
+on:
+  push:
+    branches: [ main, release ]
+    paths:
+      - 'devboard-backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'devboard-backend/**'
+
+# Environment variables available to all jobs
+env:
+  JAVA_VERSION: '17'
+  MAVEN_OPTS: '-Xmx3072m'
+  DOCKER_REGISTRY: docker.io
+  DOCKER_IMAGE_NAME: ${{ github.repository_owner }}/devboard-backend
+
+jobs:
+  # Job 1: Build and Test
+  build-and-test:
+    name: Build and Test Backend
+    runs-on: ubuntu-latest
+    
+    # Service containers for testing
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: devboard_test
+          MYSQL_USER: devboard_user
+          MYSQL_PASSWORD: devboard_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Java
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # Step 3: Cache Maven dependencies
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      # Step 4: Run tests
+      - name: Run Tests
+        working-directory: ./devboard-backend
+        run: |
+          mvn clean test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/devboard_test
+          SPRING_DATASOURCE_USERNAME: devboard_user
+          SPRING_DATASOURCE_PASSWORD: devboard_pass
+
+      # Step 5: Build application
+      - name: Build with Maven
+        working-directory: ./devboard-backend
+        run: mvn clean package -DskipTests
+
+      # Step 6: Upload JAR artifact
+      - name: Upload JAR
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-jar
+          path: devboard-backend/target/*.jar
+          retention-days: 1
+
+  # Job 2: Build Docker Image (only on main branch)
+  docker-build:
+    name: Build Docker Image
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Download JAR artifact
+      - name: Download JAR
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-jar
+          path: devboard-backend/target
+
+      # Step 3: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 4: Log in to Docker Hub (only if credentials are provided)
+      - name: Log in to Docker Hub
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Step 5: Extract metadata
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      # Step 6: Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./devboard-backend
+          push: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Step 7: Output image info
+      - name: Image digest
+        run: echo ${{ steps.meta.outputs.tags }}
