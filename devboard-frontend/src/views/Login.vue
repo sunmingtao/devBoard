@@ -75,14 +75,14 @@ const handleSubmit = async () => {
   try {
     const response = await authService.login(formData.value)
     
-    // Store user data
-    localStorage.setItem('token', response.token)
+    // Store user data (response has unified format with data field)
+    localStorage.setItem('token', response.data.token)
     localStorage.setItem('user', JSON.stringify({
-      id: response.id,
-      username: response.username,
-      email: response.email,
-      nickname: response.nickname,
-      role: response.role
+      id: response.data.id,
+      username: response.data.username,
+      email: response.data.email,
+      nickname: response.data.nickname,
+      role: response.data.role
     }))
     
     // Redirect to home or previous page

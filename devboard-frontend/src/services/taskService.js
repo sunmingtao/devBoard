@@ -5,7 +5,7 @@ export const taskService = {
   getAllTasks: async () => {
     try {
       const response = await api.get('/tasks')
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch tasks: ${error.message}`)
     }
@@ -24,7 +24,7 @@ export const taskService = {
       
       const url = params.toString() ? `/tasks?${params.toString()}` : '/tasks'
       const response = await api.get(url)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch filtered tasks: ${error.message}`)
     }
@@ -34,7 +34,7 @@ export const taskService = {
   getTaskById: async (id) => {
     try {
       const response = await api.get(`/tasks/${id}`)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch task ${id}: ${error.message}`)
     }
@@ -44,7 +44,7 @@ export const taskService = {
   createTask: async (task) => {
     try {
       const response = await api.post('/tasks', task)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to create task: ${error.message}`)
     }
@@ -54,7 +54,7 @@ export const taskService = {
   updateTask: async (id, task) => {
     try {
       const response = await api.put(`/tasks/${id}`, task)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to update task ${id}: ${error.message}`)
     }
@@ -74,7 +74,7 @@ export const taskService = {
   getTasksByStatus: async (status) => {
     try {
       const response = await api.get(`/tasks/status/${status}`)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch tasks with status ${status}: ${error.message}`)
     }
@@ -84,7 +84,7 @@ export const taskService = {
   getTasksByPriority: async (priority) => {
     try {
       const response = await api.get(`/tasks/priority/${priority}`)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch tasks with priority ${priority}: ${error.message}`)
     }
@@ -94,7 +94,7 @@ export const taskService = {
   getTaskDetail: async (id) => {
     try {
       const response = await api.get(`/tasks/${id}/detail`)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch task detail ${id}: ${error.message}`)
     }
@@ -104,7 +104,7 @@ export const taskService = {
   addComment: async (taskId, comment) => {
     try {
       const response = await api.post(`/tasks/${taskId}/comments`, comment)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to add comment to task ${taskId}: ${error.message}`)
     }
@@ -114,7 +114,7 @@ export const taskService = {
   getTaskComments: async (taskId) => {
     try {
       const response = await api.get(`/tasks/${taskId}/comments`)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch comments for task ${taskId}: ${error.message}`)
     }
@@ -134,7 +134,7 @@ export const taskService = {
   testConnection: async () => {
     try {
       const response = await api.get('/hello')
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to connect to API: ${error.message}`)
     }

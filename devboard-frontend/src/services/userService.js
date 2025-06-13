@@ -4,13 +4,13 @@ export const userService = {
   // Get current user's detailed profile
   async getProfile() {
     const response = await api.get('/users/me')
-    return response.data
+    return response.data.data
   },
 
   // Update user profile
   async updateProfile(profileData) {
     const response = await api.put('/users/me', profileData)
-    return response.data
+    return response.data.data
   },
 
   // Upload avatar (for future implementation)
@@ -23,14 +23,14 @@ export const userService = {
         'Content-Type': 'multipart/form-data'
       }
     })
-    return response.data
+    return response.data.data
   },
 
   // Get all users (for assignee dropdown)
   async getAllUsers() {
     try {
       const response = await api.get('/users')
-      return response.data
+      return response.data.data
     } catch (error) {
       // If endpoint doesn't exist, return current user as fallback
       console.warn('getAllUsers endpoint not available, using current user as fallback')

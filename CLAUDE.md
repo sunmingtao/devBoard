@@ -16,3 +16,6 @@ When completing any coding task:
 - Never commit secrets or API keys to the repository
 - Always use environment variables for sensitive configuration
 - JWT secrets must be at least 256 bits (32 bytes)
+
+## File Locations
+- TAKEAWAY.md is located at /Users/mingtao/workspaces/devBoard/. When asked to add to takeaway doc, this is the specific file to use

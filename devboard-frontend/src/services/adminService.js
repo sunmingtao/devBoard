@@ -5,7 +5,7 @@ export const adminService = {
   getAllUsers: async () => {
     try {
       const response = await api.get('/admin/users')
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch users: ${error.message}`)
     }
@@ -15,7 +15,7 @@ export const adminService = {
   getDashboardData: async () => {
     try {
       const response = await api.get('/admin/dashboard')
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch dashboard data: ${error.message}`)
     }
@@ -25,7 +25,7 @@ export const adminService = {
   getUserById: async (id) => {
     try {
       const response = await api.get(`/admin/users/${id}`)
-      return response.data
+      return response.data.data
     } catch (error) {
       throw new Error(`Failed to fetch user ${id}: ${error.message}`)
     }
@@ -35,7 +35,7 @@ export const adminService = {
   disableUser: async (id) => {
     try {
       const response = await api.put(`/admin/users/${id}/disable`)
-      return response.data
+      return response.data.data
     } catch (error) {
       if (error.response?.status === 501) {
         throw new Error('User disable functionality not implemented yet')
@@ -47,7 +47,7 @@ export const adminService = {
   enableUser: async (id) => {
     try {
       const response = await api.put(`/admin/users/${id}/enable`)
-      return response.data
+      return response.data.data
     } catch (error) {
       if (error.response?.status === 501) {
         throw new Error('User enable functionality not implemented yet')
@@ -59,7 +59,7 @@ export const adminService = {
   resetUserPassword: async (id) => {
     try {
       const response = await api.post(`/admin/users/${id}/reset-password`)
-      return response.data
+      return response.data.data
     } catch (error) {
       if (error.response?.status === 501) {
         throw new Error('Password reset functionality not implemented yet')

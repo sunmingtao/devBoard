@@ -1,0 +1,26 @@
+# Development override for easier debugging
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  frontend:
+    # Use development Dockerfile instead of production
+    build:
+      context: ./devboard-frontend
+      dockerfile: Dockerfile.dev
+    image: devboard-frontend:dev
+    volumes:
+      # Mount source code for hot reload
+      - ./devboard-frontend/src:/app/src
+      - ./devboard-frontend/public:/app/public
+      - ./devboard-frontend/index.html:/app/index.html
+      - ./devboard-frontend/vite.config.js:/app/vite.config.js
+    ports:
+      # Use Vite dev server port instead of Nginx
+      - "5173:5173"
+    environment:
+      # Enable source maps and debugging
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8080
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

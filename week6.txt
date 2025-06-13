@@ -1,0 +1,100 @@
+✅ Week 6：部署优化 + 云端上线（CI/CD & 云平台）
+
+🎯 目标：将项目部署至互联网环境，实现最小可上线版本（MVP）；初步构建持续部署能力。
+🗓 日常任务分解：
+🔹 Day 1：GitHub Actions 自动构建后端
+
+编写 .github/workflows/backend.yml
+
+    触发条件：push 到 main 或 release 分支
+
+    步骤：构建 Java 项目、打包成 jar、上传构建产物
+
+    可选：打包成 Docker 镜像并推送到 Docker Hub（需配置 GitHub Secrets）
+
+🔹 Day 2：GitHub Actions 自动构建前端
+
+编写 .github/workflows/frontend.yml
+
+    安装依赖 → npm run build → 上传静态文件
+
+    可自动部署到：
+
+        Vercel
+
+        Netlify
+
+        Render
+
+    配置 .env.production 使用云端后端接口地址
+
+🔹 Day 3：前端部署至云平台（Vercel / Netlify）
+
+选择平台（推荐 Vercel）
+
+创建项目连接 GitHub 仓库
+
+设置构建命令：npm run build
+
+设置输出目录：dist/
+
+    设置环境变量（VITE_API_URL 等）
+
+🔹 Day 4：后端部署至 Render / Railway / Fly.io
+
+使用 Render 部署 Spring Boot 后端：
+
+    部署方式：Dockerfile 或 jar 包
+
+    添加环境变量（DB_URL, JWT_SECRET 等）
+
+    数据库选项：
+
+        Render 免费 PostgreSQL（推荐）
+
+        也可部署 MySQL（更接近开发环境）
+
+🔹 Day 5：域名绑定 & HTTPS 配置
+
+Vercel / Netlify 免费提供自定义域名绑定 + HTTPS
+
+配置自定义域名（如 devboard.mingtao.dev）
+
+    检查前后端跨域配置是否正确（Access-Control-Allow-Origin）
+
+🔹 Day 6–7：测试 + 项目打磨
+
+端到端功能自测（登录 / 注册 / 创建任务 / 评论）
+
+优化前端 UI（样式统一、移动端适配、404 页面）
+
+解决部署过程中出现的问题（如跨域、接口失败）
+
+    整理 README，补充上线说明、部署链接、演示账号
+
+📦 本周产出清单
+内容	说明
+自动构建	GitHub Actions 构建后端 + 前端
+云部署	Render / Vercel / Netlify 实现公网访问
+环境变量管理	区分开发/生产配置，确保接口连通
+上线版本 MVP	支持用户登录、任务创建、评论、基本管理
+项目文档完善	包括部署指南、演示账号说明、项目结构图
+🧠 加分项（如有时间）
+
+登录验证码 / 限流（防止暴力攻击）
+
+接口权限更细粒度控制（如只能删除自己创建的任务）
+
+日志系统（Logback + 文件输出）
+
+    加入监控或健康检查接口 /health
+
+完成 Week 6 后，你将拥有一个可上线、可维护、可展示的 DevBoard 项目。这是技术、架构、部署的完整闭环，完全可以作为作品集加入简历！
+
+如果你愿意，我可以帮你：
+
+    自动生成 GitHub Actions 的 workflow 模板
+
+    优化你的项目 README
+
+    撰写部署文档（适合面试时介绍）

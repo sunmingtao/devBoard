@@ -39,6 +39,17 @@ services:
     networks:
       - devboard-network
 
+  frontend:
+    build: ./devboard-frontend
+    container_name: devboard-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - devboard-network
+
 networks:
   devboard-network:
     driver: bridge

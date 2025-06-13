@@ -533,4 +533,334 @@ docker exec -it devboard-mysql mysql -u devboard_user -pdevboard_pass -e "USE de
 
 ---
 
+## 🎉 Week 5 Day 4 - Frontend Dockerization COMPLETED!
+
+### What We Accomplished Today
+
+✅ **Vue3 Frontend Containerization**
+- Created multi-stage `Dockerfile` for Vue3 application
+- **Build Stage**: Node.js 18 Alpine for building Vue3 app
+- **Runtime Stage**: Nginx Alpine for serving static files
+- Optimized build process with proper dependency management
+
+✅ **Nginx Configuration for Single Page Apps**
+- Custom `nginx.conf` for Vue Router support
+- Proper fallback to `index.html` for all routes
+- Static asset caching and security headers
+- GZIP compression for better performance
+
+✅ **Docker Build Optimization**
+- Created comprehensive `.dockerignore` file
+- Used Docker layer caching for faster builds
+- Separated build and runtime environments
+- Reduced final image size (only Nginx + static files)
+
+✅ **Complete Multi-Container Orchestration**
+- Added frontend service to `docker-compose.yml`
+- Frontend, Backend, and Database all containerized
+- Container dependency management (frontend → backend → mysql)
+- Custom Docker network for secure communication
+
+### Current Full-Stack Container Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Docker Host                           │
+├───────────────┬─────────────────┬─────────────────────┤
+│   Frontend    │     Backend     │      Database       │
+│  Container    │   Container     │     Container       │
+├───────────────┼─────────────────┼─────────────────────┤
+│ Nginx Alpine  │ OpenJDK 21 Slim│ MySQL 8.0           │
+│ Vue3 Build    │ Spring Boot     │ Persistent Data     │
+│ Port 3000→80  │ Port 8080→8080  │ Port 3307→3306      │
+│ Static Files  │ REST API        │ devboard Database   │
+└───────────────┴─────────────────┴─────────────────────┘
+        ↕               ↕                 ↕
+    Web Browser    HTTP Requests    Database Queries
+   (localhost:3000) (localhost:8080)  (mysql:3306)
+        ↑               ↑                 ↑
+        └─── devboard-network (isolated) ───┘
+```
+
+### How to Run the Complete Stack
+
+```bash
+# Start all services (builds images if needed)
+docker compose up --build
+
+# Start in background
+docker compose up -d
+
+# View status
+docker compose ps
+
+# View logs
+docker compose logs frontend
+docker compose logs backend
+docker compose logs mysql
+
+# Stop everything
+docker compose down
+
+# Complete cleanup (removes volumes)
+docker compose down -v
+```
+
+### Testing the Full Stack
+
+**Frontend Testing:**
+```bash
+# Test frontend is serving Vue app
+curl http://localhost:3000
+
+# Should return HTML with Vue.js application
+```
+
+**Backend Testing:**
+```bash
+# Test backend API
+curl http://localhost:8080/api/hello | python3 -m json.tool
+
+# Should return JSON response from Spring Boot
+```
+
+**Database Testing:**
+```bash
+# Test database connectivity
+docker exec devboard-mysql mysql -u devboard_user -pdevboard_pass -e "SHOW TABLES;"
+
+# Should show users, tasks, comments tables
+```
+
+### Key Docker Concepts Learned
+
+1. **Multi-Stage Builds**: Separate build environment from runtime
+   - Build stage: Install dependencies, compile code
+   - Runtime stage: Only production files needed
+
+2. **Container Dependencies**: Use `depends_on` for startup order
+   - Frontend waits for backend
+   - Backend waits for database health check
+
+3. **Port Mapping**: Different ports for each service
+   - Frontend: `3000:80` (host:container)
+   - Backend: `8080:8080`
+   - MySQL: `3307:3306`
+
+4. **Container Networking**: Services communicate by name
+   - Frontend talks to backend via container network
+   - Backend talks to MySQL via `mysql:3306`
+
+5. **Build Context Optimization**: `.dockerignore` excludes unnecessary files
+   - Faster builds
+   - Smaller images
+   - Better security
+
+### Frontend-Specific Docker Insights
+
+#### Why Two-Stage Build?
+
+**Without Multi-Stage:**
+```dockerfile
+FROM node:18
+WORKDIR /app
+COPY . .
+RUN npm install && npm run build
+CMD ["npm", "start"]
+```
+**Problems:**
+- Final image includes Node.js, npm, source code
+- Large image size (~1GB+)
+- More security vulnerabilities
+- Slower deployment
+
+**With Multi-Stage:**
+```dockerfile
+FROM node:18 AS build
+# ... build the app
+
+FROM nginx:alpine AS runtime  
+# ... copy only built files
+```
+**Benefits:**
+- Final image only has Nginx + static files (~50MB)
+- No Node.js in production
+- Faster deployment
+- More secure
+
+#### Nginx Configuration Essentials
+
+For Vue Router (Single Page Apps), you need:
+```nginx
+location / {
+    try_files $uri $uri/ /index.html;
+}
+```
+**Why?** When user visits `/tasks/123`:
+1. Nginx looks for `/tasks/123` file (doesn't exist)
+2. Nginx looks for `/tasks/123/` directory (doesn't exist)
+3. Nginx serves `/index.html` (Vue Router handles the route)
+
+Without this, direct URL access to Vue routes would show 404 errors.
+
+### Development vs Production Considerations
+
+**Development (what we've built):**
+- All containers on same machine
+- Direct port mapping to localhost
+- No HTTPS/SSL
+- Development database credentials
+
+**Production (future improvements):**
+- Load balancers for scaling
+- HTTPS/SSL certificates
+- Environment-specific configurations
+- Secure credential management
+- Health checks and monitoring
+- Persistent volume management
+
+### Common Issues and Solutions
+
+#### Issue: Frontend can't reach backend
+**Symptoms:** API calls from frontend fail
+**Cause:** CORS or network configuration
+**Solution:** Ensure both services on same Docker network
+
+#### Issue: "vite: not found" during build
+**Symptoms:** Build stage fails
+**Cause:** Only production dependencies installed
+**Solution:** Use `npm ci` (not `npm ci --only=production`)
+
+#### Issue: Vue Router routes return 404
+**Symptoms:** Direct URL access fails
+**Cause:** Missing Nginx fallback configuration
+**Solution:** Add `try_files $uri $uri/ /index.html;` to nginx.conf
+
+#### Issue: Build context too large
+**Symptoms:** Slow Docker builds
+**Cause:** Sending unnecessary files to Docker daemon
+**Solution:** Add comprehensive `.dockerignore` file
+
+### Performance Tips
+
+1. **Layer Caching**: Copy `package.json` before source code
+2. **Build Cache**: Use `--build-arg BUILDKIT_INLINE_CACHE=1`
+3. **Image Size**: Use Alpine Linux variants
+4. **Static Assets**: Enable GZIP compression in Nginx
+5. **Development**: Use bind mounts for faster iteration
+
+---
+
+## 🐛 Container Debugging Solution
+
+### The Problem
+Once containerized, frontend debugging becomes difficult because:
+- JavaScript is minified and bundled
+- Source maps are missing
+- Hot reload doesn't work
+- Original source files aren't visible in DevTools
+
+### The Solution: Development Mode Container
+
+**Development Container Setup:**
+
+1. **Development Dockerfile** (`Dockerfile.dev`):
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+```
+
+2. **Development Override** (`docker-compose.dev.yml`):
+```yaml
+services:
+  frontend:
+    build:
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./devboard-frontend/src:/app/src  # Hot reload
+    ports:
+      - "5173:5173"  # Vite dev server
+    environment:
+      - NODE_ENV=development
+```
+
+3. **Vite Configuration** (Source maps enabled):
+```javascript
+export default defineConfig({
+  build: {
+    sourcemap: true,  // Enable source maps
+    minify: false,    // Disable minification for debugging
+  }
+})
+```
+
+### Usage
+
+**For Development/Debugging:**
+```bash
+# Start development mode with hot reload
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# Access debuggable frontend
+open http://localhost:5173
+
+# Features:
+# ✅ Original source files visible in DevTools
+# ✅ Hot reload - changes appear instantly  
+# ✅ Breakpoints work in .vue files
+# ✅ Unminified, readable code
+```
+
+**For Production Testing:**
+```bash
+# Start production mode with source maps
+docker compose up --build
+
+# Access production-like frontend
+open http://localhost:3000
+
+# Features:
+# ✅ Source maps for debugging
+# ✅ Production build optimization
+# ❌ No hot reload
+```
+
+### Browser DevTools Experience
+
+With development mode enabled:
+1. **Sources Tab**: See original `.vue` files under `webpack://`
+2. **Breakpoints**: Set breakpoints directly in source code
+3. **Console**: Variables show real names (not minified)
+4. **Network**: Monitor API calls to backend
+5. **Vue DevTools**: Full component inspection
+
+### Quick Debug Commands
+
+```bash
+# Check if source maps exist
+docker exec devboard-frontend ls -la /app/dist/assets/*.map
+
+# View container logs
+docker compose logs -f frontend
+
+# Get shell access to container  
+docker exec -it devboard-frontend sh
+```
+
+### Result: Best of Both Worlds
+
+- **Development**: Full debugging experience with hot reload (`localhost:5173`)
+- **Production**: Production-like testing with source maps (`localhost:3000`)
+- **Container Benefits**: Consistent environment across team
+- **Debugging Power**: Original source files and breakpoints work
+
+Now you can debug containerized applications as easily as local development! 🎉
+
+---
+
 *This guide will be updated as we progress through each day of Week 5.*
