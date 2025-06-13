@@ -110,13 +110,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Step 4: Log in to Docker Hub (only if credentials are provided)
-      - name: Log in to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # Step 4: Skip Docker Hub login - just build locally
+      # - name: Log in to Docker Hub
+      #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Step 5: Extract metadata
       - name: Extract metadata
@@ -131,17 +131,25 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
 
-      # Step 6: Build and push Docker image
-      - name: Build and push Docker image
+      # Step 6: Build Docker image (without pushing)
+      # Note: Image is built in GitHub's runner and exists only during workflow
+      # Without push, the image is discarded when workflow completes
+      - name: Build Docker image (local only)
         uses: docker/build-push-action@v5
         with:
           context: ./devboard-backend
-          push: false  # Set to true when Docker Hub credentials are configured
+          push: false  # Just build, don't push anywhere
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          outputs: type=docker  # Build to Docker daemon
 
-      # Step 7: Output image info
-      - name: Image digest
-        run: echo ${{ steps.meta.outputs.tags }}
+      # Step 7: Verify image was built
+      - name: List Docker images
+        run: |
+          echo "Built image tags:"
+          echo "${{ steps.meta.outputs.tags }}"
+          echo ""
+          echo "Docker images in runner:"
+          docker images | grep devboard || echo "No devboard images found"
