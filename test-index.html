@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevBoard - Coming Soon</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        .status {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .tech {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 DevBoard</h1>
+        <p class="subtitle">Task Management System</p>
+        
+        <div class="status">
+            <h3>🔧 Deployment in Progress</h3>
+            <p>AWS Infrastructure Setup Complete!</p>
+            <p><strong>Account:</strong> 627073650332</p>
+            <p><strong>S3 Bucket:</strong> devboard-frontend-627073650332</p>
+            <p><strong>ECR Repository:</strong> devboard-backend</p>
+        </div>
+
+        <div class="tech-stack">
+            <span class="tech">Vue.js</span>
+            <span class="tech">Spring Boot</span>
+            <span class="tech">AWS ECS</span>
+            <span class="tech">RDS MySQL</span>
+            <span class="tech">CloudFront</span>
+            <span class="tech">GitHub Actions</span>
+        </div>
+        
+        <p style="margin-top: 2rem; opacity: 0.8;">
+            Full application coming soon...
+        </p>
+    </div>
+</body>
+</html>
