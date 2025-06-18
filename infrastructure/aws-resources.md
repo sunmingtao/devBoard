@@ -40,6 +40,11 @@ ECR_REPOSITORY_URI: 627073650332.dkr.ecr.us-east-1.amazonaws.com/devboard-backen
 S3_BUCKET_NAME: devboard-frontend-627073650332
 ```
 
+## CloudFront
+- Distribution ID: E13IQLG4XH9EXL
+- CloudFront URL: https://d58an524la6th.cloudfront.net
+- Status: Deploying (created 2025-06-18)
+
 ## Cost Monitoring
 - Billing alerts configured for $10, $50, $100 thresholds
 - SNS notifications to email address
