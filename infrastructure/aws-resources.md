@@ -43,7 +43,19 @@ S3_BUCKET_NAME: devboard-frontend-627073650332
 ## CloudFront
 - Distribution ID: E13IQLG4XH9EXL
 - CloudFront URL: https://d58an524la6th.cloudfront.net
-- Status: Deploying (created 2025-06-18)
+- Status: Deployed
+
+## RDS MySQL
+- Instance Identifier: devboard-mysql
+- Endpoint: devboard-mysql.cgt0u0gesgx3.us-east-1.rds.amazonaws.com
+- Port: 3306
+- Instance Class: db.t3.micro (Free Tier)
+
+## ECS Fargate
+- Cluster: devboard-cluster
+- Service: devboard-backend-service
+- Task Definition: devboard-backend:1
+- Status: Running
 
 ## Cost Monitoring
 - Billing alerts configured for $10, $50, $100 thresholds
