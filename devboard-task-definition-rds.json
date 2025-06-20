@@ -1,0 +1,55 @@
+{
+  "family": "devboard-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::627073650332:role/devboard-ecs-task-execution-role",
+  "containerDefinitions": [
+    {
+      "name": "devboard-backend",
+      "image": "627073650332.dkr.ecr.us-east-1.amazonaws.com/devboard-backend:latest",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "mysql"
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "jdbc:mysql://devboard-mysql.cgt0u0gesgx3.us-east-1.rds.amazonaws.com:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true"
+        },
+        {
+          "name": "DATABASE_USERNAME",
+          "value": "admin"
+        },
+        {
+          "name": "DATABASE_PASSWORD",
+          "value": "jqWMsoz3y71l4Zdo"
+        },
+        {
+          "name": "HIBERNATE_DDL_AUTO",
+          "value": "update"
+        },
+        {
+          "name": "SHOW_SQL",
+          "value": "true"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/devboard-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

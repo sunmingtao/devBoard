@@ -43,7 +43,12 @@ S3_BUCKET_NAME: devboard-frontend-627073650332
 ## CloudFront
 - Distribution ID: E13IQLG4XH9EXL
 - CloudFront URL: https://d58an524la6th.cloudfront.net
-- Status: Deployed
+- Status: Deployed with API proxy
+- Configuration:
+  - Frontend: S3 static website (default behavior)
+  - API: ALB backend proxy (/api/* path pattern)
+  - HTTPS: Enabled with redirect
+  - Caching: 1 hour for static files, no cache for API
 
 ## RDS MySQL
 - Instance Identifier: devboard-mysql

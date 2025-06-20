@@ -1,0 +1,76 @@
+✅ Week 7：测试覆盖 + 细节打磨 + 项目文档
+
+🎯 目标：补齐项目测试、优化用户体验、撰写展示文档，为开源展示或求职作品做好准备。
+🗓 日常任务分解：
+🔹 Day 1：后端单元测试（JUnit + Mockito）
+
+引入测试依赖：spring-boot-starter-test、mockito-core
+
+为 Service 层编写单元测试（如 UserService, TaskService）
+
+    测试用户注册、登录、任务创建等业务逻辑
+
+模拟数据库层（使用 @Mock Repository）
+
+    运行测试用例、生成覆盖率报告（Jacoco）
+
+🔹 Day 2：后端集成测试（MockMvc）
+
+使用 MockMvc 测试 Controller 层接口
+
+编写 /api/tasks 和 /api/auth/login 等接口的集成测试
+
+    模拟完整流程：注册 → 登录 → 创建任务 → 获取任务
+
+🔹 Day 3：前端自动化测试（可选）
+
+（可选）使用 Vitest + Vue Test Utils 测试核心组件：
+
+    登录表单是否能正确提交
+
+    权限守卫是否能拦截未登录访问
+
+    或者写一个简单的端到端测试脚本（如用 Playwright/Cypress）
+
+🔹 Day 4：体验优化 + UI 细节打磨
+
+前端处理异常提示（如登录失败、表单校验）
+
+增加加载状态（如接口请求时按钮 loading）
+
+优化移动端适配，确保小屏设备布局正常
+
+    增加 404 页面和路由兜底逻辑
+
+🔹 Day 5：项目结构 & 代码重构
+
+清理无用代码、注释、调试语句
+
+拆分大型组件，保持每个组件职责单一
+
+按功能模块归类代码结构（components, views, services 等）
+
+    后端整理包结构（controller, service, dto, entity, config）
+
+🔹 Day 6–7：编写最终文档 + 项目展示
+
+撰写详细 README（包含但不限于）：
+
+    项目简介（功能概览、技术栈）
+
+    本地部署指南（前后端 + Docker）
+
+    云部署地址（可选：演示账号 / 密码）
+
+    功能截图或动图
+
+撰写 CHANGELOG.md，总结每周迭代进度
+
+    在 GitHub 发布 Release（可标注为 v1.0.0）
+
+📦 本周产出清单
+模块	内容
+测试覆盖	JUnit 单测、MockMvc 接口测试（可选：前端组件测试）
+项目体验	表单校验、错误提示、loading 状态、移动端优化
+项目结构优化	前后端代码重构、文件归类清晰
+展示文档	README.md + CHANGELOG + 项目截图，GitHub Release
