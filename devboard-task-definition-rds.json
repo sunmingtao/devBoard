@@ -40,6 +40,18 @@
         {
           "name": "SHOW_SQL",
           "value": "true"
+        },
+        {
+          "name": "CORS_ALLOWED_ORIGINS",
+          "value": "http://localhost:3000,http://localhost:5173,http://frontend:5173,https://d58an524la6th.cloudfront.net"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "devboard-redis.m7n8pe.0001.use1.cache.amazonaws.com"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
         }
       ],
       "logConfiguration": {

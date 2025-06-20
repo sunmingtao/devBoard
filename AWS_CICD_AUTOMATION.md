@@ -604,5 +604,13 @@ aws cloudfront get-invalidation \
   --distribution-id E1234567890 \
   --id I1234567890
 ```
+Recommendation: EC2 Bastion (Your VPN idea) -- connect to RDS via SSH tunnel
+
+Setup Process:
+1. Create EC2 in public subnet
+2. Install MySQL client on EC2
+3. Test EC2 → RDS connection
+4. Set up SSH tunnel from your machine
+5. Connect MySQL Workbench via tunnel
 
 This fully automated pipeline ensures that every commit to main is tested, built, and deployed without manual intervention, showcasing modern DevOps practices that employers value!

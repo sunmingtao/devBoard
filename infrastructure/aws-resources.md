@@ -62,6 +62,15 @@ S3_BUCKET_NAME: devboard-frontend-627073650332
 - Task Definition: devboard-backend:1
 - Status: Running
 
+## ElastiCache Redis
+- Cluster ID: devboard-redis
+- Endpoint: devboard-redis.m7n8pe.0001.use1.cache.amazonaws.com:6379
+- Node Type: cache.t3.micro (Free Tier)
+- Engine: Redis 7.1.0
+- Status: Available
+- Security Group: sg-013415a4d430d92f4
+- Subnet Group: devboard-redis-subnet-group
+
 ## Cost Monitoring
 - Billing alerts configured for $10, $50, $100 thresholds
 - SNS notifications to email address

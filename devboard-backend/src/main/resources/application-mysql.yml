@@ -36,6 +36,20 @@ spring:
         order_inserts: true
         order_updates: true
   
+  # Redis Configuration for session storage and caching
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}  # Leave empty if no auth
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+
   # Disable H2 Console (MySQL doesn't need it)
   h2:
     console:

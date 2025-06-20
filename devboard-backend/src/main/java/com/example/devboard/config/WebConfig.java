@@ -16,13 +16,14 @@ public class WebConfig implements WebMvcConfigurer {
                     "http://localhost:5173",
                     "http://localhost:5174", 
                     "http://localhost:5175",
-                    "http://localhost:3000"
+                    "http://localhost:3000",
+                    "https://d58an524la6th.cloudfront.net"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
         
-        System.out.println("✅ CORS configuration applied for ports 5173, 5174, 5175");
+        System.out.println("✅ CORS configuration applied for localhost ports and CloudFront domain");
     }
 }
