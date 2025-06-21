@@ -23,13 +23,14 @@ describe('TaskForm.vue', () => {
     beforeEach(() => {
       wrapper = mount(TaskForm, {
         props: {
-          mode: 'create'
+          mode: 'create',
+          visible: true
         }
       })
     })
 
     it('renders form with empty fields', () => {
-      expect(wrapper.find('h2').text()).toBe('Create New Task')
+      expect(wrapper.find('h2').text()).toBe('➕ Create New Task')
       expect(wrapper.find('#title').element.value).toBe('')
       expect(wrapper.find('#description').element.value).toBe('')
       expect(wrapper.find('#status').element.value).toBe('TODO')
@@ -41,7 +42,7 @@ describe('TaskForm.vue', () => {
       await form.trigger('submit.prevent')
 
       // Title is required, so form shouldn't emit
-      expect(wrapper.emitted('save')).toBeFalsy()
+      expect(wrapper.emitted('submit')).toBeFalsy()
     })
 
     it('emits save event with form data', async () => {
@@ -55,8 +56,8 @@ describe('TaskForm.vue', () => {
       await wrapper.find('form').trigger('submit.prevent')
 
       // Check emitted event
-      expect(wrapper.emitted('save')).toBeTruthy()
-      expect(wrapper.emitted('save')[0][0]).toEqual({
+      expect(wrapper.emitted('submit')).toBeTruthy()
+      expect(wrapper.emitted('submit')[0][0]).toEqual({
         title: 'New Task',
         description: 'Task description',
         status: 'IN_PROGRESS',
@@ -69,7 +70,7 @@ describe('TaskForm.vue', () => {
       const cancelButton = wrapper.find('button[type="button"]')
       await cancelButton.trigger('click')
 
-      expect(wrapper.emitted('cancel')).toBeTruthy()
+      expect(wrapper.emitted('close')).toBeTruthy()
     })
   })
 
@@ -78,13 +79,14 @@ describe('TaskForm.vue', () => {
       wrapper = mount(TaskForm, {
         props: {
           mode: 'edit',
-          task: defaultTask
+          task: defaultTask,
+          visible: true
         }
       })
     })
 
     it('renders form with task data', () => {
-      expect(wrapper.find('h2').text()).toBe('Edit Task')
+      expect(wrapper.find('h2').text()).toBe('✏️ Edit Task')
       expect(wrapper.find('#title').element.value).toBe('Test Task')
       expect(wrapper.find('#description').element.value).toBe('Test Description')
       expect(wrapper.find('#status').element.value).toBe('TODO')
@@ -99,8 +101,8 @@ describe('TaskForm.vue', () => {
       await wrapper.find('form').trigger('submit.prevent')
 
       // Check emitted event includes all fields
-      expect(wrapper.emitted('save')).toBeTruthy()
-      expect(wrapper.emitted('save')[0][0]).toEqual({
+      expect(wrapper.emitted('submit')).toBeTruthy()
+      expect(wrapper.emitted('submit')[0][0]).toEqual({
         title: 'Updated Task',
         description: 'Test Description',
         status: 'TODO',
@@ -128,7 +130,8 @@ describe('TaskForm.vue', () => {
     beforeEach(() => {
       wrapper = mount(TaskForm, {
         props: {
-          mode: 'create'
+          mode: 'create',
+          visible: true
         }
       })
     })
@@ -137,14 +140,14 @@ describe('TaskForm.vue', () => {
       await wrapper.find('#description').setValue('Description only')
       await wrapper.find('form').trigger('submit.prevent')
 
-      expect(wrapper.emitted('save')).toBeFalsy()
+      expect(wrapper.emitted('submit')).toBeFalsy()
     })
 
     it('trims whitespace from title', async () => {
       await wrapper.find('#title').setValue('  Trimmed Title  ')
       await wrapper.find('form').trigger('submit.prevent')
 
-      expect(wrapper.emitted('save')[0][0].title).toBe('Trimmed Title')
+      expect(wrapper.emitted('submit')[0][0].title).toBe('Trimmed Title')
     })
 
     it('allows empty description', async () => {
@@ -152,8 +155,8 @@ describe('TaskForm.vue', () => {
       await wrapper.find('#description').setValue('')
       await wrapper.find('form').trigger('submit.prevent')
 
-      expect(wrapper.emitted('save')).toBeTruthy()
-      expect(wrapper.emitted('save')[0][0].description).toBe('')
+      expect(wrapper.emitted('submit')).toBeTruthy()
+      expect(wrapper.emitted('submit')[0][0].description).toBe('')
     })
   })
 
@@ -161,7 +164,8 @@ describe('TaskForm.vue', () => {
     beforeEach(() => {
       wrapper = mount(TaskForm, {
         props: {
-          mode: 'create'
+          mode: 'create',
+          visible: true
         }
       })
     })

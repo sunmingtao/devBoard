@@ -4,51 +4,53 @@ import { vi } from 'vitest'
 import { server } from './mocks/server'
 
 // Mock vue-router globally to prevent import errors
-vi.mock('vue-router', () => ({
-  createRouter: vi.fn(() => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    go: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    beforeEach: vi.fn(),
-    afterEach: vi.fn(),
-    onError: vi.fn(),
-    isReady: vi.fn(() => Promise.resolve()),
-    currentRoute: {
-      value: {
-        path: '/',
-        name: 'home',
-        params: {},
-        query: {}
+vi.mock('vue-router', async () => {
+  const actual = await vi.importActual('vue-router')
+  return {
+    ...actual,
+    createRouter: vi.fn(() => ({
+      push: vi.fn(),
+      replace: vi.fn(),
+      go: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      beforeEach: vi.fn(),
+      afterEach: vi.fn(),
+      onError: vi.fn(),
+      isReady: vi.fn(() => Promise.resolve()),
+      install: vi.fn(),
+      currentRoute: {
+        value: {
+          path: '/',
+          name: 'home',
+          params: {},
+          query: {}
+        }
       }
-    }
-  })),
-  createWebHistory: vi.fn(),
-  createWebHashHistory: vi.fn(),
-  createMemoryHistory: vi.fn(),
-  RouterLink: {
-    name: 'RouterLink',
-    template: '<a><slot /></a>'
-  },
-  RouterView: {
-    name: 'RouterView',
-    template: '<div></div>'
-  },
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    go: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn()
-  })),
-  useRoute: vi.fn(() => ({
-    path: '/',
-    name: 'home',
-    params: {},
-    query: {}
-  }))
-}))
+    })),
+    RouterLink: {
+      name: 'RouterLink',
+      template: '<a><slot /></a>'
+    },
+    RouterView: {
+      name: 'RouterView',
+      template: '<div></div>'
+    },
+    useRouter: vi.fn(() => ({
+      push: vi.fn(),
+      replace: vi.fn(),
+      go: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn()
+    })),
+    useRoute: vi.fn(() => ({
+      path: '/',
+      name: 'home',
+      params: {},
+      query: {}
+    }))
+  }
+})
 
 // Configure Vue Test Utils
 config.global.mocks = {
