@@ -28,7 +28,6 @@ jobs:
     - name: Run tests
       working-directory: ./devboard-frontend
       run: npm run test:run
-      continue-on-error: true  # Don't block deployment if tests fail
       
     - name: Build frontend
       working-directory: ./devboard-frontend
