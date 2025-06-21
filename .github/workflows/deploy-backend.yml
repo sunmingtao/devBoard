@@ -36,9 +36,13 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
     
+    - name: Run tests
+      working-directory: ./devboard-backend
+      run: mvn test
+      
     - name: Build with Maven
       working-directory: ./devboard-backend
-      run: mvn clean package -DskipTests
+      run: mvn package
     
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
