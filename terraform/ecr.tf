@@ -2,7 +2,7 @@
 
 # Backend ECR Repository
 resource "aws_ecr_repository" "dev_backend" {
-  name                 = "${var.project_name}-backend"
+  name                 = "${var.project_name}-${var.environment}-backend"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -18,7 +18,7 @@ resource "aws_ecr_repository" "dev_backend" {
 
 # Frontend ECR Repository
 resource "aws_ecr_repository" "dev_frontend" {
-  name                 = "${var.project_name}-frontend"
+  name                 = "${var.project_name}-${var.environment}-frontend"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {

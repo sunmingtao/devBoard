@@ -47,7 +47,7 @@ resource "aws_db_instance" "dev_mysql" {
 
   # Engine Configuration
   engine         = "mysql"
-  engine_version = "8.0.35"
+  engine_version = "8.0.40"
   instance_class = "db.t3.micro"
 
   # Storage Configuration
