@@ -30,13 +30,7 @@ resource "aws_security_group" "dev_ecs_sg" {
     description     = "Backend port from ALB"
   }
 
-  ingress {
-    from_port       = 5173
-    to_port         = 5173
-    protocol        = "tcp"
-    security_groups = [aws_security_group.dev_alb_sg.id]
-    description     = "Frontend port from ALB"
-  }
+  # Frontend ingress removed - using S3/CloudFront instead
 
   egress {
     from_port   = 0
@@ -134,31 +128,7 @@ resource "aws_lb_target_group" "dev_backend_tg" {
   }
 }
 
-resource "aws_lb_target_group" "dev_frontend_tg" {
-  name        = "${var.project_name}-${var.environment}-frontend-tg"
-  port        = 5173
-  protocol    = "HTTP"
-  vpc_id      = aws_vpc.dev_vpc.id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    matcher             = "200"
-    path                = "/"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 3
-  }
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-frontend-tg"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
+# Frontend target group removed - using S3/CloudFront instead
 
 # ALB Listeners
 resource "aws_lb_listener" "dev_alb_listener" {
@@ -167,8 +137,12 @@ resource "aws_lb_listener" "dev_alb_listener" {
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.dev_frontend_tg.arn
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "DevBoard API - Use /api/* endpoints"
+      status_code  = "200"
+    }
   }
 }
 
@@ -229,10 +203,7 @@ output "backend_target_group_arn" {
   value       = aws_lb_target_group.dev_backend_tg.arn
 }
 
-output "frontend_target_group_arn" {
-  description = "ARN of the frontend target group"
-  value       = aws_lb_target_group.dev_frontend_tg.arn
-}
+# Frontend target group output removed - using S3/CloudFront instead
 
 output "ecs_cluster_name" {
   description = "Name of the ECS cluster"

@@ -87,60 +87,8 @@ resource "aws_ecs_task_definition" "dev_backend" {
   }
 }
 
-# Frontend Task Definition
-resource "aws_ecs_task_definition" "dev_frontend" {
-  family                   = "${var.project_name}-${var.environment}-frontend"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = aws_iam_role.dev_ecs_execution_role.arn
-
-  container_definitions = jsonencode([
-    {
-      name  = "frontend"
-      image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/devboard-frontend:latest"
-      
-      portMappings = [
-        {
-          containerPort = 5173
-          protocol      = "tcp"
-        }
-      ]
-      
-      environment = [
-        {
-          name  = "VITE_API_BASE_URL"
-          value = "http://${aws_lb.dev_alb.dns_name}/api"
-        }
-      ]
-      
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = "/ecs/${var.project_name}-${var.environment}-frontend"
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-          "awslogs-create-group"  = "true"
-        }
-      }
-      
-      healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:5173/ || exit 1"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
-      }
-    }
-  ])
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-frontend-task"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
+# Frontend Task Definition - REMOVED
+# Frontend is now deployed to S3/CloudFront instead of ECS
 
 # Backend Service
 resource "aws_ecs_service" "dev_backend" {
@@ -174,36 +122,8 @@ resource "aws_ecs_service" "dev_backend" {
   }
 }
 
-# Frontend Service
-resource "aws_ecs_service" "dev_frontend" {
-  name            = "${var.project_name}-${var.environment}-frontend"
-  cluster         = aws_ecs_cluster.dev_cluster.id
-  task_definition = aws_ecs_task_definition.dev_frontend.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
-    security_groups  = [aws_security_group.dev_ecs_sg.id]
-    assign_public_ip = true  # Needed for Fargate to pull images
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.dev_frontend_tg.arn
-    container_name   = "frontend"
-    container_port   = 5173
-  }
-
-  depends_on = [
-    aws_lb_listener.dev_alb_listener
-  ]
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-frontend-service"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
+# Frontend Service - REMOVED
+# Frontend is now deployed to S3/CloudFront instead of ECS
 
 # Data source for AWS account ID
 data "aws_caller_identity" "current" {}
@@ -220,13 +140,4 @@ resource "aws_cloudwatch_log_group" "backend_logs" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "frontend_logs" {
-  name              = "/ecs/${var.project_name}-${var.environment}-frontend"
-  retention_in_days = 7
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-frontend-logs"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
+# Frontend CloudWatch logs removed - using S3/CloudFront instead

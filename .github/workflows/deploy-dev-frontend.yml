@@ -17,16 +17,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      working-directory: ./devboard-frontend
+      run: npm ci
+    
+    - name: Run tests
+      working-directory: ./devboard-frontend
+      run: npm run test:run
+    
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
-    
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
     
     - name: Get ALB DNS name
       id: get-alb-dns
@@ -37,35 +46,51 @@ jobs:
           --output text)
         echo "ALB_DNS=$ALB_DNS" >> $GITHUB_OUTPUT
     
-    - name: Build and push Docker image
+    - name: Build frontend
       working-directory: ./devboard-frontend
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: devboard-frontend
-        IMAGE_TAG: dev-${{ github.sha }}
         VITE_API_BASE_URL: http://${{ steps.get-alb-dns.outputs.ALB_DNS }}/api
-      run: |
-        docker buildx build \
-          --platform linux/amd64 \
-          --build-arg VITE_API_BASE_URL=$VITE_API_BASE_URL \
-          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+      run: npm run build
     
-    - name: Update ECS service
+    - name: Get S3 bucket and CloudFront ID
+      id: get-resources
       run: |
-        aws ecs update-service \
-          --cluster devboard-dev-cluster \
-          --service devboard-dev-frontend \
-          --force-new-deployment
+        S3_BUCKET="devboard-dev-frontend-${{ secrets.AWS_ACCOUNT_ID }}"
+        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_OUTPUT
+        
+        CF_DIST_ID=$(aws cloudfront list-distributions \
+          --query "DistributionList.Items[?Comment=='${S3_BUCKET}'].Id | [0]" \
+          --output text)
+        
+        if [ "$CF_DIST_ID" == "None" ] || [ -z "$CF_DIST_ID" ]; then
+          CF_DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Origins.Items[0].DomainName=='${S3_BUCKET}.s3.us-east-1.amazonaws.com'].Id | [0]" \
+            --output text)
+        fi
+        
+        echo "CF_DIST_ID=$CF_DIST_ID" >> $GITHUB_OUTPUT
     
-    - name: Wait for service stability
+    - name: Deploy to S3
+      working-directory: ./devboard-frontend
       run: |
-        aws ecs wait services-stable \
-          --cluster devboard-dev-cluster \
-          --services devboard-dev-frontend
+        aws s3 sync dist/ s3://${{ steps.get-resources.outputs.S3_BUCKET }} --delete
     
-    - name: Display dev environment URL
+    - name: Invalidate CloudFront
       run: |
-        echo "Dev environment URL: http://${{ steps.get-alb-dns.outputs.ALB_DNS }}"
+        aws cloudfront create-invalidation \
+          --distribution-id ${{ steps.get-resources.outputs.CF_DIST_ID }} \
+          --paths "/*"
+    
+    - name: Get CloudFront domain
+      id: get-cf-domain
+      run: |
+        CF_DOMAIN=$(aws cloudfront get-distribution \
+          --id ${{ steps.get-resources.outputs.CF_DIST_ID }} \
+          --query 'Distribution.DomainName' \
+          --output text)
+        echo "CF_DOMAIN=$CF_DOMAIN" >> $GITHUB_OUTPUT
+    
+    - name: Display dev environment URLs
+      run: |
+        echo "Frontend URL: https://${{ steps.get-cf-domain.outputs.CF_DOMAIN }}"
+        echo "Backend API: http://${{ steps.get-alb-dns.outputs.ALB_DNS }}/api"
