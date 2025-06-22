@@ -5,6 +5,8 @@
 
 A modern task management system built with Spring Boot and Vue.js for demonstrating full-stack development skills.
 
+🌐 **Live Demo:** https://d58an524la6th.cloudfront.net/
+
 ## 🚀 Quick Start
 
 ### Backend Setup (Spring Boot)
@@ -93,22 +95,11 @@ devboard-backend/
 ## 🛠️ Technologies
 
 - **Backend:** Spring Boot 3.3.0, Java 21
+- **Frontend:** Vue.js 3, TypeScript
 - **Database:** MySQL (via Spring Data JPA)
 - **Build Tool:** Maven
+- **Infrastructure:** Terraform
+- **CI/CD:** GitHub Actions
+- **Cloud Services:** AWS (ECS, RDS, S3, CloudFront)
 - **Utilities:** Lombok
 
-## 📝 Next Steps
-
-1. Configure MySQL database connection in `application.properties`
-2. Create entity models for the task board
-3. Implement REST API endpoints
-4. Set up JWT authentication
-5. Add frontend with Vue.js 3
-
-## 🎯 Features (To Be Implemented)
-
-- User authentication (JWT)
-- Task management (Create, Read, Update, Delete)
-- Kanban board view (To Do, In Progress, Done)
-- User roles and permissions
-- Admin dashboard
