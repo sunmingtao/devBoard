@@ -56,18 +56,9 @@ jobs:
     - name: Get S3 bucket and CloudFront ID
       id: get-resources
       run: |
-        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-        S3_BUCKET="devboard-dev-frontend-${ACCOUNT_ID}"
+        S3_BUCKET="devboard-dev-frontend-${{ secrets.AWS_ACCOUNT_ID }}"
         echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_OUTPUT
         echo "Using S3 bucket: $S3_BUCKET"
-        
-        # Check if bucket exists
-        if ! aws s3 ls "s3://${S3_BUCKET}" > /dev/null 2>&1; then
-          echo "ERROR: S3 bucket ${S3_BUCKET} does not exist!"
-          echo "Available buckets:"
-          aws s3 ls
-          exit 1
-        fi
         
         # Get CloudFront distribution ID by looking for S3 origin domain
         echo "Looking for CloudFront distribution..."
