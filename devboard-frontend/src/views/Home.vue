@@ -19,10 +19,6 @@
       </div>
     </header>
 
-    <!-- Vue 3 Composition API Demo -->
-    <section class="composition-api-demo">
-      <Counter />
-    </section>
 
     <!-- API Testing Section -->
     <section class="api-test-section">
@@ -55,14 +51,12 @@
   import { ref, onMounted, onUnmounted, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import ApiTest from '../components/ApiTest.vue'
-  import Counter from '../components/Counter.vue'
   import { authService } from '../services/authService'
 
   export default {
     name: 'Home',
     components: {
       ApiTest,
-      Counter,
     },
     setup() {
       const route = useRoute()
@@ -155,9 +149,6 @@
     margin-top: 1rem;
   }
 
-  .composition-api-demo {
-    margin-bottom: 3rem;
-  }
 
   .api-test-section {
     margin-bottom: 3rem;
