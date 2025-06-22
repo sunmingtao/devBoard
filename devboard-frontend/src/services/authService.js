@@ -55,6 +55,13 @@ export const authService = {
     const token = localStorage.getItem('token')
     if (!token) return false
     
+    // Validate token format first
+    if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
+      console.warn('Invalid token format detected, clearing storage')
+      this.logout() // Clear invalid token
+      return false
+    }
+    
     // Check if token is expired
     if (this.isTokenExpired(token)) {
       this.logout() // Auto logout if expired
@@ -96,7 +103,17 @@ export const authService = {
   // Decode JWT token to get payload
   decodeToken(token) {
     try {
-      const base64Url = token.split('.')[1]
+      if (!token || typeof token !== 'string') {
+        return null
+      }
+      
+      const parts = token.split('.')
+      if (parts.length !== 3) {
+        console.error('Invalid JWT format: expected 3 parts, got', parts.length)
+        return null
+      }
+      
+      const base64Url = parts[1]
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
       const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
