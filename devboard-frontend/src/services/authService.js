@@ -14,13 +14,27 @@ export const authService = {
   // Register new user
   async register(userData) {
     const response = await authApi.post('/signup', userData)
-    return response.data
+    const apiResponse = response.data
+    
+    // Backend returns {code, message, data} structure
+    if (apiResponse.code !== 0) {
+      throw new Error(apiResponse.message || 'Registration failed')
+    }
+    
+    return apiResponse.data
   },
 
   // Login user
   async login(username, password) {
     const response = await authApi.post('/login', { username, password })
-    const data = response.data
+    const apiResponse = response.data
+    
+    // Backend returns {code, message, data} structure
+    if (apiResponse.code !== 0) {
+      throw new Error(apiResponse.message || 'Login failed')
+    }
+    
+    const data = apiResponse.data
     
     // Store token and user data
     localStorage.setItem('token', data.token)
@@ -28,7 +42,8 @@ export const authService = {
       id: data.id,
       username: data.username,
       email: data.email,
-      role: data.role
+      role: data.role,
+      nickname: data.nickname
     }))
     
     return data
@@ -41,7 +56,14 @@ export const authService = {
         Authorization: `Bearer ${token}`,
       },
     })
-    return response.data
+    const apiResponse = response.data
+    
+    // Backend returns {code, message, data} structure
+    if (apiResponse.code !== 0) {
+      throw new Error(apiResponse.message || 'Failed to get user info')
+    }
+    
+    return apiResponse.data
   },
 
   // Logout (client-side only)
