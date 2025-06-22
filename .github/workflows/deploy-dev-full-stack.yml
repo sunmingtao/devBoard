@@ -1,0 +1,123 @@
+name: Deploy Full Stack to Dev Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: 'Deploy backend'
+        required: true
+        default: true
+        type: boolean
+      deploy_frontend:
+        description: 'Deploy frontend'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  deploy-backend:
+    if: ${{ github.event.inputs.deploy_backend == 'true' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    
+    - name: Build and push backend Docker image
+      working-directory: ./devboard-backend
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: devboard-backend
+        IMAGE_TAG: dev-${{ github.sha }}
+      run: |
+        docker buildx build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+    
+    - name: Update backend ECS service
+      run: |
+        aws ecs update-service \
+          --cluster devboard-dev-cluster \
+          --service devboard-dev-backend \
+          --force-new-deployment
+    
+    - name: Wait for backend service stability
+      run: |
+        aws ecs wait services-stable \
+          --cluster devboard-dev-cluster \
+          --services devboard-dev-backend
+
+  deploy-frontend:
+    if: ${{ github.event.inputs.deploy_frontend == 'true' }}
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    
+    - name: Get ALB DNS name
+      id: get-alb-dns
+      run: |
+        ALB_DNS=$(aws elbv2 describe-load-balancers \
+          --names devboard-dev-alb \
+          --query 'LoadBalancers[0].DNSName' \
+          --output text)
+        echo "ALB_DNS=$ALB_DNS" >> $GITHUB_OUTPUT
+    
+    - name: Build and push frontend Docker image
+      working-directory: ./devboard-frontend
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: devboard-frontend
+        IMAGE_TAG: dev-${{ github.sha }}
+        VITE_API_BASE_URL: http://${{ steps.get-alb-dns.outputs.ALB_DNS }}/api
+      run: |
+        docker buildx build \
+          --platform linux/amd64 \
+          --build-arg VITE_API_BASE_URL=$VITE_API_BASE_URL \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+    
+    - name: Update frontend ECS service
+      run: |
+        aws ecs update-service \
+          --cluster devboard-dev-cluster \
+          --service devboard-dev-frontend \
+          --force-new-deployment
+    
+    - name: Wait for frontend service stability
+      run: |
+        aws ecs wait services-stable \
+          --cluster devboard-dev-cluster \
+          --services devboard-dev-frontend
+    
+    - name: Display dev environment URL
+      run: |
+        echo "✅ Dev environment deployed successfully!"
+        echo "🌐 Dev URL: http://${{ steps.get-alb-dns.outputs.ALB_DNS }}"
