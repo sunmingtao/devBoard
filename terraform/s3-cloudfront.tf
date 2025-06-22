@@ -62,12 +62,27 @@ resource "aws_cloudfront_distribution" "dev_frontend" {
   default_root_object = "index.html"
   price_class         = "PriceClass_100"  # Use only North America and Europe (cheaper for dev)
 
+  # Origin 1: S3 bucket for static frontend files
   origin {
     domain_name              = aws_s3_bucket.dev_frontend.bucket_regional_domain_name
     origin_id                = aws_s3_bucket.dev_frontend.id
     origin_access_control_id = aws_cloudfront_origin_access_control.dev_frontend.id
   }
 
+  # Origin 2: ALB for API proxy
+  origin {
+    domain_name = aws_lb.dev_alb.dns_name
+    origin_id   = "dev-alb-api"
+    
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"  # ALB doesn't have HTTPS cert
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # Default behavior: serve frontend from S3
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
@@ -84,6 +99,27 @@ resource "aws_cloudfront_distribution" "dev_frontend" {
     min_ttl                = 0
     default_ttl            = 3600
     max_ttl                = 86400
+  }
+
+  # API behavior: proxy to ALB
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "dev-alb-api"
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type", "Accept"]
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
   }
 
   # Custom error page for SPA routing

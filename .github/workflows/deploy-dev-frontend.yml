@@ -47,11 +47,28 @@ jobs:
           --output text)
         echo "ALB_DNS=$ALB_DNS" >> $GITHUB_OUTPUT
     
-    - name: Build frontend
+    - name: Get CloudFront domain for dev environment  
+      id: get-dev-cf-domain
+      run: |
+        CF_DOMAIN=$(aws cloudfront list-distributions \
+          --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, 'devboard-dev-frontend')].DomainName | [0]" \
+          --output text)
+        
+        if [ "$CF_DOMAIN" == "None" ] || [ -z "$CF_DOMAIN" ]; then
+          echo "Development CloudFront not deployed yet. Please run 'terraform apply' first."
+          exit 1
+        fi
+        
+        echo "DEV_CF_DOMAIN=$CF_DOMAIN" >> $GITHUB_OUTPUT
+        echo "Development CloudFront domain: $CF_DOMAIN"
+
+    - name: Build frontend for development
       working-directory: ./devboard-frontend
       env:
-        VITE_API_BASE_URL: http://${{ steps.get-alb-dns.outputs.ALB_DNS }}/api
-      run: npm run build
+        # Replace placeholder with actual CloudFront domain
+        VITE_API_URL: https://${{ steps.get-dev-cf-domain.outputs.DEV_CF_DOMAIN }}
+        VITE_API_BASE_URL: https://${{ steps.get-dev-cf-domain.outputs.DEV_CF_DOMAIN }}/api
+      run: npm run build:dev
     
     - name: Get S3 bucket and CloudFront ID
       id: get-resources
@@ -97,5 +114,7 @@ jobs:
     
     - name: Display dev environment URLs
       run: |
-        echo "Frontend URL: https://${{ steps.get-cf-domain.outputs.CF_DOMAIN }}"
-        echo "Backend API: http://${{ steps.get-alb-dns.outputs.ALB_DNS }}/api"
+        echo "=== Development Environment URLs ==="
+        echo "Frontend URL: https://${{ steps.get-dev-cf-domain.outputs.DEV_CF_DOMAIN }}"
+        echo "Backend API (via CloudFront): https://${{ steps.get-dev-cf-domain.outputs.DEV_CF_DOMAIN }}/api"
+        echo "Backend API (direct ALB): http://${{ steps.get-alb-dns.outputs.ALB_DNS }}/api"
