@@ -56,17 +56,30 @@ jobs:
     - name: Get S3 bucket and CloudFront ID
       id: get-resources
       run: |
-        S3_BUCKET="devboard-dev-frontend-${{ secrets.AWS_ACCOUNT_ID }}"
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        S3_BUCKET="devboard-dev-frontend-${ACCOUNT_ID}"
         echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_OUTPUT
+        echo "Using S3 bucket: $S3_BUCKET"
         
+        # Check if bucket exists
+        if ! aws s3 ls "s3://${S3_BUCKET}" > /dev/null 2>&1; then
+          echo "ERROR: S3 bucket ${S3_BUCKET} does not exist!"
+          echo "Available buckets:"
+          aws s3 ls
+          exit 1
+        fi
+        
+        # Get CloudFront distribution ID by looking for S3 origin domain
+        echo "Looking for CloudFront distribution..."
         CF_DIST_ID=$(aws cloudfront list-distributions \
-          --query "DistributionList.Items[?Comment=='${S3_BUCKET}'].Id | [0]" \
+          --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, '${S3_BUCKET}')].Id | [0]" \
           --output text)
         
         if [ "$CF_DIST_ID" == "None" ] || [ -z "$CF_DIST_ID" ]; then
-          CF_DIST_ID=$(aws cloudfront list-distributions \
-            --query "DistributionList.Items[?Origins.Items[0].DomainName=='${S3_BUCKET}.s3.us-east-1.amazonaws.com'].Id | [0]" \
-            --output text)
+          echo "CloudFront distribution not found for bucket ${S3_BUCKET}"
+          echo "Available distributions:"
+          aws cloudfront list-distributions --query "DistributionList.Items[*].[Id,Origins.Items[0].DomainName]" --output table
+          exit 1
         fi
         
         echo "CF_DIST_ID=$CF_DIST_ID" >> $GITHUB_OUTPUT
