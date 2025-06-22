@@ -20,6 +20,7 @@
             :class="{ 'error': errors.title }"
             placeholder="Enter task title..."
             maxlength="255"
+            :disabled="loading"
             required
           />
           <div v-if="errors.title" class="error-message">{{ errors.title }}</div>
@@ -37,6 +38,7 @@
             placeholder="Describe the task details..."
             rows="4"
             maxlength="1000"
+            :disabled="loading"
           ></textarea>
           <div v-if="errors.description" class="error-message">{{ errors.description }}</div>
           <div class="char-count">{{ formData.description.length }}/1000</div>
@@ -46,7 +48,7 @@
         <div class="form-row">
           <div class="form-group">
             <label for="status" class="form-label">Status</label>
-            <select id="status" v-model="formData.status" class="form-select">
+            <select id="status" v-model="formData.status" class="form-select" :disabled="loading.value">
               <option value="TODO">📝 To Do</option>
               <option value="IN_PROGRESS">🔄 In Progress</option>
               <option value="DONE">✅ Done</option>
@@ -55,7 +57,7 @@
 
           <div class="form-group">
             <label for="priority" class="form-label">Priority</label>
-            <select id="priority" v-model="formData.priority" class="form-select">
+            <select id="priority" v-model="formData.priority" class="form-select" :disabled="loading.value">
               <option value="LOW">🟢 Low</option>
               <option value="MEDIUM">🟡 Medium</option>
               <option value="HIGH">🔴 High</option>
@@ -66,7 +68,7 @@
         <!-- Assignee Field -->
         <div class="form-group">
           <label for="assignee" class="form-label">Assignee</label>
-          <select id="assignee" v-model="formData.assigneeId" class="form-select">
+          <select id="assignee" v-model="formData.assigneeId" class="form-select" :disabled="loading.value">
             <option value="">Select assignee (optional)</option>
             <option 
               v-for="user in users" 

@@ -46,13 +46,10 @@ jobs:
         working-directory: ./devboard-frontend
         run: npm run lint || true  # Don't fail on lint warnings
 
-      # Step 5: Run tests (if any)
+      # Step 5: Run tests
       - name: Run tests
         working-directory: ./devboard-frontend
-        run: |
-          # Add test command when tests are implemented
-          # npm test
-          echo "No tests configured yet"
+        run: npm run test:run
 
       # Step 6: Build production bundle
       - name: Build for production

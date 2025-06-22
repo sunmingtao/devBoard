@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import TaskForm from '../TaskForm.vue'
@@ -29,6 +29,9 @@ describe('TaskForm.vue', () => {
 
   afterEach(() => {
     localStorage.clear()
+    if (wrapper) {
+      wrapper.unmount()
+    }
   })
 
   describe('Create mode', () => {
@@ -207,12 +210,15 @@ describe('TaskForm.vue', () => {
         }
       })
 
+      await wrapper.vm.$nextTick()
+
       const submitButton = wrapper.find('button[type="submit"]')
       const cancelButton = wrapper.find('button[type="button"]')
+      const titleInput = wrapper.find('#title')
       
       expect(submitButton.element.disabled).toBe(true)
       expect(cancelButton.element.disabled).toBe(true)
-      expect(wrapper.find('#title').element.disabled).toBe(true)
+      expect(titleInput.attributes('disabled')).toBeDefined()
     })
   })
 })

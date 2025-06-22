@@ -18,9 +18,20 @@ export const authService = {
   },
 
   // Login user
-  async login(credentials) {
-    const response = await authApi.post('/login', credentials)
-    return response.data
+  async login(username, password) {
+    const response = await authApi.post('/login', { username, password })
+    const data = response.data
+    
+    // Store token and user data
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify({
+      id: data.id,
+      username: data.username,
+      email: data.email,
+      role: data.role
+    }))
+    
+    return data
   },
 
   // Get current user info
