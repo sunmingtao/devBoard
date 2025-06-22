@@ -17,6 +17,18 @@ describe('TaskForm.vue', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    // Set up authentication for API calls
+    localStorage.setItem('token', 'mock-jwt-token')
+    localStorage.setItem('user', JSON.stringify({
+      id: 1,
+      username: 'testuser',
+      email: 'test@example.com',
+      role: 'USER'
+    }))
+  })
+
+  afterEach(() => {
+    localStorage.clear()
   })
 
   describe('Create mode', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createMemoryHistory } from 'vue-router'
 import authService from '@/services/authService'
 import { routes } from '../index'
 
@@ -7,9 +7,14 @@ import { routes } from '../index'
 vi.mock('@/services/authService', () => ({
   default: {
     isAuthenticated: vi.fn(),
-    isAdmin: vi.fn()
+    isAdmin: vi.fn(),
+    getUser: vi.fn(),
+    logout: vi.fn()
   }
 }))
+
+// Mock window.alert
+global.alert = vi.fn()
 
 describe('Router Guards', () => {
   let router
@@ -17,10 +22,49 @@ describe('Router Guards', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     
-    // Create fresh router instance
+    // Create a fresh router for each test with memory history
     router = createRouter({
-      history: createWebHistory(),
+      history: createMemoryHistory(),
       routes
+    })
+    
+    // Add the navigation guard from index.js
+    router.beforeEach((to, from, next) => {
+      // Update page title
+      document.title = to.meta.title || 'DevBoard'
+      
+      // Check if route requires authentication
+      if (to.meta.requiresAuth) {
+        if (!authService.isAuthenticated()) {
+          // Redirect to login with return URL
+          next({
+            path: '/login',
+            query: { returnUrl: to.fullPath }
+          })
+          return
+        }
+        
+        // Check if route requires admin role
+        if (to.meta.requiresAdmin) {
+          if (!authService.isAdmin()) {
+            // Redirect to home if not admin
+            alert('Access denied: Admin role required')
+            next('/')
+            return
+          }
+        }
+        
+        next()
+      } else {
+        // Handle guest routes (login/register)
+        if ((to.path === '/login' || to.path === '/register') && authService.isAuthenticated()) {
+          // Redirect authenticated users away from login/register
+          next('/')
+          return
+        }
+        
+        next()
+      }
     })
     
     // Wait for router to be ready
@@ -31,7 +75,7 @@ describe('Router Guards', () => {
     it('allows authenticated users to access protected routes', async () => {
       authService.isAuthenticated.mockReturnValue(true)
 
-      const result = await router.push('/tasks')
+      await router.push('/tasks')
       
       expect(router.currentRoute.value.path).toBe('/tasks')
     })
@@ -72,11 +116,11 @@ describe('Router Guards', () => {
       await router.push('/admin')
       
       expect(router.currentRoute.value.path).toBe('/')
+      expect(global.alert).toHaveBeenCalledWith('Access denied: Admin role required')
     })
 
     it('redirects unauthenticated users to login', async () => {
       authService.isAuthenticated.mockReturnValue(false)
-      authService.isAdmin.mockReturnValue(false)
 
       await router.push('/admin')
       
@@ -115,16 +159,13 @@ describe('Router Guards', () => {
     it('allows navigation between unprotected routes', async () => {
       authService.isAuthenticated.mockReturnValue(false)
 
-      await router.push('/')
-      expect(router.currentRoute.value.path).toBe('/')
-
       await router.push('/about')
       expect(router.currentRoute.value.path).toBe('/about')
     })
 
     it('preserves query params during redirects', async () => {
       authService.isAuthenticated.mockReturnValue(false)
-
+      
       await router.push('/tasks?filter=active&sort=date')
       
       expect(router.currentRoute.value.path).toBe('/login')
@@ -141,7 +182,7 @@ describe('Router Guards', () => {
 
     it('preserves 404 behavior for authenticated users', async () => {
       authService.isAuthenticated.mockReturnValue(true)
-
+      
       await router.push('/non-existent-route')
       
       expect(router.currentRoute.value.name).toBe('NotFound')

@@ -79,6 +79,25 @@ export const handlers = [
     }, { status: 201 })
   }),
 
+  http.post(`${API_BASE}/auth/signup`, async ({ request }) => {
+    const body = await request.json()
+    
+    // Simulate existing user error
+    if (body.username === 'existinguser') {
+      return HttpResponse.json(
+        { message: 'Username already exists' },
+        { status: 400 }
+      )
+    }
+    
+    return HttpResponse.json({
+      id: 2,
+      username: body.username,
+      email: body.email,
+      role: 'USER'
+    }, { status: 201 })
+  }),
+
   // Task endpoints
   http.get(`${API_BASE}/tasks`, () => {
     return HttpResponse.json(mockTasks)
@@ -192,6 +211,20 @@ export const handlers = [
         { id: 2, username: 'assignee', email: 'assignee@example.com', role: 'USER' },
         { id: 3, username: 'admin', email: 'admin@example.com', role: 'ADMIN' }
       ])
+    }
+    
+    return HttpResponse.json(
+      { message: 'Unauthorized' },
+      { status: 401 }
+    )
+  }),
+
+  // Current user endpoint
+  http.get(`${API_BASE}/users/me`, ({ request }) => {
+    const authHeader = request.headers.get('Authorization')
+    
+    if (authHeader && authHeader.includes('mock-jwt-token')) {
+      return HttpResponse.json(mockUser)
     }
     
     return HttpResponse.json(

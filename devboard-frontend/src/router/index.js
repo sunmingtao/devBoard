@@ -7,6 +7,7 @@ import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Profile from '../views/Profile.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
+import authService from '../services/authService'
 
 const routes = [
   {
@@ -78,6 +79,14 @@ const routes = [
       requiresAdmin: true,
     },
   },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../views/NotFound.vue'),
+    meta: {
+      title: 'DevBoard - Page Not Found',
+    },
+  },
 ]
 
 const router = createRouter({
@@ -92,40 +101,37 @@ router.beforeEach((to, from, next) => {
   
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      // Redirect to login if not authenticated
-      next('/login')
+    if (!authService.isAuthenticated()) {
+      // Redirect to login with return URL
+      next({
+        path: '/login',
+        query: { returnUrl: to.fullPath }
+      })
       return
     }
     
     // Check if route requires admin role
     if (to.meta.requiresAdmin) {
-      const userStr = localStorage.getItem('user')
-      if (!userStr) {
-        next('/login')
-        return
-      }
-      
-      try {
-        const user = JSON.parse(userStr)
-        if (user.role !== 'ADMIN') {
-          // Redirect to home if not admin
-          alert('Access denied: Admin role required')
-          next('/')
-          return
-        }
-      } catch (error) {
-        console.error('Failed to parse user data:', error)
-        next('/login')
+      if (!authService.isAdmin()) {
+        // Redirect to home if not admin
+        alert('Access denied: Admin role required')
+        next('/')
         return
       }
     }
     
     next()
   } else {
+    // Handle guest routes (login/register)
+    if ((to.path === '/login' || to.path === '/register') && authService.isAuthenticated()) {
+      // Redirect authenticated users away from login/register
+      next('/')
+      return
+    }
+    
     next()
   }
 })
 
+export { routes }
 export default router

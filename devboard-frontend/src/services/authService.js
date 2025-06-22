@@ -61,7 +61,25 @@ export const authService = {
   // Get stored user info
   getUser() {
     const userStr = localStorage.getItem('user')
-    return userStr ? JSON.parse(userStr) : null
+    if (!userStr) return null
+    
+    try {
+      return JSON.parse(userStr)
+    } catch (error) {
+      console.error('Failed to parse user data:', error)
+      return null
+    }
+  },
+
+  // Alias for getUser to match test expectations
+  getCurrentUser() {
+    return this.getUser()
+  },
+
+  // Check if current user is admin
+  isAdmin() {
+    const user = this.getUser()
+    return !!(user && user.role === 'ADMIN')
   },
 
   // Decode JWT token to get payload
