@@ -73,19 +73,10 @@ const handleSubmit = async () => {
   loading.value = true
 
   try {
-    const response = await authService.login(formData.value)
+    const data = await authService.login(formData.value.username, formData.value.password)
     
-    // Store user data (response has unified format with data field)
-    localStorage.setItem('token', response.data.token)
-    localStorage.setItem('user', JSON.stringify({
-      id: response.data.id,
-      username: response.data.username,
-      email: response.data.email,
-      nickname: response.data.nickname,
-      role: response.data.role
-    }))
-    
-    // Redirect to home or previous page
+    // authService.login already stores the token and user data internally
+    // Just redirect to home page
     router.push('/')
   } catch (err) {
     error.value = err.response?.data?.message || 'Invalid username or password'
