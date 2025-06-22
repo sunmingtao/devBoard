@@ -20,7 +20,8 @@ describe('authService', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        role: 'USER'
+        role: 'USER',
+        nickname: 'Test User'
       }))
 
       // Check return value
@@ -30,13 +31,14 @@ describe('authService', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        role: 'USER'
+        role: 'USER',
+        nickname: 'Test User'
       })
     })
 
     it('throws error on login failure', async () => {
       await expect(authService.login('wrong', 'credentials'))
-        .rejects.toThrow('Request failed with status code 401')
+        .rejects.toThrow('Invalid credentials')
     })
   })
 
@@ -63,7 +65,7 @@ describe('authService', () => {
         username: 'existinguser',
         email: 'test@example.com',
         password: 'password123'
-      })).rejects.toThrow('Request failed with status code 400')
+      })).rejects.toThrow('Username already exists')
     })
   })
 

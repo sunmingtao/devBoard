@@ -13,40 +13,56 @@ const authApi = axios.create({
 export const authService = {
   // Register new user
   async register(userData) {
-    const response = await authApi.post('/signup', userData)
-    const apiResponse = response.data
-    
-    // Backend returns {code, message, data} structure
-    if (apiResponse.code !== 0) {
-      throw new Error(apiResponse.message || 'Registration failed')
+    try {
+      const response = await authApi.post('/signup', userData)
+      const apiResponse = response.data
+      
+      // Backend returns {code, message, data} structure
+      if (apiResponse.code !== 0) {
+        throw new Error(apiResponse.message || 'Registration failed')
+      }
+      
+      return apiResponse.data
+    } catch (error) {
+      // Handle axios errors or API errors
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message)
+      }
+      throw error
     }
-    
-    return apiResponse.data
   },
 
   // Login user
   async login(username, password) {
-    const response = await authApi.post('/login', { username, password })
-    const apiResponse = response.data
-    
-    // Backend returns {code, message, data} structure
-    if (apiResponse.code !== 0) {
-      throw new Error(apiResponse.message || 'Login failed')
+    try {
+      const response = await authApi.post('/login', { username, password })
+      const apiResponse = response.data
+      
+      // Backend returns {code, message, data} structure
+      if (apiResponse.code !== 0) {
+        throw new Error(apiResponse.message || 'Login failed')
+      }
+      
+      const data = apiResponse.data
+      
+      // Store token and user data
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify({
+        id: data.id,
+        username: data.username,
+        email: data.email,
+        role: data.role,
+        nickname: data.nickname
+      }))
+      
+      return data
+    } catch (error) {
+      // Handle axios errors or API errors
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message)
+      }
+      throw error
     }
-    
-    const data = apiResponse.data
-    
-    // Store token and user data
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify({
-      id: data.id,
-      username: data.username,
-      email: data.email,
-      role: data.role,
-      nickname: data.nickname
-    }))
-    
-    return data
   },
 
   // Get current user info

@@ -54,12 +54,17 @@ export const handlers = [
     
     if (username === 'testuser' && password === 'password123') {
       return HttpResponse.json({
-        token: 'mock-jwt-token',
-        type: 'Bearer',
-        id: 1,
-        username: 'testuser',
-        email: 'test@example.com',
-        role: 'USER'
+        code: 0,
+        message: 'success',
+        data: {
+          token: 'mock-jwt-token',
+          type: 'Bearer',
+          id: 1,
+          username: 'testuser',
+          email: 'test@example.com',
+          role: 'USER',
+          nickname: 'Test User'
+        }
       })
     }
     
@@ -91,10 +96,14 @@ export const handlers = [
     }
     
     return HttpResponse.json({
-      id: 2,
-      username: body.username,
-      email: body.email,
-      role: 'USER'
+      code: 0,
+      message: 'success',
+      data: {
+        id: 2,
+        username: body.username,
+        email: body.email,
+        role: 'USER'
+      }
     }, { status: 201 })
   }),
 
