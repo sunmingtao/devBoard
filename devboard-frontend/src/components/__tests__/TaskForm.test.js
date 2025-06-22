@@ -190,7 +190,8 @@ describe('TaskForm.vue', () => {
       wrapper = mount(TaskForm, {
         props: {
           mode: 'create',
-          loading: true
+          loading: true,
+          visible: true
         }
       })
 

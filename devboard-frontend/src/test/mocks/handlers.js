@@ -182,6 +182,24 @@ export const handlers = [
     )
   }),
 
+  // Users list endpoint
+  http.get(`${API_BASE}/users`, ({ request }) => {
+    const authHeader = request.headers.get('Authorization')
+    
+    if (authHeader && authHeader.includes('mock-jwt-token')) {
+      return HttpResponse.json([
+        mockUser,
+        { id: 2, username: 'assignee', email: 'assignee@example.com', role: 'USER' },
+        { id: 3, username: 'admin', email: 'admin@example.com', role: 'ADMIN' }
+      ])
+    }
+    
+    return HttpResponse.json(
+      { message: 'Unauthorized' },
+      { status: 401 }
+    )
+  }),
+
   // Admin endpoints
   http.get(`${API_BASE}/admin/dashboard`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')

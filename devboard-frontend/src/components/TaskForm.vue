@@ -130,12 +130,19 @@ export default {
     visible: {
       type: Boolean,
       default: false
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['close', 'submit'],
   setup(props, { emit }) {
-    const loading = ref(false)
+    const internalLoading = ref(false)
     const submitError = ref('')
+    
+    // Use external loading prop if provided, otherwise use internal loading
+    const loading = computed(() => props.loading || internalLoading.value)
     const users = ref([])
 
     // Form data
@@ -215,7 +222,7 @@ export default {
         return
       }
 
-      loading.value = true
+      internalLoading.value = true
       submitError.value = ''
 
       try {
@@ -230,7 +237,7 @@ export default {
         emit('submit', taskData)
       } catch (error) {
         submitError.value = error.message || 'An unexpected error occurred'
-        loading.value = false
+        internalLoading.value = false
       }
     }
 
