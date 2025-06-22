@@ -87,18 +87,22 @@ api.interceptors.response.use(
       }
       
       // Dispatch custom event for other components to handle
-      window.dispatchEvent(new CustomEvent('auth-error', {
-        detail: { 
-          status: 401, 
-          message: message,
-          redirectTo: '/login'
-        }
-      }))
-      
-      // Small delay to allow components to handle the event
-      setTimeout(() => {
-        window.location.href = '/login'
-      }, 100)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth-error', {
+          detail: { 
+            status: 401, 
+            message: message,
+            redirectTo: '/login'
+          }
+        }))
+        
+        // Small delay to allow components to handle the event
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login'
+          }
+        }, 100)
+      }
     } else if (error.response?.status === 403) {
       console.error('🚫 Forbidden - insufficient permissions')
       
