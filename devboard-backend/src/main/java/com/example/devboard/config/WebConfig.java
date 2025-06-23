@@ -17,7 +17,8 @@ public class WebConfig implements WebMvcConfigurer {
                     "http://localhost:5174", 
                     "http://localhost:5175",
                     "http://localhost:3000",
-                    "https://d58an524la6th.cloudfront.net"
+                    "https://d58an524la6th.cloudfront.net",
+                    "https://d2j8m7rly4way3.cloudfront.net"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
