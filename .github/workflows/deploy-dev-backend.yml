@@ -26,7 +26,7 @@ jobs:
     - name: Build with Maven
       working-directory: ./devboard-backend
       run: |
-        mvn clean compile package -DskipTests
+        mvn clean compile test package
         ls -la target/
     
     - name: Configure AWS credentials
