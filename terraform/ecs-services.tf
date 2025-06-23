@@ -48,7 +48,7 @@ resource "aws_ecs_task_definition" "dev_backend" {
         },
         {
           name  = "CORS_ALLOWED_ORIGINS"
-          value = "http://${aws_lb.dev_alb.dns_name},http://localhost:3000,http://localhost:5173"
+          value = "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,https://d2j8m7rly4way3.cloudfront.net"
         }
       ]
       
