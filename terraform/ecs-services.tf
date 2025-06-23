@@ -27,23 +27,15 @@ resource "aws_ecs_task_definition" "dev_backend" {
           value = "mysql"
         },
         {
-          name  = "DB_HOST"
-          value = aws_db_instance.dev_mysql.address
+          name  = "DATABASE_URL"
+          value = "jdbc:mysql://${aws_db_instance.dev_mysql.address}:${aws_db_instance.dev_mysql.port}/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true"
         },
         {
-          name  = "DB_PORT"
-          value = tostring(aws_db_instance.dev_mysql.port)
-        },
-        {
-          name  = "DB_NAME"
-          value = "devboard"
-        },
-        {
-          name  = "DB_USERNAME"
+          name  = "DATABASE_USERNAME"
           value = "admin"
         },
         {
-          name  = "DB_PASSWORD"
+          name  = "DATABASE_PASSWORD"
           value = "devboard123!"
         },
         {
@@ -71,7 +63,7 @@ resource "aws_ecs_task_definition" "dev_backend" {
       }
       
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+        command     = ["CMD-SHELL", "curl -f http://localhost:8080/api/health || exit 1"]
         interval    = 30
         timeout     = 5
         retries     = 3
