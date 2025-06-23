@@ -61,6 +61,96 @@ jobs:
     
     - name: Wait for service stability
       run: |
+        echo "Waiting for ECS service to stabilize..."
         aws ecs wait services-stable \
           --cluster devboard-dev-cluster \
           --services devboard-dev-backend
+        echo "ECS service is stable"
+    
+    - name: Get ALB DNS name for health check
+      id: get-alb-dns
+      run: |
+        ALB_DNS=$(aws elbv2 describe-load-balancers \
+          --names devboard-dev-alb \
+          --query 'LoadBalancers[0].DNSName' \
+          --output text)
+        echo "ALB_DNS=$ALB_DNS" >> $GITHUB_OUTPUT
+        echo "ALB DNS: $ALB_DNS"
+    
+    - name: Health check - wait for targets to be healthy
+      run: |
+        echo "Waiting for ALB targets to become healthy..."
+        TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups \
+          --names devboard-dev-backend-tg \
+          --query 'TargetGroups[0].TargetGroupArn' \
+          --output text)
+        
+        echo "Target Group ARN: $TARGET_GROUP_ARN"
+        
+        # Wait up to 5 minutes for targets to become healthy
+        for i in {1..30}; do
+          HEALTHY_TARGETS=$(aws elbv2 describe-target-health \
+            --target-group-arn "$TARGET_GROUP_ARN" \
+            --query 'TargetHealthDescriptions[?TargetHealth.State==`healthy`]' \
+            --output json | jq length)
+          
+          echo "Attempt $i/30: $HEALTHY_TARGETS healthy targets"
+          
+          if [ "$HEALTHY_TARGETS" -gt 0 ]; then
+            echo "✅ Targets are healthy!"
+            break
+          fi
+          
+          if [ $i -eq 30 ]; then
+            echo "❌ Timeout waiting for healthy targets"
+            aws elbv2 describe-target-health --target-group-arn "$TARGET_GROUP_ARN"
+            exit 1
+          fi
+          
+          sleep 10
+        done
+    
+    - name: Health check - verify API endpoints
+      run: |
+        ALB_DNS="${{ steps.get-alb-dns.outputs.ALB_DNS }}"
+        
+        echo "Testing health endpoints..."
+        
+        # Test direct ALB health endpoint
+        echo "Testing http://$ALB_DNS/api/health"
+        if curl -f --max-time 10 "http://$ALB_DNS/api/health"; then
+          echo "✅ Direct ALB health check passed"
+        else
+          echo "❌ Direct ALB health check failed"
+          exit 1
+        fi
+        
+        # Test hello endpoint for more detailed response
+        echo "Testing http://$ALB_DNS/api/hello"
+        RESPONSE=$(curl -s --max-time 10 "http://$ALB_DNS/api/hello")
+        echo "API Response: $RESPONSE"
+        
+        # Verify the response contains expected data
+        if echo "$RESPONSE" | jq -e '.data.status == "running"' > /dev/null; then
+          echo "✅ API is responding correctly"
+        else
+          echo "❌ API response is invalid"
+          exit 1
+        fi
+    
+    - name: Display deployment success
+      run: |
+        ALB_DNS="${{ steps.get-alb-dns.outputs.ALB_DNS }}"
+        echo "🎉 Backend deployment successful!"
+        echo ""
+        echo "📋 Deployment Summary:"
+        echo "- ECS Cluster: devboard-dev-cluster"
+        echo "- Service: devboard-dev-backend"
+        echo "- Image: devboard-backend:dev-latest"
+        echo "- ALB Endpoint: http://$ALB_DNS"
+        echo ""
+        echo "🔗 Health Check URLs:"
+        echo "- Direct: http://$ALB_DNS/api/health"
+        echo "- Via CloudFront: https://d2j8m7rly4way3.cloudfront.net/api/health"
+        echo ""
+        echo "✅ All health checks passed - backend is ready!"

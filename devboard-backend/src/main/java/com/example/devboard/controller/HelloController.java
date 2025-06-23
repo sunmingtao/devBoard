@@ -25,4 +25,11 @@ public class HelloController {
         data.put("timestamp", java.time.LocalDateTime.now().toString());
         return ApiResponse.success(data);
     }
+    
+    @GetMapping("/health")
+    @Operation(summary = "Simple health check", description = "Returns basic health status for load balancer")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Service is healthy")
+    public ApiResponse<String> health() {
+        return ApiResponse.success("OK");
+    }
 }
