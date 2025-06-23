@@ -12,7 +12,7 @@ resource "aws_ecs_task_definition" "dev_backend" {
   container_definitions = jsonencode([
     {
       name  = "backend"
-      image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/devboard-backend:latest"
+      image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/devboard-backend:dev-latest"
       
       portMappings = [
         {
