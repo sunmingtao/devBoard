@@ -1,25 +1,34 @@
-# Use OpenJDK 21 as the base image
-# This provides Java 21 runtime environment
-FROM openjdk:21-jdk-slim
+# ---------- Stage 1: Build ----------
+FROM maven:3.9.9-eclipse-temurin-21 AS builder
 
-# Set working directory inside container
-# All subsequent commands will run from this directory
+WORKDIR /build
+
+# 先复制 pom.xml（利用缓存）
+COPY pom.xml .
+
+# 下载依赖（加速后续 build）
+RUN mvn dependency:go-offline
+
+# 再复制源码
+COPY src ./src
+
+# 构建 jar
+RUN mvn clean package -DskipTests
+
+
+# ---------- Stage 2: Runtime ----------
+FROM eclipse-temurin:21-jre-jammy
+
 WORKDIR /app
 
-# Copy the built JAR file from target/ to container
-# We'll build this JAR first using Maven
-COPY target/devboard-*.jar app.jar
+# 从 build 阶段复制 jar
+COPY --from=builder /build/target/devboard-*.jar app.jar
 
-# Expose port 8080 
-# This tells Docker that our app uses port 8080
-# (Doesn't actually publish the port - that's done with -p flag when running)
+# 暴露端口
 EXPOSE 8080
 
-# Set JVM options for better container performance
-# -XX:+UseContainerSupport: Make JVM aware it's running in container
-# -Xmx512m: Limit memory usage to 512MB
+# JVM 优化
 ENV JAVA_OPTS="-XX:+UseContainerSupport -Xmx512m"
 
-# Command to run when container starts
-# This starts our Spring Boot application
-CMD ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# 启动
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
