@@ -24,7 +24,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
@@ -69,6 +69,7 @@ pipeline {
                             cd /opt/devboard &&
                             cat > .env <<EOF
 IMAGE_TAG=${IMAGE_TAG}
+CORS_ALLOWED_ORIGINS=http://${params.VM_IP}:3000,http://localhost:3000
 EOF
                             docker compose pull &&
                             docker compose up -d
