@@ -1,25 +1,44 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '15'))
+    }
+
     parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
         string(name: 'VM_IP', defaultValue: '139.180.161.144', description: 'Target VM public IP')
+        string(name: 'SSH_USER', defaultValue: 'root', description: 'SSH user for target VM')
+        string(name: 'DEPLOY_PATH', defaultValue: '/opt/devboard', description: 'Deployment path on target VM')
+        string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag override. Leave blank to use BUILD_NUMBER')
     }
 
     environment {
-        IMAGE_NAME_BACKEND = 'sunmingtao/devboard-backend'
+        IMAGE_NAME_BACKEND  = 'sunmingtao/devboard-backend'
         IMAGE_NAME_FRONTEND = 'sunmingtao/devboard-frontend'
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        REMOTE_USER = 'root'
+        EFFECTIVE_IMAGE_TAG = "${params.DOCKER_IMAGE_TAG ?: env.BUILD_NUMBER}"
+        GIT_REPO_URL        = 'https://github.com/sunmingtao/devBoard.git'
+        COMPOSE_FILE        = 'docker-compose.yml'
     }
 
     stages {
 
-
         stage('Validate Parameters') {
             steps {
                 script {
+                    if (!params.BRANCH_NAME?.trim()) {
+                        error("BRANCH_NAME is required")
+                    }
                     if (!params.VM_IP?.trim()) {
-                        error("VM_IP parameter is required")
+                        error("VM_IP is required")
+                    }
+                    if (!params.SSH_USER?.trim()) {
+                        error("SSH_USER is required")
+                    }
+                    if (!params.DEPLOY_PATH?.trim()) {
+                        error("DEPLOY_PATH is required")
                     }
                 }
             }
@@ -27,35 +46,72 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'main',
+                git branch: params.BRANCH_NAME,
                     credentialsId: 'devboard-repo',
-                    url: 'https://github.com/sunmingtao/devBoard.git'
+                    url: env.GIT_REPO_URL
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Show Build Info') {
             steps {
-                sh 'docker build -t devboard-backend:latest ./devboard-backend'
-                sh 'docker build -t devboard-frontend:latest ./devboard-frontend'
+                sh """
+                    echo "Branch: ${params.BRANCH_NAME}"
+                    echo "VM IP: ${params.VM_IP}"
+                    echo "SSH User: ${params.SSH_USER}"
+                    echo "Deploy Path: ${params.DEPLOY_PATH}"
+                    echo "Image Tag: ${EFFECTIVE_IMAGE_TAG}"
+                """
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Build Docker Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                sh '''
+                    set -eux
+                    docker build -t devboard-backend:latest ./devboard-backend
+                    docker build -t devboard-frontend:latest ./devboard-frontend
+                '''
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh """
+                        set -eux
                         echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+
                         docker tag devboard-backend:latest ${IMAGE_NAME_BACKEND}:latest
-                        docker tag devboard-backend:latest ${IMAGE_NAME_BACKEND}:${IMAGE_TAG}
+                        docker tag devboard-backend:latest ${IMAGE_NAME_BACKEND}:${EFFECTIVE_IMAGE_TAG}
                         docker push ${IMAGE_NAME_BACKEND}:latest
-                        docker push ${IMAGE_NAME_BACKEND}:${IMAGE_TAG}
+                        docker push ${IMAGE_NAME_BACKEND}:${EFFECTIVE_IMAGE_TAG}
 
                         docker tag devboard-frontend:latest ${IMAGE_NAME_FRONTEND}:latest
-                        docker tag devboard-frontend:latest ${IMAGE_NAME_FRONTEND}:${IMAGE_TAG}
+                        docker tag devboard-frontend:latest ${IMAGE_NAME_FRONTEND}:${EFFECTIVE_IMAGE_TAG}
                         docker push ${IMAGE_NAME_FRONTEND}:latest
-                        docker push ${IMAGE_NAME_FRONTEND}:${IMAGE_TAG}
+                        docker push ${IMAGE_NAME_FRONTEND}:${EFFECTIVE_IMAGE_TAG}
+
+                        docker logout
                     """
                 }
+            }
+        }
+
+        stage('Prepare Deployment Files') {
+            steps {
+                sh """
+                    cat > .env <<EOF
+IMAGE_TAG=${EFFECTIVE_IMAGE_TAG}
+CORS_ALLOWED_ORIGINS=http://${params.VM_IP}:3000,http://localhost:3000
+EOF
+
+                    echo "Generated .env:"
+                    cat .env
+                """
             }
         }
 
@@ -63,20 +119,53 @@ pipeline {
             steps {
                 sshagent(credentials: ['digitalocean-vm-ssh']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${params.VM_IP} 'mkdir -p /opt/devboard'
-                        scp -o StrictHostKeyChecking=no docker-compose.yml ${REMOTE_USER}@${params.VM_IP}:/opt/devboard/docker-compose.yml
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${params.VM_IP} '
-                            cd /opt/devboard &&
-                            cat > .env <<EOF
-IMAGE_TAG=${IMAGE_TAG}
-CORS_ALLOWED_ORIGINS=http://${params.VM_IP}:3000,http://localhost:3000
-EOF
-                            docker compose pull &&
-                            docker compose up -d
+                        set -eux
+
+                        ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
+                            mkdir -p ${params.DEPLOY_PATH}
+                        '
+
+                        scp -o StrictHostKeyChecking=no ${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
+                        scp -o StrictHostKeyChecking=no .env ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/.env
+
+                        ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
+                            set -eux
+                            cd ${params.DEPLOY_PATH}
+                            docker compose pull
+                            docker compose up -d --remove-orphans
+                            docker compose ps
                         '
                     """
                 }
             }
+        }
+
+        stage('Post Deploy Verification') {
+            steps {
+                sshagent(credentials: ['digitalocean-vm-ssh']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
+                            set -eux
+                            cd ${params.DEPLOY_PATH}
+                            docker compose ps
+                            docker images | grep devboard || true
+                        '
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment succeeded. Frontend: http://${params.VM_IP}:3000"
+            echo "Backend: http://${params.VM_IP}:8080"
+        }
+        failure {
+            echo "Pipeline failed. Check the stage logs above."
+        }
+        always {
+            cleanWs()
         }
     }
 }
