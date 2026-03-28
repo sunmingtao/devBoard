@@ -1,14 +1,30 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'VM_IP', defaultValue: '139.180.161.144', description: 'Target VM public IP')
+    }
+
     environment {
         IMAGE_NAME_BACKEND = 'sunmingtao/devboard-backend'
         IMAGE_NAME_FRONTEND = 'sunmingtao/devboard-frontend'
         IMAGE_TAG = "${BUILD_NUMBER}"
+        REMOTE_USER = 'root'
     }
 
     stages {
 
+
+        stage('Validate Parameters') {
+            steps {
+                script {
+                    if (!params.VM_IP?.trim()) {
+                        error("VM_IP parameter is required")
+                    }
+                }
+            }
+        }
+        
         stage('Checkout Code') {
             steps {
                 git branch: 'main',
@@ -33,6 +49,7 @@ pipeline {
                         docker tag devboard-backend:latest ${IMAGE_NAME_BACKEND}:${IMAGE_TAG}
                         docker push ${IMAGE_NAME_BACKEND}:latest
                         docker push ${IMAGE_NAME_BACKEND}:${IMAGE_TAG}
+
                         docker tag devboard-frontend:latest ${IMAGE_NAME_FRONTEND}:latest
                         docker tag devboard-frontend:latest ${IMAGE_NAME_FRONTEND}:${IMAGE_TAG}
                         docker push ${IMAGE_NAME_FRONTEND}:latest
@@ -46,9 +63,9 @@ pipeline {
             steps {
                 sshagent(credentials: ['digitalocean-vm-ssh']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no root@139.180.161.144 'mkdir -p /opt/devboard'
-                        scp -o StrictHostKeyChecking=no docker-compose.yml root@139.180.161.144:/opt/devboard/docker-compose.yml
-                        ssh -o StrictHostKeyChecking=no root@139.180.161.144 '
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${params.VM_IP} 'mkdir -p /opt/devboard'
+                        scp -o StrictHostKeyChecking=no docker-compose.yml ${REMOTE_USER}@${params.VM_IP}:/opt/devboard/docker-compose.yml
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${params.VM_IP} '
                             cd /opt/devboard &&
                             cat > .env <<EOF
 IMAGE_TAG=${IMAGE_TAG}
