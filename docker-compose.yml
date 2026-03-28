@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
     container_name: devboard-mysql
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: devboard
@@ -14,18 +12,16 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --innodb-buffer-pool-size=256M
     networks:
       - devboard-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
 
   backend:
-    build: ./devboard-backend
+    image: sunmingtao/devboard-backend:${IMAGE_TAG}
     container_name: devboard-backend
-    restart: always
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
@@ -33,16 +29,16 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: devboard_user
       SPRING_DATASOURCE_PASSWORD: devboard_pass
+      CORS_ALLOWED_ORIGINS: http://139.180.161.144:3000,http://localhost:3000
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mysql
     networks:
       - devboard-network
 
   frontend:
-    build: ./devboard-frontend
+    image: sunmingtao/devboard-frontend:${IMAGE_TAG}
     container_name: devboard-frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
