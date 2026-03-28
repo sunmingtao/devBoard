@@ -1,9 +1,11 @@
 import axios from 'axios'
 
+const API_URL = '/api'
+
 // Environment-based configuration
 const config = {
   // Use environment variable or fallback to localhost
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL: API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
