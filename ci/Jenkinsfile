@@ -13,6 +13,7 @@ pipeline {
         string(name: 'SSH_USER', defaultValue: 'root', description: 'SSH user for target VM')
         string(name: 'DEPLOY_PATH', defaultValue: '/opt/devboard', description: 'Deployment path on target VM')
         string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag override. Leave blank to use BUILD_NUMBER')
+        string(name: 'DEPLOYMENT_MODE_DIR', defaultValue: 'deploy/docker-compose/single-vm', description: 'Deployment configuration directory')
     }
 
     environment {
@@ -23,7 +24,6 @@ pipeline {
         APP_BACKEND_DIR     = 'apps/backend'
         APP_FRONTEND_DIR    = 'apps/frontend'
         ENV_FILE_NAME       = '.env'
-        DEPLOYMENT_MODE_DIR = 'deploy/docker-compose/single-vm'
         COMPOSE_FILE        = 'docker-compose.yml'
     }
 
