@@ -20,6 +20,9 @@ pipeline {
         IMAGE_NAME_FRONTEND = 'sunmingtao/devboard-frontend'
         EFFECTIVE_IMAGE_TAG = "${params.DOCKER_IMAGE_TAG ?: env.BUILD_NUMBER}"
         GIT_REPO_URL        = 'https://github.com/sunmingtao/devBoard.git'
+        APP_BACKEND_DIR     = 'apps/backend'
+        APP_FRONTEND_DIR    = 'apps/frontend'
+        DEPLOYMENT_MODE_DIR = 'deploy/docker-compose/single-vm'
         COMPOSE_FILE        = 'docker-compose.yml'
     }
 
@@ -68,8 +71,8 @@ pipeline {
             steps {
                 sh '''
                     set -eux
-                    docker build -t devboard-backend:latest ./apps/backend
-                    docker build -t devboard-frontend:latest ./apps/frontend
+                    docker build -t devboard-backend:latest ./${APP_BACKEND_DIR}
+                    docker build -t devboard-frontend:latest ./${APP_FRONTEND_DIR}
                 '''
             }
         }
@@ -125,7 +128,7 @@ EOF
                             mkdir -p ${params.DEPLOY_PATH}
                         '
 
-                        scp -o StrictHostKeyChecking=no deploy/docker-compose/single-vm/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
+                        scp -o StrictHostKeyChecking=no ${DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
                         scp -o StrictHostKeyChecking=no .env ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/.env
 
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
