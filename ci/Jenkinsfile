@@ -22,6 +22,7 @@ pipeline {
         GIT_REPO_URL        = 'https://github.com/sunmingtao/devBoard.git'
         APP_BACKEND_DIR     = 'apps/backend'
         APP_FRONTEND_DIR    = 'apps/frontend'
+        ENV_FILE_NAME       = '.env'
         DEPLOYMENT_MODE_DIR = 'deploy/docker-compose/single-vm'
         COMPOSE_FILE        = 'docker-compose.yml'
     }
@@ -67,6 +68,17 @@ pipeline {
             }
         }
 
+        stage('Validate Repository Layout') {
+            steps {
+                sh """
+                    set -eux
+                    test -d "${APP_BACKEND_DIR}"
+                    test -d "${APP_FRONTEND_DIR}"
+                    test -f "${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE}"
+                """
+            }
+        }
+
         stage('Build Docker Images') {
             steps {
                 sh '''
@@ -107,13 +119,13 @@ pipeline {
         stage('Prepare Deployment Files') {
             steps {
                 sh """
-                    cat > .env <<EOF
+                    cat > ${ENV_FILE_NAME} <<EOF
 IMAGE_TAG=${EFFECTIVE_IMAGE_TAG}
 CORS_ALLOWED_ORIGINS=http://${params.VM_IP}:3000,http://localhost:3000
 EOF
 
-                    echo "Generated .env:"
-                    cat .env
+                    echo "Generated ${ENV_FILE_NAME}:"
+                    cat ${ENV_FILE_NAME}
                 """
             }
         }
@@ -129,7 +141,7 @@ EOF
                         '
 
                         scp -o StrictHostKeyChecking=no ${DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
-                        scp -o StrictHostKeyChecking=no .env ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/.env
+                        scp -o StrictHostKeyChecking=no ${ENV_FILE_NAME} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/.env
 
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
                             set -eux
