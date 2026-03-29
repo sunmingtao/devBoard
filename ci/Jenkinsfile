@@ -140,7 +140,7 @@ EOF
                             mkdir -p ${params.DEPLOY_PATH}
                         '
 
-                        scp -o StrictHostKeyChecking=no ${DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
+                        scp -o StrictHostKeyChecking=no ${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
                         scp -o StrictHostKeyChecking=no ${ENV_FILE_NAME} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/.env
 
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
