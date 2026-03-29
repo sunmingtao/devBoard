@@ -68,8 +68,8 @@ pipeline {
             steps {
                 sh '''
                     set -eux
-                    docker build -t devboard-backend:latest ./devboard-backend
-                    docker build -t devboard-frontend:latest ./devboard-frontend
+                    docker build -t devboard-backend:latest ./apps/backend
+                    docker build -t devboard-frontend:latest ./apps/frontend
                 '''
             }
         }
@@ -125,7 +125,7 @@ EOF
                             mkdir -p ${params.DEPLOY_PATH}
                         '
 
-                        scp -o StrictHostKeyChecking=no ${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
+                        scp -o StrictHostKeyChecking=no deploy/docker-compose/single-vm/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
                         scp -o StrictHostKeyChecking=no .env ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/.env
 
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
