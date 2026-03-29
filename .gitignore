@@ -66,3 +66,4 @@ replay_pid*
 # AWS credentials
 rds-password.txt
 infrastructure/rds-credentials.md
+.terraform/

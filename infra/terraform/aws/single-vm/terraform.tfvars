@@ -1,0 +1,9 @@
+aws_region         = "ap-southeast-2"
+availability_zone  = "ap-southeast-2a"
+instance_type      = "t4g.small"
+key_name           = "devboard-aws"
+public_key_path    = "~/.ssh/devboard-aws.pub"
+ssh_ingress_cidr   = "119.18.2.3/32"
+app_ingress_cidrs  = ["0.0.0.0/0"]
+project_name       = "devboard"
+environment        = "dev"
