@@ -5,8 +5,6 @@
 
 A modern task management system built with Spring Boot and Vue.js for demonstrating full-stack development skills.
 
-🌐 **Live Demo:** https://d58an524la6th.cloudfront.net/
-
 ## 🚀 Quick Start
 
 ### Backend Setup (Spring Boot)
