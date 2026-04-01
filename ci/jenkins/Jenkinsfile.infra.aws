@@ -1,0 +1,211 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '15'))
+    }
+
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+        choice(name: 'TF_ACTION', choices: ['plan', 'apply'], description: 'Terraform action')
+        string(name: 'TF_DIR', defaultValue: 'infra/terraform/aws/single-vm', description: 'Terraform working directory')
+        string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
+    }
+
+    environment {
+        GIT_REPO_URL = 'https://github.com/sunmingtao/devBoard.git'
+    }
+
+    stages {
+
+        stage('Validate Parameters') {
+            steps {
+                script {
+                    if (!params.BRANCH_NAME?.trim()) {
+                        error("BRANCH_NAME is required")
+                    }
+                    if (!params.TF_DIR?.trim()) {
+                        error("TF_DIR is required")
+                    }
+                    if (!params.AWS_REGION?.trim()) {
+                        error("AWS_REGION is required")
+                    }
+                }
+            }
+        }
+
+        stage('Checkout Code') {
+            steps {
+                git branch: params.BRANCH_NAME,
+                    credentialsId: 'devboard-repo',
+                    url: env.GIT_REPO_URL
+            }
+        }
+
+        stage('Show Build Info') {
+            steps {
+                sh """
+                    echo "Branch: ${params.BRANCH_NAME}"
+                    echo "Terraform Action: ${params.TF_ACTION}"
+                    echo "Terraform Directory: ${params.TF_DIR}"
+                    echo "AWS Region: ${params.AWS_REGION}"
+                """
+            }
+        }
+
+        stage('Validate Terraform Directory') {
+            steps {
+                sh """
+                    set -eux
+                    test -d "${params.TF_DIR}"
+                    test -f "${params.TF_DIR}/main.tf"
+                """
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-devboard-terraform',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    dir("${params.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform init
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-devboard-terraform',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    dir("${params.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform validate
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-devboard-terraform',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    dir("${params.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform plan -out=tfplan
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            when {
+                expression { params.TF_ACTION == 'apply' }
+            }
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-devboard-terraform',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    dir("${params.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform apply -auto-approve tfplan
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Show Terraform Outputs') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-devboard-terraform',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    dir("${params.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform output
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Capture Public IP') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-devboard-terraform',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    dir("${params.TF_DIR}") {
+                        script {
+                            env.TF_PUBLIC_IP = sh(
+                                script: """
+                                    export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                                    terraform output -raw public_ip
+                                """,
+                                returnStdout: true
+                            ).trim()
+
+                            env.TF_SSH_COMMAND = sh(
+                                script: """
+                                    export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                                    terraform output -raw ssh_command
+                                """,
+                                returnStdout: true
+                            ).trim()
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Show Connection Info') {
+            steps {
+                echo "Terraform public IP: ${env.TF_PUBLIC_IP}"
+                echo "Terraform ssh command: ${env.TF_SSH_COMMAND}"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "AWS Terraform pipeline succeeded."
+            echo "EC2 public IP: ${env.TF_PUBLIC_IP ?: 'N/A'}"
+        }
+        failure {
+            echo "AWS Terraform pipeline failed. Check the stage logs above."
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
