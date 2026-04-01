@@ -15,5 +15,5 @@ output "public_dns" {
 
 output "ssh_command" {
   description = "SSH command to connect to the instance"
-  value       = "ssh -i ${var.public_key_path != "" ? replace(var.public_key_path, ".pub", "") : "~/.ssh/devboard-aws"} ec2-user@${aws_instance.devboard.public_ip}"
+  value       = "ssh -i ${var.private_key_path} ec2-user@${aws_instance.devboard.public_ip}"
 }

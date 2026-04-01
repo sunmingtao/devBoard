@@ -65,75 +65,31 @@ pipeline {
             }
         }
 
-        stage('Terraform Init') {
+        stage('Terraform Workflow') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'aws-devboard-terraform',
-                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                )]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ),
+                    string(
+                        credentialsId: 'devboard-aws-public-key',
+                        variable: 'TF_VAR_public_key'
+                    )
+                ]) {
                     dir("${params.TF_DIR}") {
                         sh """
                             set -eux
                             export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
                             terraform init
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Terraform Validate') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'aws-devboard-terraform',
-                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                )]) {
-                    dir("${params.TF_DIR}") {
-                        sh """
-                            set -eux
-                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
                             terraform validate
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Terraform Plan') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'aws-devboard-terraform',
-                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                )]) {
-                    dir("${params.TF_DIR}") {
-                        sh """
-                            set -eux
-                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
                             terraform plan -out=tfplan
-                        """
-                    }
-                }
-            }
-        }
 
-        stage('Terraform Apply') {
-            when {
-                expression { params.TF_ACTION == 'apply' }
-            }
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'aws-devboard-terraform',
-                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                )]) {
-                    dir("${params.TF_DIR}") {
-                        sh """
-                            set -eux
-                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
-                            terraform apply -auto-approve tfplan
+                            if [ "${params.TF_ACTION}" = "apply" ]; then
+                              terraform apply -auto-approve tfplan
+                            fi
                         """
                     }
                 }
@@ -142,12 +98,28 @@ pipeline {
 
         stage('Show Terraform Outputs') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'aws-devboard-terraform',
-                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                )]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ),
+                    string(
+                        credentialsId: 'devboard-aws-public-key',
+                        variable: 'TF_VAR_public_key'
+                    )
+                ]) {
                     dir("${params.TF_DIR}") {
+                        script {
+                            env.TF_PUBLIC_IP = sh(
+                                script: """
+                                    export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                                    terraform output -raw public_ip
+                                """,
+                                returnStdout: true
+                            ).trim()
+                        }
+
                         sh """
                             set -eux
                             export AWS_DEFAULT_REGION=${params.AWS_REGION}
@@ -158,40 +130,9 @@ pipeline {
             }
         }
 
-        stage('Capture Public IP') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'aws-devboard-terraform',
-                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                )]) {
-                    dir("${params.TF_DIR}") {
-                        script {
-                            env.TF_PUBLIC_IP = sh(
-                                script: """
-                                    export AWS_DEFAULT_REGION=${params.AWS_REGION}
-                                    terraform output -raw public_ip
-                                """,
-                                returnStdout: true
-                            ).trim()
-
-                            env.TF_SSH_COMMAND = sh(
-                                script: """
-                                    export AWS_DEFAULT_REGION=${params.AWS_REGION}
-                                    terraform output -raw ssh_command
-                                """,
-                                returnStdout: true
-                            ).trim()
-                        }
-                    }
-                }
-            }
-        }
-
         stage('Show Connection Info') {
             steps {
-                echo "Terraform public IP: ${env.TF_PUBLIC_IP}"
-                echo "Terraform ssh command: ${env.TF_SSH_COMMAND}"
+                echo "Terraform public IP: ${env.TF_PUBLIC_IP ?: 'N/A'}"
             }
         }
     }

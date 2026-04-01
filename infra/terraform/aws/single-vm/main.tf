@@ -104,7 +104,7 @@ resource "aws_security_group" "ec2" {
 
 resource "aws_key_pair" "devboard_key" {
   key_name   = var.key_name
-  public_key = file(var.public_key_path)
+  public_key = var.public_key
 
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-key"

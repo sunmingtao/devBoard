@@ -46,10 +46,15 @@ variable "key_name" {
   default     = "devboard-aws"
 }
 
-variable "public_key_path" {
-  description = "Path to local SSH public key"
+variable "public_key" {
+  description = "SSH public key content"
   type        = string
-  default     = "~/.ssh/devboard-aws.pub"
+}
+
+variable "private_key_path" {
+  description = "Path to private SSH key"
+  type        = string
+  default     = "~/.ssh/devboard-aws"
 }
 
 variable "ssh_ingress_cidr" {
