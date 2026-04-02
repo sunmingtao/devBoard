@@ -138,7 +138,8 @@ EOF
                         set -eux
 
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
-                            mkdir -p ${params.DEPLOY_PATH}
+                            sudo mkdir -p ${params.DEPLOY_PATH} &&
+                            sudo chown -R ${params.SSH_USER}:${params.SSH_USER} ${params.DEPLOY_PATH}
                         '
 
                         scp -o StrictHostKeyChecking=no ${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
