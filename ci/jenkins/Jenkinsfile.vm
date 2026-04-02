@@ -133,7 +133,7 @@ EOF
 
         stage('Deploy to VM') {
             steps {
-                sshagent(credentials: ['digitalocean-vm-ssh']) {
+                sshagent(credentials: [params.SSH_CREDENTIAL_ID]) {
                     sh """
                         set -eux
 
