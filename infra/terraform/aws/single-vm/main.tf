@@ -130,10 +130,13 @@ resource "aws_instance" "devboard" {
 
               usermod -aG docker ec2-user
 
-              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-aarch64" -o /usr/local/bin/docker-compose
-              chmod +x /usr/local/bin/docker-compose
+              mkdir -p /usr/libexec/docker/cli-plugins
+              curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-aarch64" \
+                -o /usr/libexec/docker/cli-plugins/docker-compose
+              chmod +x /usr/libexec/docker/cli-plugins/docker-compose
 
               mkdir -p /opt/devboard
+              chown -R ec2-user:ec2-user /opt/devboard
               EOF
 
   tags = merge(local.common_tags, {

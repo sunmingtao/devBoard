@@ -138,8 +138,7 @@ EOF
                         set -eux
 
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
-                            sudo mkdir -p ${params.DEPLOY_PATH} &&
-                            sudo chown -R ${params.SSH_USER}:${params.SSH_USER} ${params.DEPLOY_PATH}
+                            sudo mkdir -p ${params.DEPLOY_PATH}
                         '
 
                         scp -o StrictHostKeyChecking=no ${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
@@ -148,9 +147,9 @@ EOF
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
                             set -eux
                             cd ${params.DEPLOY_PATH}
-                            sudo docker compose pull
-                            sudo docker compose up -d --remove-orphans
-                            sudo docker compose ps
+                            docker compose pull
+                            docker compose up -d --remove-orphans
+                            docker compose ps
                         '
                     """
                 }
@@ -164,8 +163,8 @@ EOF
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
                             set -eux
                             cd ${params.DEPLOY_PATH}
-                            sudo docker compose ps
-                            sudo docker images | grep devboard || true
+                            docker compose ps
+                            docker images | grep devboard || true
                         '
                     """
                 }
