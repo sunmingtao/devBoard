@@ -9,7 +9,7 @@ pipeline {
 
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
-        choice(name: 'TF_ACTION', choices: ['plan', 'apply'], description: 'Terraform action')
+        choice(name: 'TF_ACTION', choices: ['apply','plan'], description: 'Terraform action')
         string(name: 'TF_DIR', defaultValue: 'infra/terraform/aws/single-vm', description: 'Terraform working directory')
         string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
     }
