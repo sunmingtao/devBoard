@@ -8,8 +8,8 @@ locals {
   }
 }
 
-data "aws_ssm_parameter" "al2023_arm64_ami" {
-  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
+data "aws_ssm_parameter" "al2023_x86_64_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
 
 resource "aws_vpc" "main" {
@@ -112,7 +112,7 @@ resource "aws_key_pair" "devboard_key" {
 }
 
 resource "aws_instance" "devboard" {
-  ami                         = data.aws_ssm_parameter.al2023_arm64_ami.value
+  ami                         = data.aws_ssm_parameter.al2023_x86_64_ami.value
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.ec2.id]
@@ -125,16 +125,21 @@ resource "aws_instance" "devboard" {
 
               dnf update -y
               dnf install -y docker
+
               systemctl enable docker
               systemctl start docker
 
               usermod -aG docker ec2-user
 
+              # Install Docker Compose v2 plugin
               mkdir -p /usr/libexec/docker/cli-plugins
-              curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-aarch64" \
+
+              curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
                 -o /usr/libexec/docker/cli-plugins/docker-compose
+
               chmod +x /usr/libexec/docker/cli-plugins/docker-compose
 
+              # Prepare app directory
               mkdir -p /opt/devboard
               chown -R ec2-user:ec2-user /opt/devboard
               EOF
