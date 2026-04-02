@@ -135,6 +135,24 @@ pipeline {
                 echo "Terraform public IP: ${env.TF_PUBLIC_IP ?: 'N/A'}"
             }
         }
+
+        stage('Trigger Deploy Pipeline') {
+            when {
+                expression { params.TF_ACTION == 'apply' }
+            }
+            steps {
+                build job: 'devboard-vm-deploy',
+                    wait: true,
+                    parameters: [
+                        string(name: 'BRANCH_NAME', value: params.BRANCH_NAME),
+                        string(name: 'VM_IP', value: env.TF_PUBLIC_IP),
+                        string(name: 'SSH_USER', value: 'ec2-user'),
+                        string(name: 'DEPLOY_PATH', value: '/opt/devboard'),
+                        string(name: 'SSH_CREDENTIAL_ID', value: 'devboard-aws-ssh'),
+                        string(name: 'DEPLOYMENT_MODE_DIR', value: 'deploy/docker-compose/single-vm')
+                    ]
+            }
+        }
     }
 
     post {
