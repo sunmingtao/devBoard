@@ -1,0 +1,16 @@
+environment                   = "prod"
+aws_region                    = "ap-southeast-2"
+instance_name                 = "devboard-prod"
+instance_type                 = "t3.small"
+app_port                      = 8080
+ssh_allowed_cidr              = "119.18.2.3/32"
+public_key_path               = "/home/jacky/.ssh/devboard-aws.pub"
+root_volume_size              = 30
+enable_termination_protection = true
+monitoring_enabled            = true
+associate_public_ip_address   = true
+
+additional_tags = {
+  Owner      = "Mingtao"
+  CostCenter = "production"
+}
