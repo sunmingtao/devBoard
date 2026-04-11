@@ -12,6 +12,7 @@ pipeline {
         choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
         choice(name: 'TF_ACTION', choices: ['plan', 'apply'], description: 'Terraform action')
         string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
+        string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Required for prod promotion; optional for dev')
     }
 
     environment {
@@ -222,7 +223,12 @@ pipeline {
             }
             steps {
                 script {
-                    def sshCredentialId = params.ENVIRONMENT == 'prod' ? 'devboard-aws-ssh' : 'devboard-aws-ssh'
+                    def sshCredentialId = 'devboard-aws-ssh'
+                    def deployMode = params.ENVIRONMENT == 'prod' ? 'pull_only' : 'build_and_push'
+
+                    if (params.ENVIRONMENT == 'prod' && !params.DOCKER_IMAGE_TAG?.trim()) {
+                        error("DOCKER_IMAGE_TAG is required for prod deployment")
+                    }
 
                     build job: 'devboard-vm-deploy',
                         wait: true,
@@ -233,7 +239,9 @@ pipeline {
                             string(name: 'SSH_USER', value: 'ec2-user'),
                             string(name: 'DEPLOY_PATH', value: '/opt/devboard'),
                             string(name: 'SSH_CREDENTIAL_ID', value: sshCredentialId),
-                            string(name: 'DEPLOYMENT_MODE_DIR', value: 'deploy/docker-compose/single-vm')
+                            string(name: 'DEPLOYMENT_MODE_DIR', value: 'deploy/docker-compose/single-vm'),
+                            string(name: 'DOCKER_IMAGE_TAG', value: params.DOCKER_IMAGE_TAG ?: ''),
+                            string(name: 'DEPLOY_MODE', value: deployMode)
                         ]
                 }
             }
