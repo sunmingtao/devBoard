@@ -17,4 +17,4 @@ chmod +x /usr/libexec/docker/cli-plugins/docker-compose
 mkdir -p /opt/devboard
 chown -R ec2-user:ec2-user /opt/devboard
 
-echo "VM ready. App should run on port ${app_port}"
+echo "VM ready. App should run on port ${frontend_port}"

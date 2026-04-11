@@ -62,7 +62,7 @@ resource "aws_instance" "vm" {
   disable_api_termination     = var.enable_termination_protection
 
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
-    app_port = var.app_port
+    frontend_port = var.frontend_port
   })
 
   root_block_device {
