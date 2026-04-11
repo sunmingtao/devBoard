@@ -23,8 +23,8 @@ variable "ssh_allowed_cidr" {
   type        = string
 }
 
-variable "public_key_path" {
-  description = "Path to SSH public key"
+variable "public_key" {
+  description = "SSH public key Content"
   type        = string
 }
 

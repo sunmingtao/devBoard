@@ -14,7 +14,7 @@ module "single_vm" {
   instance_type                 = var.instance_type
   app_port                      = var.app_port
   ssh_allowed_cidr              = var.ssh_allowed_cidr
-  public_key_path               = var.public_key_path
+  public_key                    = var.public_key
   root_volume_size              = var.root_volume_size
   enable_termination_protection = var.enable_termination_protection
   monitoring_enabled            = var.monitoring_enabled
