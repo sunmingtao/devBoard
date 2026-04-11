@@ -200,7 +200,7 @@ jobs:
         uses: treosh/lighthouse-ci-action@v11
         with:
           urls: |
-            http://localhost:3000
+            http://localhost:80
           uploadArtifacts: true
           temporaryPublicStorage: true
           # Performance budget

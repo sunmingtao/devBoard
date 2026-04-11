@@ -85,7 +85,7 @@ CMD ["java", "-jar", "/app/myapp.jar"]  # Run your app
 ├──────────────┼──────────────┼────────────┤
 │ Nginx        │ Java 21      │ MySQL 8.0  │
 │ Vue.js build │ Spring Boot  │ Data files │
-│ Port 3000    │ Port 8080    │ Port 3306  │
+│ Port 80      │ Port 8080    │ Port 3306  │
 └──────────────┴──────────────┴────────────┘
          ↕              ↕             ↕
       HTTP           REST API     Database
@@ -572,12 +572,12 @@ docker exec -it devboard-mysql mysql -u devboard_user -pdevboard_pass -e "USE de
 ├───────────────┼─────────────────┼─────────────────────┤
 │ Nginx Alpine  │ OpenJDK 21 Slim│ MySQL 8.0           │
 │ Vue3 Build    │ Spring Boot     │ Persistent Data     │
-│ Port 3000→80  │ Port 8080→8080  │ Port 3307→3306      │
+│ Port   80→80  │ Port 8080→8080  │ Port 3307→3306      │
 │ Static Files  │ REST API        │ devboard Database   │
 └───────────────┴─────────────────┴─────────────────────┘
         ↕               ↕                 ↕
     Web Browser    HTTP Requests    Database Queries
-   (localhost:3000) (localhost:8080)  (mysql:3306)
+   (localhost:80) (localhost:8080)  (mysql:3306)
         ↑               ↑                 ↑
         └─── devboard-network (isolated) ───┘
 ```
@@ -611,7 +611,7 @@ docker compose down -v
 **Frontend Testing:**
 ```bash
 # Test frontend is serving Vue app
-curl http://localhost:3000
+curl http://localhost:80
 
 # Should return HTML with Vue.js application
 ```
@@ -643,7 +643,7 @@ docker exec devboard-mysql mysql -u devboard_user -pdevboard_pass -e "SHOW TABLE
    - Backend waits for database health check
 
 3. **Port Mapping**: Different ports for each service
-   - Frontend: `3000:80` (host:container)
+   - Frontend: `80:80` (host:container)
    - Backend: `8080:8080`
    - MySQL: `3307:3306`
 
@@ -822,7 +822,7 @@ open http://localhost:5173
 docker compose up --build
 
 # Access production-like frontend
-open http://localhost:3000
+open http://localhost:80
 
 # Features:
 # ✅ Source maps for debugging
@@ -855,7 +855,7 @@ docker exec -it devboard-frontend sh
 ### Result: Best of Both Worlds
 
 - **Development**: Full debugging experience with hot reload (`localhost:5173`)
-- **Production**: Production-like testing with source maps (`localhost:3000`)
+- **Production**: Production-like testing with source maps (`localhost:80`)
 - **Container Benefits**: Consistent environment across team
 - **Debugging Power**: Original source files and breakpoints work
 

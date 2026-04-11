@@ -18,11 +18,6 @@ variable "frontend_port" {
   type        = number
 }
 
-variable "backend_port" {
-  description = "Application port"
-  type        = number
-}
-
 variable "ssh_allowed_cidr" {
   description = "Allowed CIDR for SSH"
   type        = string

@@ -13,7 +13,6 @@ module "single_vm" {
   instance_name                 = var.instance_name
   instance_type                 = var.instance_type
   frontend_port                 = var.frontend_port
-  backend_port                  = var.backend_port
   ssh_allowed_cidr              = var.ssh_allowed_cidr
   public_key                    = var.public_key
   root_volume_size              = var.root_volume_size
