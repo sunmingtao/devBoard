@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-04-11
+
+### Added
+- Introduced environment separation for infrastructure and deployment:
+  - Created dedicated Terraform environments (`envs/dev`, `envs/prod`)
+  - Enabled independent provisioning and deployment workflows per environment
+- Added support for environment-specific Docker Compose overrides:
+  - `docker-compose.dev.yml` and `docker-compose.prod.yml`
+  - Enabled flexible configuration for ports, services, and runtime behavior
+- Implemented deployment mode control in Jenkins pipeline:
+  - `build_and_push` mode for development environment
+  - `pull_only` mode for production environment
+- Enabled artifact promotion workflow:
+  - Reused Docker images built and validated in dev for production deployment
+  - Eliminated redundant builds in production
+
+### Changed
+- Refactored deployment architecture to use a single public entry point via Nginx:
+  - Exposed only port 80 in security groups
+  - Removed direct public access to backend (8080) and frontend (3000)
+- Updated Nginx configuration to act as reverse proxy:
+  - Routed `/` to Vue frontend
+  - Routed `/api` to backend service
+- Standardized deployment structure on VM:
+  - Centralized application files under `/opt/devboard`
+  - Unified `.env`-based configuration for runtime variables
+- Enhanced Jenkins pipeline to support multi-environment deployments:
+  - Dynamically passed `ENVIRONMENT`, `DEPLOY_MODE`, and `DOCKER_IMAGE_TAG`
+  - Introduced validation for production deployments (mandatory image tag)
+
+### Improved
+- Improved security posture:
+  - Reduced attack surface by exposing only port 80
+  - Enforced internal service communication via Docker network
+- Increased deployment consistency and reliability:
+  - Ensured production uses the exact same Docker images validated in dev
+- Improved system design clarity:
+  - Established clear separation of responsibilities:
+    - Terraform → infrastructure
+    - Docker Compose → runtime
+    - Nginx → traffic routing
+    - Jenkins → orchestration
+    
 ## [0.2.0] - 2026-04-02
 
 ### Added
