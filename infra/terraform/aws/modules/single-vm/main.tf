@@ -30,7 +30,7 @@ resource "aws_security_group" "vm_sg" {
 
 resource "aws_key_pair" "vm_key" {
   key_name   = "${var.instance_name}-key"
-  public_key = public_key
+  public_key = var.public_key
 }
 
 data "aws_ami" "amazon_linux" {
