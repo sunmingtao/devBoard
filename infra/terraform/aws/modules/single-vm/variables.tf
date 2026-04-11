@@ -13,7 +13,12 @@ variable "instance_type" {
   type        = string
 }
 
-variable "app_port" {
+variable "frontend_port" {
+  description = "Application port"
+  type        = number
+}
+
+variable "backend_port" {
   description = "Application port"
   type        = number
 }

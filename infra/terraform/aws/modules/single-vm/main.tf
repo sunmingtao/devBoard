@@ -12,8 +12,16 @@ resource "aws_security_group" "vm_sg" {
 
   ingress {
     description = "App port"
-    from_port   = var.app_port
-    to_port     = var.app_port
+    from_port   = var.frontend_port
+    to_port     = var.frontend_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "App port"
+    from_port   = var.backend_port
+    to_port     = var.backend_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
