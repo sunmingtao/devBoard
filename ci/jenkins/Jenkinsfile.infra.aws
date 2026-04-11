@@ -222,7 +222,7 @@ pipeline {
             }
             steps {
                 script {
-                    def sshCredentialId = params.ENVIRONMENT == 'prod' ? 'devboard-aws-public-key' : 'devboard-aws-public-key'
+                    def sshCredentialId = params.ENVIRONMENT == 'prod' ? 'devboard-aws-ssh' : 'devboard-aws-ssh'
 
                     build job: 'devboard-vm-deploy',
                         wait: true,
