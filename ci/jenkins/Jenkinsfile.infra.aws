@@ -9,13 +9,14 @@ pipeline {
 
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
-        choice(name: 'TF_ACTION', choices: ['apply','plan'], description: 'Terraform action')
-        string(name: 'TF_DIR', defaultValue: 'infra/terraform/aws/single-vm', description: 'Terraform working directory')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
+        choice(name: 'TF_ACTION', choices: ['plan', 'apply'], description: 'Terraform action')
         string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
     }
 
     environment {
         GIT_REPO_URL = 'https://github.com/sunmingtao/devBoard.git'
+        TF_DIR       = "infra/terraform/aws/envs/${params.ENVIRONMENT}"
     }
 
     stages {
@@ -25,9 +26,6 @@ pipeline {
                 script {
                     if (!params.BRANCH_NAME?.trim()) {
                         error("BRANCH_NAME is required")
-                    }
-                    if (!params.TF_DIR?.trim()) {
-                        error("TF_DIR is required")
                     }
                     if (!params.AWS_REGION?.trim()) {
                         error("AWS_REGION is required")
@@ -48,8 +46,9 @@ pipeline {
             steps {
                 sh """
                     echo "Branch: ${params.BRANCH_NAME}"
+                    echo "Environment: ${params.ENVIRONMENT}"
                     echo "Terraform Action: ${params.TF_ACTION}"
-                    echo "Terraform Directory: ${params.TF_DIR}"
+                    echo "Terraform Directory: ${env.TF_DIR}"
                     echo "AWS Region: ${params.AWS_REGION}"
                 """
             }
@@ -59,37 +58,104 @@ pipeline {
             steps {
                 sh """
                     set -eux
-                    test -d "${params.TF_DIR}"
-                    test -f "${params.TF_DIR}/main.tf"
+                    test -d "${env.TF_DIR}"
+                    test -f "${env.TF_DIR}/main.tf"
+                    test -f "${env.TF_DIR}/backend.hcl"
+                    test -f "${env.TF_DIR}/terraform.tfvars"
                 """
             }
         }
 
-        stage('Terraform Workflow') {
+        stage('Terraform Init') {
             steps {
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'aws-devboard-terraform',
                         usernameVariable: 'AWS_ACCESS_KEY_ID',
                         passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    ),
-                    string(
-                        credentialsId: 'devboard-aws-public-key',
-                        variable: 'TF_VAR_public_key'
                     )
                 ]) {
-                    dir("${params.TF_DIR}") {
+                    dir("${env.TF_DIR}") {
                         sh """
                             set -eux
                             export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform init -backend-config=backend.hcl
+                        """
+                    }
+                }
+            }
+        }
 
-                            terraform init
+        stage('Terraform Validate') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform fmt -check
                             terraform validate
-                            terraform plan -out=tfplan
+                        """
+                    }
+                }
+            }
+        }
 
-                            if [ "${params.TF_ACTION}" = "apply" ]; then
-                              terraform apply -auto-approve tfplan
-                            fi
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform plan -var-file=terraform.tfvars -out=tfplan
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Approve Prod Apply') {
+            when {
+                allOf {
+                    expression { params.TF_ACTION == 'apply' }
+                    expression { params.ENVIRONMENT == 'prod' }
+                }
+            }
+            steps {
+                input message: 'Apply Terraform to PROD?', ok: 'Apply'
+            }
+        }
+
+        stage('Terraform Apply') {
+            when {
+                expression { params.TF_ACTION == 'apply' }
+            }
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform apply -auto-approve tfplan
                         """
                     }
                 }
@@ -97,19 +163,18 @@ pipeline {
         }
 
         stage('Show Terraform Outputs') {
+            when {
+                expression { params.TF_ACTION == 'apply' }
+            }
             steps {
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'aws-devboard-terraform',
                         usernameVariable: 'AWS_ACCESS_KEY_ID',
                         passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    ),
-                    string(
-                        credentialsId: 'devboard-aws-public-key',
-                        variable: 'TF_VAR_public_key'
                     )
                 ]) {
-                    dir("${params.TF_DIR}") {
+                    dir("${env.TF_DIR}") {
                         script {
                             env.TF_PUBLIC_IP = sh(
                                 script: """
@@ -131,6 +196,9 @@ pipeline {
         }
 
         stage('Show Connection Info') {
+            when {
+                expression { params.TF_ACTION == 'apply' }
+            }
             steps {
                 echo "Terraform public IP: ${env.TF_PUBLIC_IP ?: 'N/A'}"
             }
@@ -141,23 +209,28 @@ pipeline {
                 expression { params.TF_ACTION == 'apply' }
             }
             steps {
-                build job: 'devboard-vm-deploy',
-                    wait: true,
-                    parameters: [
-                        string(name: 'BRANCH_NAME', value: params.BRANCH_NAME),
-                        string(name: 'VM_IP', value: env.TF_PUBLIC_IP),
-                        string(name: 'SSH_USER', value: 'ec2-user'),
-                        string(name: 'DEPLOY_PATH', value: '/opt/devboard'),
-                        string(name: 'SSH_CREDENTIAL_ID', value: 'devboard-aws-ssh'),
-                        string(name: 'DEPLOYMENT_MODE_DIR', value: 'deploy/docker-compose/single-vm')
-                    ]
+                script {
+                    def sshCredentialId = params.ENVIRONMENT == 'prod' ? 'devboard-aws-ssh-prod' : 'devboard-aws-ssh-dev'
+
+                    build job: 'devboard-vm-deploy',
+                        wait: true,
+                        parameters: [
+                            string(name: 'BRANCH_NAME', value: params.BRANCH_NAME),
+                            string(name: 'ENVIRONMENT', value: params.ENVIRONMENT),
+                            string(name: 'VM_IP', value: env.TF_PUBLIC_IP),
+                            string(name: 'SSH_USER', value: 'ec2-user'),
+                            string(name: 'DEPLOY_PATH', value: '/opt/devboard'),
+                            string(name: 'SSH_CREDENTIAL_ID', value: sshCredentialId),
+                            string(name: 'DEPLOYMENT_MODE_DIR', value: 'deploy/docker-compose/single-vm')
+                        ]
+                }
             }
         }
     }
 
     post {
         success {
-            echo "AWS Terraform pipeline succeeded."
+            echo "AWS Terraform pipeline succeeded for ${params.ENVIRONMENT}."
             echo "EC2 public IP: ${env.TF_PUBLIC_IP ?: 'N/A'}"
         }
         failure {
