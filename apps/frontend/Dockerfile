@@ -71,8 +71,11 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
 EXPOSE 80
 
 # Add healthcheck
+# Note: some deployments redirect HTTP->HTTPS (301) on `/`.
+# Try HTTP first, then fall back to HTTPS for redirect-based configs.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:80/ || \
+      wget --no-verbose --tries=1 --spider --no-check-certificate https://127.0.0.1:443/ || exit 1
 
 # Start Nginx with dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
