@@ -11,6 +11,14 @@ resource "aws_security_group" "vm_sg" {
   }
 
   ingress {
+    description = "HTTPS"
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
     description = "App port"
     from_port   = var.frontend_port
     to_port     = var.frontend_port
