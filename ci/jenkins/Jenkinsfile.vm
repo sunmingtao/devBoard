@@ -166,6 +166,27 @@ EOF
             }
         }
 
+        stage('Capture Previous Version') {
+            steps {
+                sshagent(credentials: [params.SSH_CREDENTIAL_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
+                            set -e
+                            cd ${params.DEPLOY_PATH}
+
+                            if [ -f .env ]; then
+                                PREV_TAG=\$(grep IMAGE_TAG .env | cut -d "=" -f2)
+                                echo "Previous tag: \$PREV_TAG"
+                                echo \$PREV_TAG > .previous_image_tag
+                            else
+                                echo "No previous deployment found"
+                            fi
+                        '
+                    """
+                }
+            }
+        }
+
         stage('Deploy to VM') {
             steps {
                 sshagent(credentials: [params.SSH_CREDENTIAL_ID]) {
@@ -219,6 +240,32 @@ EOF
             }
         }
 
+        stage('Health Check') {
+            steps {
+                sshagent(credentials: [params.SSH_CREDENTIAL_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
+                            set -e
+
+                            echo "Running health check..."
+
+                            for i in {1..10}; do
+                                if curl -f https://${params.DOMAIN_NAME}/api/health; then
+                                    echo "Health check passed"
+                                    exit 0
+                                fi
+                                echo "Retry \$i..."
+                                sleep 5
+                            done
+
+                            echo "Health check failed after retries"
+                            exit 1
+                        '
+                    """
+                }
+            }
+        }
+
         stage('Post Deploy Verification') {
             steps {
                 sshagent(credentials: [params.SSH_CREDENTIAL_ID]) {
@@ -242,7 +289,30 @@ EOF
             echo "Backend: http://${params.VM_IP}:8080"
         }
         failure {
-            echo "Pipeline failed. Check the stage logs above."
+            echo "Deployment failed. Attempting rollback..."
+
+            sshagent(credentials: [params.SSH_CREDENTIAL_ID]) {
+                sh """
+                    ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
+                        set -e
+                        cd ${params.DEPLOY_PATH}
+
+                        if [ -f .previous_image_tag ]; then
+                            PREV_TAG=\$(cat .previous_image_tag)
+                            echo "Rolling back to \$PREV_TAG"
+
+                            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=\$PREV_TAG/" .env
+
+                            docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml pull
+                            docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml up -d
+
+                            echo "Rollback completed"
+                        else
+                            echo "No previous version found"
+                        fi
+                    '
+                """
+            }
         }
         always {
             cleanWs()
