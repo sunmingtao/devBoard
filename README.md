@@ -1,100 +1,95 @@
-# DevBoard - Developer Task Board System
+# DevBoard
 
-A modern task management system built with Spring Boot and Vue.js for demonstrating full-stack development skills.
+DevBoard is a full-stack task board application with a Spring Boot backend and a Vue 3 frontend, plus deployment assets for Docker Compose, Jenkins, and Terraform.
 
-## 🚀 Quick Start
+## Tech stack
 
-### Backend Setup (Spring Boot)
+- **Frontend:** Vue 3 + Vite + Vue Router (`apps/frontend`)
+- **Backend:** Spring Boot 3.3 (Java 21), Spring Security, JWT, JPA (`apps/backend`)
+- **Data stores:** H2 (dev/test), MySQL (container/mysql profile), Redis-ready config
+- **Infra/Deploy:** Docker Compose (`deploy/docker-compose/single-vm`), Terraform (`infra/terraform`), Jenkins pipelines (`ci/jenkins`)
 
-#### Using Spring Initializr Command Line
+## Repository layout
+
+```text
+.
+├── apps/
+│   ├── backend/     # Spring Boot API
+│   └── frontend/    # Vue SPA
+├── deploy/
+│   └── docker-compose/single-vm/
+├── ci/jenkins/
+├── infra/terraform/
+└── docs/
+```
+
+## Quick start (local development)
+
+### 1) Start the backend (H2 profile)
 
 ```bash
-# Initialize Spring Boot project with required dependencies
-curl https://start.spring.io/starter.zip \
-  -d dependencies=web,data-jpa,lombok,mysql \
-  -d type=maven-project \
-  -d language=java \
-  -d bootVersion=3.3.0 \
-  -d baseDir=devboard-backend \
-  -d groupId=com.example \
-  -d artifactId=devboard \
-  -d name=devboard \
-  -d description="Developer Task Board System" \
-  -d packageName=com.example.devboard \
-  -d packaging=jar \
-  -d javaVersion=21 \
-  -o devboard-backend.zip
-
-# Extract the project
-unzip devboard-backend.zip
-rm devboard-backend.zip
+cd apps/backend
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-#### Alternative: Using Spring Initializr Web UI
+Backend runs on `http://localhost:8080`.
 
-1. Visit [https://start.spring.io/](https://start.spring.io/)
-2. Configure the project:
-   - **Project:** Maven
-   - **Language:** Java
-   - **Spring Boot:** 3.3.0
-   - **Group:** com.example
-   - **Artifact:** devboard
-   - **Name:** devboard
-   - **Description:** Developer Task Board System
-   - **Package name:** com.example.devboard
-   - **Packaging:** Jar
-   - **Java:** 21
+Helpful local URLs:
 
-3. Add Dependencies:
-   - Spring Web
-   - Spring Data JPA
-   - Lombok
-   - MySQL Driver
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- H2 Console: `http://localhost:8080/h2-console`
 
-4. Click **Generate** to download the project
-
-### Running the Application
+### 2) Start the frontend
 
 ```bash
-cd devboard-backend
-
-# Run with Maven wrapper (no Maven installation required)
-./mvnw spring-boot:run
-
-# Or if you have Maven installed
-mvn spring-boot:run
+cd apps/frontend
+npm install
+npm run dev
 ```
 
-The application will start on `http://localhost:8080`
+Frontend runs on `http://localhost:5173` by default.
 
-## 📦 Project Structure
+## Running tests
 
-```
-devboard-backend/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/example/devboard/
-│   │   │       └── DevboardApplication.java
-│   │   └── resources/
-│   │       ├── application.properties
-│   │       ├── static/
-│   │       └── templates/
-│   └── test/
-├── pom.xml
-├── mvnw
-├── mvnw.cmd
-└── .gitignore
+### Backend tests
+
+```bash
+cd apps/backend
+./mvnw test
 ```
 
-## 🛠️ Technologies
+### Frontend tests
 
-- **Backend:** Spring Boot 3.3.0, Java 21
-- **Frontend:** Vue.js 3, TypeScript
-- **Database:** MySQL (via Spring Data JPA)
-- **Build Tool:** Maven
-- **Infrastructure:** Terraform
-- **CI/CD:** GitHub Actions
-- **Cloud Services:** AWS (ECS, RDS, S3, CloudFront)
-- **Utilities:** Lombok
+```bash
+cd apps/frontend
+npm test
+# or single-run mode
+npm run test:run
+```
 
+## Docker Compose deployment (single VM)
+
+The Compose files in `deploy/docker-compose/single-vm` are intended for containerized deployment.
+
+```bash
+cd deploy/docker-compose/single-vm
+cp ../../../apps/backend/.env.example .env
+# edit .env values as needed
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+Notes:
+
+- Base compose file runs `mysql`, `backend`, and `frontend` containers.
+- Images are expected as `sunmingtao/devboard-backend:${IMAGE_TAG}` and `sunmingtao/devboard-frontend:${IMAGE_TAG}`.
+- Backend container uses the `mysql` Spring profile in this mode.
+
+## Useful docs
+
+- Backend details: `apps/backend/README.md`
+- Frontend details: `apps/frontend/README.md`
+- Deployment docs: `docs/CONTAINER_DEPLOYMENT.md`, `docs/DEPLOYMENT_ENVIRONMENTS.md`
+
+## Current status
+
+This README was updated to reflect the current monorepo structure and run flow. Legacy instructions that generated a fresh Spring project from Spring Initializr are no longer used for this repository.
