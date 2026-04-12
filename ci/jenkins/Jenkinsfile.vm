@@ -12,11 +12,14 @@ pipeline {
         string(name: 'VM_IP', defaultValue: '', description: 'Target VM public IP')
         string(name: 'SSH_USER', defaultValue: '', description: 'SSH user for target VM')
         string(name: 'DEPLOY_PATH', defaultValue: '/opt/devboard', description: 'Deployment path on target VM')
+        string(name: 'DOMAIN_NAME', defaultValue: 'smtdevboard.com', description: 'Public domain used for TLS certificates')
+        string(name: 'LETSENCRYPT_EMAIL', defaultValue: 'sunmingtao@gmail.com', description: 'Email used for Let\'s Encrypt registration')
         string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag override. Leave blank to use BUILD_NUMBER')
         string(name: 'DEPLOYMENT_MODE_DIR', defaultValue: 'deploy/docker-compose/single-vm', description: 'Deployment configuration directory')
         string(name: 'SSH_CREDENTIAL_ID', defaultValue: '', description: 'Jenkins SSH credential ID')
         choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
         choice(name: 'DEPLOY_MODE', choices: ['build_and_push', 'pull_only'], description: 'Deployment mode')
+        booleanParam(name: 'AUTO_MANAGE_TLS', defaultValue: true, description: 'Automatically provision or renew TLS certificates only when required')
     }
 
     environment {
@@ -47,6 +50,15 @@ pipeline {
                     if (!params.DEPLOY_PATH?.trim()) {
                         error("DEPLOY_PATH is required")
                     }
+                    if (!params.SSH_CREDENTIAL_ID?.trim()) {
+                        error("SSH_CREDENTIAL_ID is required")
+                    }
+                    if (!params.DOMAIN_NAME?.trim()) {
+                        error("DOMAIN_NAME is required")
+                    }
+                    if (!params.LETSENCRYPT_EMAIL?.trim()) {
+                        error("LETSENCRYPT_EMAIL is required")
+                    }
                     if (params.DEPLOY_MODE == 'pull_only' && !params.DOCKER_IMAGE_TAG?.trim()) {
                         error("DOCKER_IMAGE_TAG is required when DEPLOY_MODE is pull_only")
                     }
@@ -69,9 +81,11 @@ pipeline {
                     echo "VM IP: ${params.VM_IP}"
                     echo "SSH User: ${params.SSH_USER}"
                     echo "Deploy Path: ${params.DEPLOY_PATH}"
+                    echo "Domain Name: ${params.DOMAIN_NAME}"
                     echo "Image Tag: ${EFFECTIVE_IMAGE_TAG}"
                     echo "Deploy Mode: ${params.DEPLOY_MODE}"
                     echo "Environment: ${params.ENVIRONMENT}"
+                    echo "Auto TLS: ${params.AUTO_MANAGE_TLS}"
                 """
             }
         }
@@ -172,12 +186,35 @@ EOF
                         scp -O -o StrictHostKeyChecking=no ${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
                         scp -O -o StrictHostKeyChecking=no ${params.DEPLOYMENT_MODE_DIR}/docker-compose.${params.ENVIRONMENT}.yml ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/docker-compose.${params.ENVIRONMENT}.yml
                         scp -O -o StrictHostKeyChecking=no deploy/nginx/nginx.http.conf ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/nginx.http.conf
-                        scp -O -o StrictHostKeyChecking=no deploy/nginx/nginx.https.conf ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/nginx.https.conf
+                        scp -O -o StrictHostKeyChecking=no deploy/nginx/nginx.https.conf ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/nginx.https.template.conf
                         scp -O -o StrictHostKeyChecking=no ${ENV_FILE_NAME} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/.env
 
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
                             set -eux
                             cd ${params.DEPLOY_PATH}
+
+                            CERT_PATH="certbot/conf/live/${params.DOMAIN_NAME}/fullchain.pem"
+
+                            if [ "${params.AUTO_MANAGE_TLS}" = "true" ]; then
+                                if [ -f "$CERT_PATH" ] && openssl x509 -checkend 2592000 -noout -in "$CERT_PATH"; then
+                                    echo "Valid certificate already present for ${params.DOMAIN_NAME}. Using HTTPS config."
+                                    cp nginx.https.template.conf nginx.https.conf
+                                    docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml up -d --force-recreate --no-deps frontend
+                                else
+                                    echo "Certificate missing or expiring within 30 days. Running one-time certbot issuance/renewal."
+                                    cp nginx.http.conf nginx.https.conf
+                                    docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml pull frontend certbot
+                                    docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml up -d --force-recreate --no-deps frontend
+                                    docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml run --rm certbot certonly --webroot -w /var/www/certbot -d ${params.DOMAIN_NAME} --email ${params.LETSENCRYPT_EMAIL} --agree-tos --no-eff-email
+                                    cp nginx.https.template.conf nginx.https.conf
+                                    docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml up -d --force-recreate --no-deps frontend
+                                fi
+                            else
+                                echo "AUTO_MANAGE_TLS=false, deploying with HTTPS config as-is."
+                                cp nginx.https.template.conf nginx.https.conf
+                                docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml up -d --force-recreate --no-deps frontend
+                            fi
+
                             docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml pull
                             docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml up -d --remove-orphans
                             docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml ps
