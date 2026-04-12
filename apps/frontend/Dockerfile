@@ -56,9 +56,6 @@ RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
 # Copy built Vue application from build stage (only dist folder)
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# Copy optimized Nginx configuration
-COPY --from=build-stage /app/nginx.conf /etc/nginx/conf.d/default.conf
-
 # Create non-root user for security (nginx user already exists, just modify permissions)
 # The nginx:alpine image already has nginx user, so we just need to set permissions
 
