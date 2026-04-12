@@ -193,7 +193,7 @@ EOF
                             CERT_PATH="certbot/conf/live/${params.DOMAIN_NAME}/fullchain.pem"
 
                             if [ "${params.AUTO_MANAGE_TLS}" = "true" ]; then
-                                if [ -f "$CERT_PATH" ] && openssl x509 -checkend 2592000 -noout -in "$CERT_PATH"; then
+                                if [ -f "\$CERT_PATH" ] && openssl x509 -checkend 2592000 -noout -in "\$CERT_PATH"; then
                                     echo "Valid certificate already present for ${params.DOMAIN_NAME}. Using HTTPS config."
                                     cp nginx.https.template.conf nginx.https.conf
                                 else
