@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-04-12
+
+### Added
+- Enabled HTTPS for production deployment using Let's Encrypt:
+  - Integrated Certbot with Nginx using webroot challenge
+  - Provisioned TLS certificates for `smtdevboard.com`
+  - Exposed secure public endpoint: https://smtdevboard.com/
+- Implemented automated TLS lifecycle management in Jenkins pipeline:
+  - Added conditional certificate provisioning based on existence and expiry
+  - Introduced `AUTO_MANAGE_TLS` flag to control TLS automation behavior
+- Added dynamic Nginx configuration switching:
+  - `nginx.http.conf` for ACME challenge during certificate issuance
+  - `nginx.https.template.conf` for HTTPS runtime configuration
+  - Introduced `active.nginx.conf` as runtime-mounted configuration
+- Extended deployment pipeline to support TLS-aware deployments:
+  - Automatically falls back to HTTP mode for initial certificate provisioning
+  - Switches to HTTPS configuration post certificate issuance
+
+### Changed
+- Updated Docker Compose configuration for frontend service:
+  - Replaced static Nginx config mount with dynamic `active.nginx.conf`
+  - Enabled seamless switching between HTTP and HTTPS without modifying Compose files
+- Refactored deployment flow to be TLS-aware and idempotent:
+  - Avoided repeated certificate requests by validating existing certificates
+  - Ensured safe re-deployments without breaking HTTPS setup
+- Updated environment configuration:
+  - Included domain-based origins in CORS settings
+  - Aligned runtime configuration with public domain access
+
+### Improved
+- Improved security posture:
+  - Enabled encrypted traffic over HTTPS
+  - Reduced risk of certificate misconfiguration through automated checks
+- Increased deployment reliability:
+  - Ensured TLS setup is executed only when required (missing or expiring certificates)
+  - Eliminated manual steps for certificate provisioning
+- Enhanced production readiness:
+  - Established a repeatable and automated HTTPS deployment workflow
+  - Prepared the system for future scaling behind domain-based routing (e.g., ALB, CloudFront)
+
 ## [0.3.0] - 2026-04-11
 
 ### Added
