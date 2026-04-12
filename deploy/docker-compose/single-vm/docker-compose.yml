@@ -52,7 +52,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./nginx.https.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./active.nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
     networks:
