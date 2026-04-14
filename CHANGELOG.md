@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-04-15
+
+### Added
+- Integrated Route 53 DNS management into Terraform:
+  - Managed A record for `smtdevboard.com` via infrastructure as code
+  - Automatically updated DNS records based on EC2 public IP changes
+  - Eliminated manual DNS updates during VM recreation
+
+### Changed
+- Migrated database from containerised MySQL to AWS RDS:
+  - Removed MySQL service from Docker Compose configuration
+  - Updated backend to connect to external RDS instance via environment variables
+  - Improved data persistence and decoupled application from infrastructure lifecycle
+- Refactored application configuration to support external database:
+  - Introduced `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD`
+  - Standardised environment-based configuration for runtime flexibility
+- Updated Terraform architecture to support multi-tier infrastructure:
+  - Added RDS module deployed in private subnets
+  - Configured security group rules to allow EC2-to-RDS connectivity only
+
+### Improved
+- Strengthened security posture:
+  - Isolated database in private subnets
+  - Restricted database access to application layer only
+
 ## [0.4.0] - 2026-04-12
 
 ### Added
