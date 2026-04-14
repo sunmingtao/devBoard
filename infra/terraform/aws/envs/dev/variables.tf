@@ -145,3 +145,13 @@ variable "db_backup_retention_period" {
   type        = number
   default     = 7
 }
+
+variable "domain_name" {
+  description = "Fully qualified domain name"
+  type        = string
+}
+
+variable "route53_zone_id" {
+  description = "Route 53 hosted zone ID"
+  type        = string
+}

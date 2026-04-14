@@ -43,3 +43,6 @@ additional_tags = {
   Owner      = "Mingtao"
   CostCenter = "learning"
 }
+
+domain_name     = "smtdevboard.com"
+route53_zone_id = "Z02400223BOTRAEUO0YCG"

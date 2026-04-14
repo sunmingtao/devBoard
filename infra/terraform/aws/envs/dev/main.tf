@@ -41,6 +41,14 @@ module "single_vm" {
   subnet_id = module.network.public_subnet_ids[0]
 }
 
+resource "aws_route53_record" "app" {
+  zone_id = var.route53_zone_id
+  name    = var.domain_name
+  type    = "A"
+  ttl     = 300
+  records = [module.single_vm.public_ip]
+}
+
 module "rds_mysql" {
   source = "../../modules/rds-mysql"
 
