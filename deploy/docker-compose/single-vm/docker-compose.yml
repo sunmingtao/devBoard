@@ -8,37 +8,16 @@ services:
     networks:
       - devboard-network
 
-  mysql:
-    image: mysql:8.0
-    container_name: devboard-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "${MYSQL_PORT}:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    command: >
-      --default-authentication-plugin=mysql_native_password
-      --innodb-buffer-pool-size=256M
-    networks:
-      - devboard-network
-
   backend:
     image: sunmingtao/devboard-backend:${IMAGE_TAG}
     container_name: devboard-backend
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: mysql
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-    depends_on:
-      - mysql
     networks:
       - devboard-network
 
@@ -61,6 +40,3 @@ services:
 networks:
   devboard-network:
     driver: bridge
-
-volumes:
-  mysql_data:

@@ -29,7 +29,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 docker compose up
 
 # Access:
-# - Frontend: http://localhost:3000 (Nginx)
+# - Frontend: http://localhost:80 (Nginx)
 # - Backend: http://localhost:8080
 # - MySQL: localhost:3307
 ```
@@ -45,7 +45,7 @@ export DATABASE_PASSWORD="secure-production-password"
 export CORS_ALLOWED_ORIGINS="https://yourdomain.com"
 
 # Access:
-# - Frontend: http://localhost:3000 (Nginx, optimized)
+# - Frontend: http://localhost:80 (Nginx, optimized)
 # - Backend: http://localhost:8080
 # - MySQL: localhost:3307
 ```
@@ -75,7 +75,7 @@ export CORS_ALLOWED_ORIGINS="https://yourdomain.com"
 - ⏰ 1-hour JWT expiration
 
 **Configuration:**
-- **Frontend**: Nginx serving optimized build (port 3000)
+- **Frontend**: Nginx serving optimized build (port 80)
 - **Backend**: Spring Boot with MySQL
 - **Database**: MySQL 8.0 container (port 3307)
 
@@ -162,7 +162,7 @@ open http://localhost:8080/h2-console
 curl http://localhost:8080/actuator/health
 
 # Frontend health
-curl http://localhost:3000
+curl http://localhost:80
 
 # Container health
 docker compose ps
@@ -175,7 +175,7 @@ docker compose ps
 1. **Port Conflicts**
    ```bash
    # Check what's using ports
-   lsof -i :3000,5173,8080,3307
+   lsof -i :80,5173,8080,3307
    ```
 
 2. **Database Connection Issues**

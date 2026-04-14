@@ -147,12 +147,10 @@ pipeline {
                     cat > ${ENV_FILE_NAME} <<EOF
 IMAGE_TAG=${EFFECTIVE_IMAGE_TAG}
 
-MYSQL_ROOT_PASSWORD=rootpassword
-MYSQL_DATABASE=devboard
-MYSQL_USER=devboard_user
-MYSQL_PASSWORD=devboard_pass
+DATABASE_URL=jdbc:mysql://your-rds-endpoint:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DATABASE_USERNAME=devboard_user
+DATABASE_PASSWORD=your_password
 
-MYSQL_PORT=3307
 BACKEND_PORT=8080
 FRONTEND_HTTP_PORT=80
 FRONTEND_HTTPS_PORT=443

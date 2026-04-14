@@ -1,6 +1,7 @@
 resource "aws_security_group" "vm_sg" {
   name        = "${var.instance_name}-sg"
   description = "Security group for ${var.instance_name}"
+  vpc_id      = var.vpc_id
 
   ingress {
     description = "SSH"
@@ -11,17 +12,17 @@ resource "aws_security_group" "vm_sg" {
   }
 
   ingress {
-    description = "HTTPS"
-    from_port = 443
-    to_port   = 443
-    protocol  = "tcp"
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description = "App port"
-    from_port   = var.frontend_port
-    to_port     = var.frontend_port
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -56,6 +57,7 @@ resource "aws_instance" "vm" {
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = var.instance_type
   key_name                    = aws_key_pair.vm_key.key_name
+  subnet_id                   = var.subnet_id
   vpc_security_group_ids      = [aws_security_group.vm_sg.id]
   associate_public_ip_address = var.associate_public_ip_address
   monitoring                  = var.monitoring_enabled

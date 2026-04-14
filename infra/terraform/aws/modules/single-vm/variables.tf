@@ -57,3 +57,13 @@ variable "additional_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "vpc_id" {
+  description = "VPC ID where the VM and security group will be created"
+  type        = string
+}
+
+variable "subnet_id" {
+  description = "Subnet ID where the EC2 instance will be launched"
+  type        = string
+}

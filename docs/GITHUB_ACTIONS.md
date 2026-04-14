@@ -442,7 +442,7 @@ Create `devboard-frontend/.lighthouserc.json`:
   "ci": {
     "collect": {
       "numberOfRuns": 3,
-      "url": ["http://localhost:3000"]
+      "url": ["http://localhost:80"]
     },
     "assert": {
       "assertions": {
