@@ -4,11 +4,11 @@
 spring:
   # MySQL Database Configuration (Container-friendly)
   datasource:
-    # Use environment variables with container-friendly defaults
-    url: ${DATABASE_URL:jdbc:mysql://mysql:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true}
+    # Prefer DATABASE_* variables, but support legacy DB_* names too
+    url: ${DATABASE_URL:${DB_URL:jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:devboard}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true}}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${DATABASE_USERNAME:devboard_user}
-    password: ${DATABASE_PASSWORD:devboard_pass}
+    username: ${DATABASE_USERNAME:${DB_USERNAME:devboard_user}}
+    password: ${DATABASE_PASSWORD:${DB_PASSWORD:devboard_pass}}
     
     # MySQL Connection pool configuration
     hikari:

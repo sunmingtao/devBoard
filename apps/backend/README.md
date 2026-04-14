@@ -73,7 +73,16 @@ Development default credentials:
 
 ### Environment Variables (common)
 
+The backend now supports both `DATABASE_*` and legacy `DB_*` variable names.
+`DATABASE_*` takes precedence when both are set.
+
 ```bash
+# Preferred names
+DATABASE_URL=jdbc:mysql://localhost:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DATABASE_USERNAME=devboard_user
+DATABASE_PASSWORD=your_secure_password
+
+# Legacy names (still supported)
 DB_HOST=localhost
 DB_PORT=3306
 DB_NAME=devboard
@@ -94,6 +103,24 @@ docker run -p 8080:8080 \
   -e DB_HOST=your_db_host \
   devboard-backend
 ```
+
+### RDS connection troubleshooting (`Access denied for user ...`)
+
+If startup fails with `java.sql.SQLException: Access denied for user ...`, this is usually a MySQL auth issue (credentials or grants), not a security-group reachability issue.
+
+1. Confirm your task/service is using the expected DB variables (`DATABASE_USERNAME` / `DATABASE_PASSWORD` or `DB_USERNAME` / `DB_PASSWORD`).
+2. Verify the user exists on RDS and can connect from `%` (or your app subnet CIDR host pattern):
+   ```sql
+   SELECT user, host FROM mysql.user WHERE user = 'devboard_user';
+   SHOW GRANTS FOR 'devboard_user'@'%';
+   ```
+3. If needed, recreate grants:
+   ```sql
+   CREATE USER IF NOT EXISTS 'devboard_user'@'%' IDENTIFIED BY '***';
+   GRANT ALL PRIVILEGES ON devboard.* TO 'devboard_user'@'%';
+   FLUSH PRIVILEGES;
+   ```
+4. Security groups are likely fine if you see `Access denied`; SG/NACL issues typically surface as timeout/refused errors.
 
 ## 📋 Core API Endpoints
 
