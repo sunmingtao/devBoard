@@ -5,9 +5,9 @@ spring:
   # Production Database Configuration
   datasource:
     # Production should use MySQL or PostgreSQL
-    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/devboard_prod?useSSL=true&requireSSL=true&serverTimezone=UTC}
-    username: ${DATABASE_USERNAME:devboard_prod_user}
-    password: ${DATABASE_PASSWORD:}
+    url: ${DATABASE_URL:${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:devboard_prod}?useSSL=true&requireSSL=true&serverTimezone=UTC}}
+    username: ${DATABASE_USERNAME:${DB_USERNAME:devboard_prod_user}}
+    password: ${DATABASE_PASSWORD:${DB_PASSWORD:}}
     driver-class-name: com.mysql.cj.jdbc.Driver
     
     # Connection pool configuration for production
