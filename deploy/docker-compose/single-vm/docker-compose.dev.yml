@@ -1,7 +1,4 @@
 services:
-  mysql:
-    restart: unless-stopped
-
   backend:
     restart: unless-stopped
 
