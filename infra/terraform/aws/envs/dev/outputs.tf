@@ -25,3 +25,15 @@ output "public_subnet_ids" {
 output "private_db_subnet_ids" {
   value = module.network.private_db_subnet_ids
 }
+
+output "db_address" {
+  value = module.rds_mysql.db_address
+}
+
+output "db_port" {
+  value = module.rds_mysql.db_port
+}
+
+output "db_endpoint" {
+  value = module.rds_mysql.db_endpoint
+}

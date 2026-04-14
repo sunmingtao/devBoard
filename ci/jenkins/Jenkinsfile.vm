@@ -17,9 +17,16 @@ pipeline {
         string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag override. Leave blank to use BUILD_NUMBER')
         string(name: 'DEPLOYMENT_MODE_DIR', defaultValue: 'deploy/docker-compose/single-vm', description: 'Deployment configuration directory')
         string(name: 'SSH_CREDENTIAL_ID', defaultValue: '', description: 'Jenkins SSH credential ID')
+
         choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
         choice(name: 'DEPLOY_MODE', choices: ['build_and_push', 'pull_only'], description: 'Deployment mode')
         booleanParam(name: 'AUTO_MANAGE_TLS', defaultValue: true, description: 'Automatically provision or renew TLS certificates only when required')
+
+        string(name: 'DB_HOST', defaultValue: '', description: 'RDS endpoint hostname')
+        string(name: 'DB_PORT', defaultValue: '3306', description: 'RDS port')
+        string(name: 'DB_NAME', defaultValue: 'devboard', description: 'Database name')
+        string(name: 'DB_USERNAME', defaultValue: 'devboard_user', description: 'Database username')
+        string(name: 'DB_PASSWORD_CREDENTIAL_ID', defaultValue: '', description: 'Jenkins credential ID for database password')
     }
 
     environment {
@@ -58,6 +65,21 @@ pipeline {
                     }
                     if (params.DEPLOY_MODE == 'pull_only' && !params.DOCKER_IMAGE_TAG?.trim()) {
                         error("DOCKER_IMAGE_TAG is required when DEPLOY_MODE is pull_only")
+                    }
+                    if (!params.DB_HOST?.trim()) {
+                        error("DB_HOST is required")
+                    }
+                    if (!params.DB_PORT?.trim()) {
+                        error("DB_PORT is required")
+                    }
+                    if (!params.DB_NAME?.trim()) {
+                        error("DB_NAME is required")
+                    }
+                    if (!params.DB_USERNAME?.trim()) {
+                        error("DB_USERNAME is required")
+                    }
+                    if (!params.DB_PASSWORD_CREDENTIAL_ID?.trim()) {
+                        error("DB_PASSWORD_CREDENTIAL_ID is required")
                     }
                 }
             }
@@ -142,27 +164,31 @@ pipeline {
         }
 
         stage('Prepare Deployment Files') {
-            steps {
-                sh """
-                    cat > ${ENV_FILE_NAME} <<EOF
+    steps {
+        withCredentials([
+            string(credentialsId: params.DB_PASSWORD_CREDENTIAL_ID, variable: 'DB_PASSWORD')
+        ]) {
+            sh """
+                cat > ${ENV_FILE_NAME} <<EOF
 IMAGE_TAG=${EFFECTIVE_IMAGE_TAG}
 
-DATABASE_URL=jdbc:mysql://your-rds-endpoint:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-DATABASE_USERNAME=devboard_user
-DATABASE_PASSWORD=your_password
+DATABASE_URL=jdbc:mysql://${params.DB_HOST}:${params.DB_PORT}/${params.DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DATABASE_USERNAME=${params.DB_USERNAME}
+DATABASE_PASSWORD=\$DB_PASSWORD
 
 BACKEND_PORT=8080
 FRONTEND_HTTP_PORT=80
 FRONTEND_HTTPS_PORT=443
 
-CORS_ALLOWED_ORIGINS=http://${params.VM_IP}:80,https://${params.VM_IP}:443,http://localhost:80
+CORS_ALLOWED_ORIGINS=https://${params.DOMAIN_NAME},http://${params.DOMAIN_NAME},http://localhost:80
 EOF
 
-                    echo "Generated ${ENV_FILE_NAME}:"
-                    cat ${ENV_FILE_NAME}
-                """
-            }
+                echo "Generated ${ENV_FILE_NAME} (sanitized):"
+                sed 's/^DATABASE_PASSWORD=.*/DATABASE_PASSWORD=****/' ${ENV_FILE_NAME}
+            """
         }
+    }
+}
 
         stage('Capture Previous Version') {
             steps {
@@ -210,23 +236,29 @@ EOF
                             cd ${params.DEPLOY_PATH}
 
                             CERT_PATH="certbot/conf/live/${params.DOMAIN_NAME}/fullchain.pem"
+                            KEY_PATH="certbot/conf/live/${params.DOMAIN_NAME}/privkey.pem"
 
                             if [ "${params.AUTO_MANAGE_TLS}" = "true" ]; then
-                                if [ -f "\$CERT_PATH" ] && openssl x509 -checkend 2592000 -noout -in "\$CERT_PATH"; then
+                                if [ -f "\$CERT_PATH" ] && [ -f "\$KEY_PATH" ] && openssl x509 -checkend 2592000 -noout -in "\$CERT_PATH"; then
                                     echo "Valid certificate already present for ${params.DOMAIN_NAME}. Using HTTPS config."
-                                    cp nginx.https.template.conf nginx.https.conf
+                                    cp nginx.https.template.conf active.nginx.conf
                                 else
-                                    echo "Certificate missing or expiring within 30 days. Running one-time certbot issuance/renewal."
-                                    cp nginx.http.conf nginx.https.conf
+                                    echo "Certificate missing or expiring within 30 days. Running certbot."
+                                    cp nginx.http.conf active.nginx.conf
                                     docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml pull frontend certbot
                                     docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml up -d --no-deps frontend
                                     docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml run --rm certbot certonly --webroot -w /var/www/certbot -d ${params.DOMAIN_NAME} --email ${params.LETSENCRYPT_EMAIL} --agree-tos --no-eff-email
-                                    cp nginx.https.template.conf nginx.https.conf
+                                    cp nginx.https.template.conf active.nginx.conf
                                     docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml up -d --no-deps frontend
                                 fi
                             else
-                                echo "AUTO_MANAGE_TLS=false, deploying with HTTPS config as-is."
-                                cp nginx.https.template.conf nginx.https.conf
+                                if [ -f "\$CERT_PATH" ] && [ -f "\$KEY_PATH" ]; then
+                                    echo "AUTO_MANAGE_TLS=false, using existing certificate."
+                                    cp nginx.https.template.conf active.nginx.conf
+                                else
+                                    echo "AUTO_MANAGE_TLS=false but no certificate exists. Aborting."
+                                    exit 1
+                                fi
                             fi
 
                             docker compose -f docker-compose.yml -f docker-compose.${params.ENVIRONMENT}.yml pull
@@ -282,9 +314,9 @@ EOF
 
     post {
         success {
-            echo "Deployment succeeded. Frontend: http://${params.VM_IP}:80"
-            echo "Deployment succeeded. Frontend (HTTPS): https://${params.VM_IP}:443"
-            echo "Backend: http://${params.VM_IP}:8080"
+            echo "Deployment succeeded. Frontend: https://${params.DOMAIN_NAME}"
+            echo "Frontend HTTP: http://${params.DOMAIN_NAME}"
+            echo "API health: https://${params.DOMAIN_NAME}/api/health"
         }
         failure {
             echo "Deployment failed. Attempting rollback..."

@@ -82,3 +82,66 @@ variable "private_db_subnet_cidrs" {
   description = "CIDRs for private DB subnets"
   type        = list(string)
 }
+
+variable "db_instance_identifier" {
+  description = "RDS instance identifier"
+  type        = string
+}
+
+variable "db_name" {
+  description = "Database name"
+  type        = string
+}
+
+variable "db_username" {
+  description = "Database master username"
+  type        = string
+}
+
+variable "db_password" {
+  description = "Database master password"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "db_allocated_storage" {
+  description = "Allocated storage for RDS"
+  type        = number
+  default     = 20
+}
+
+variable "db_max_allocated_storage" {
+  description = "Max allocated storage for RDS autoscaling"
+  type        = number
+  default     = 100
+}
+
+variable "db_multi_az" {
+  description = "Enable Multi-AZ for RDS"
+  type        = bool
+  default     = false
+}
+
+variable "db_deletion_protection" {
+  description = "Enable deletion protection for RDS"
+  type        = bool
+  default     = false
+}
+
+variable "db_skip_final_snapshot" {
+  description = "Skip final snapshot on deletion"
+  type        = bool
+  default     = true
+}
+
+variable "db_backup_retention_period" {
+  description = "Backup retention period in days"
+  type        = number
+  default     = 7
+}

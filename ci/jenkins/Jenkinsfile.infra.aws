@@ -123,6 +123,10 @@ pipeline {
                     string(
                         credentialsId: 'devboard-aws-public-key',
                         variable: 'TF_VAR_public_key'
+                    ),
+                    string(
+                        credentialsId: "devboard-${params.ENVIRONMENT}-db-password",
+                        variable: 'TF_VAR_db_password'
                     )
                 ]) {
                     dir("${env.TF_DIR}") {
@@ -196,6 +200,22 @@ pipeline {
                                 """,
                                 returnStdout: true
                             ).trim()
+
+                            env.TF_DB_HOST = sh(
+                                script: """
+                                    export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                                    terraform output -raw db_address
+                                """,
+                                returnStdout: true
+                            ).trim()
+
+                            env.TF_DB_PORT = sh(
+                                script: """
+                                    export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                                    terraform output -raw db_port
+                                """,
+                                returnStdout: true
+                            ).trim()
                         }
 
                         sh """
@@ -214,6 +234,8 @@ pipeline {
             }
             steps {
                 echo "Terraform public IP: ${env.TF_PUBLIC_IP ?: 'N/A'}"
+                echo "Terraform DB host: ${env.TF_DB_HOST ?: 'N/A'}"
+                echo "Terraform DB port: ${env.TF_DB_PORT ?: 'N/A'}"
             }
         }
 
@@ -241,7 +263,13 @@ pipeline {
                             string(name: 'SSH_CREDENTIAL_ID', value: sshCredentialId),
                             string(name: 'DEPLOYMENT_MODE_DIR', value: 'deploy/docker-compose/single-vm'),
                             string(name: 'DOCKER_IMAGE_TAG', value: params.DOCKER_IMAGE_TAG ?: ''),
-                            string(name: 'DEPLOY_MODE', value: deployMode)
+                            string(name: 'DEPLOY_MODE', value: deployMode),
+
+                            string(name: 'DB_HOST', value: env.TF_DB_HOST),
+                            string(name: 'DB_PORT', value: env.TF_DB_PORT),
+                            string(name: 'DB_NAME', value: 'devboard'),
+                            string(name: 'DB_USERNAME', value: 'devboard_user'),
+                            string(name: 'DB_PASSWORD_CREDENTIAL_ID', value: "devboard-${params.ENVIRONMENT}-db-password")
                         ]
                 }
             }

@@ -26,6 +26,19 @@ enable_termination_protection = false
 monitoring_enabled            = false
 associate_public_ip_address   = true
 
+db_instance_identifier   = "devboard-dev-db"
+db_name                  = "devboard"
+db_username              = "devboard_user"
+db_password              = "devboard_password"
+
+db_instance_class        = "db.t3.micro"
+db_allocated_storage     = 20
+db_max_allocated_storage = 100
+db_multi_az              = false
+db_deletion_protection   = false
+db_skip_final_snapshot   = true
+db_backup_retention_period = 7
+
 additional_tags = {
   Owner      = "Mingtao"
   CostCenter = "learning"

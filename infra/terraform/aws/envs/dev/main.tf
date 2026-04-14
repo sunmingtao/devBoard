@@ -40,3 +40,27 @@ module "single_vm" {
   vpc_id    = module.network.vpc_id
   subnet_id = module.network.public_subnet_ids[0]
 }
+
+module "rds_mysql" {
+  source = "../../modules/rds-mysql"
+
+  environment           = var.environment
+  vpc_id                = module.network.vpc_id
+  subnet_ids            = module.network.private_db_subnet_ids
+  app_security_group_id = module.single_vm.vm_security_group_id
+
+  db_instance_identifier = var.db_instance_identifier
+  db_name                = var.db_name
+  username               = var.db_username
+  password               = var.db_password
+
+  instance_class          = var.db_instance_class
+  allocated_storage       = var.db_allocated_storage
+  max_allocated_storage   = var.db_max_allocated_storage
+  multi_az                = var.db_multi_az
+  deletion_protection     = var.db_deletion_protection
+  skip_final_snapshot     = var.db_skip_final_snapshot
+  backup_retention_period = var.db_backup_retention_period
+
+  additional_tags = var.additional_tags
+}
