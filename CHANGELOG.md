@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
   - Managed A record for `smtdevboard.com` via infrastructure as code
   - Automatically updated DNS records based on EC2 public IP changes
   - Eliminated manual DNS updates during VM recreation
+- Automated EC2 start/stop scheduling using AWS EventBridge and Lambda:
+  - Implemented a reusable Terraform module (`modules/scheduler`) for infrastructure scheduling
+  - Created Lambda functions to start and stop EC2 instances based on tags
+  - Configured EventBridge rules with cron expressions for daily scheduling
 
 ### Changed
 - Migrated database from containerised MySQL to AWS RDS:
@@ -26,6 +30,9 @@ All notable changes to this project will be documented in this file.
 - Strengthened security posture:
   - Isolated database in private subnets
   - Restricted database access to application layer only
+
+### Cost Optimisation
+- Reduced compute costs by automatically stopping EC2 instances during idle hours
 
 ## [0.4.0] - 2026-04-12
 
