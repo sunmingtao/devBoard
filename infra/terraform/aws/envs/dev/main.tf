@@ -72,3 +72,18 @@ module "rds_mysql" {
 
   additional_tags = var.additional_tags
 }
+
+module "scheduler" {
+  source = "../../modules/scheduler"
+
+  name_prefix = "devboard-dev"
+  environment = var.environment
+
+  tag_key   = "AutoSchedule"
+  tag_value = "true"
+
+  start_schedule_expression = "cron(0 21 * * ? *)"
+  stop_schedule_expression  = "cron(0 13 * * ? *)"
+
+  additional_tags = var.additional_tags
+}

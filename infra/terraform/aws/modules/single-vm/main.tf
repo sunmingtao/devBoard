@@ -74,7 +74,8 @@ resource "aws_instance" "vm" {
   tags = merge(
     local.common_tags,
     {
-      Name = var.instance_name
+      Name         = var.instance_name
+      AutoSchedule = "true"
     }
   )
 }
