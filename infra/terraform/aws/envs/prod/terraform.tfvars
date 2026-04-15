@@ -1,7 +1,7 @@
 environment                   = "prod"
 aws_region                    = "ap-southeast-2"
 instance_name                 = "devboard-prod"
-instance_type                 = "t3.small"
+instance_type                 = "t3.micro"
 frontend_port                 = 80
 ssh_allowed_cidr              = "119.18.2.3/32"
 root_volume_size              = 30

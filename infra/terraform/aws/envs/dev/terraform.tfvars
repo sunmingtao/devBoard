@@ -18,7 +18,7 @@ private_db_subnet_cidrs = [
   "10.0.12.0/24"
 ]
 instance_name                 = "devboard-dev-vm"
-instance_type                 = "t3.small"
+instance_type                 = "t3.micro"
 frontend_port                 = 80
 ssh_allowed_cidr              = "119.18.2.3/32"
 root_volume_size              = 30
