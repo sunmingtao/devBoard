@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
   - Ensures stable public IP across stop/start cycles
   - Updated Route 53 A record to point to Elastic IP
 
+- Introduced application monitoring and alerting:
+  - Implemented Route 53 health check for `/api/health`
+  - Configured CloudWatch alarms for application availability and EC2 CPU usage
+  - Integrated SNS email notifications for incident alerts
+
 ## [0.5.0] - 2026-04-15
 
 ### Added
