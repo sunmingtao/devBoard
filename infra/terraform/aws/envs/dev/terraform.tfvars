@@ -46,3 +46,4 @@ additional_tags = {
 
 domain_name     = "smtdevboard.com"
 route53_zone_id = "Z02400223BOTRAEUO0YCG"
+ami_id          = "ami-0d47a01c411ea05d7"

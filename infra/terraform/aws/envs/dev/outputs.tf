@@ -37,3 +37,11 @@ output "db_port" {
 output "db_endpoint" {
   value = module.rds_mysql.db_endpoint
 }
+
+output "elastic_ip" {
+  value = module.single_vm.elastic_ip
+}
+
+output "elastic_ip_allocation_id" {
+  value = module.single_vm.elastic_ip_allocation_id
+}

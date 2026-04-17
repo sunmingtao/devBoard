@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2026-04-17
+
+### Added
+- Introduced Elastic IP for EC2 instance:
+  - Ensures stable public IP across stop/start cycles
+  - Updated Route 53 A record to point to Elastic IP
+
 ## [0.5.0] - 2026-04-15
 
 ### Added

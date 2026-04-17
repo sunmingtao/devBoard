@@ -17,3 +17,11 @@ output "vm_security_group_id" {
 output "subnet_id" {
   value = aws_instance.vm.subnet_id
 }
+
+output "elastic_ip" {
+  value = aws_eip.vm_eip.public_ip
+}
+
+output "elastic_ip_allocation_id" {
+  value = aws_eip.vm_eip.id
+}

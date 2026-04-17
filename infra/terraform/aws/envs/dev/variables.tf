@@ -155,3 +155,8 @@ variable "route53_zone_id" {
   description = "Route 53 hosted zone ID"
   type        = string
 }
+
+variable "ami_id" {
+  description = "AMI ID for the EC2 instance"
+  type        = string
+}

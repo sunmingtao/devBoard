@@ -42,19 +42,8 @@ resource "aws_key_pair" "vm_key" {
   public_key = var.public_key
 }
 
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-
-  owners = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-x86_64"]
-  }
-}
-
 resource "aws_instance" "vm" {
-  ami                         = data.aws_ami.amazon_linux.id
+  ami                         = var.ami_id
   instance_type               = var.instance_type
   key_name                    = aws_key_pair.vm_key.key_name
   subnet_id                   = var.subnet_id
@@ -78,6 +67,22 @@ resource "aws_instance" "vm" {
       AutoSchedule = "true"
     }
   )
+}
+
+resource "aws_eip" "vm_eip" {
+  domain = "vpc"
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.instance_name}-eip"
+    }
+  )
+}
+
+resource "aws_eip_association" "vm_eip_assoc" {
+  instance_id   = aws_instance.vm.id
+  allocation_id = aws_eip.vm_eip.id
 }
 
 locals {

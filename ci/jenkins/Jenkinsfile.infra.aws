@@ -196,7 +196,7 @@ pipeline {
                             env.TF_PUBLIC_IP = sh(
                                 script: """
                                     export AWS_DEFAULT_REGION=${params.AWS_REGION}
-                                    terraform output -raw public_ip
+                                    terraform output -raw elastic_ip
                                 """,
                                 returnStdout: true
                             ).trim()

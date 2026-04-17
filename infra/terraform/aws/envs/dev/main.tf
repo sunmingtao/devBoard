@@ -28,6 +28,7 @@ module "single_vm" {
   environment                   = var.environment
   instance_name                 = var.instance_name
   instance_type                 = var.instance_type
+  ami_id                        = var.ami_id
   frontend_port                 = var.frontend_port
   ssh_allowed_cidr              = var.ssh_allowed_cidr
   public_key                    = var.public_key
@@ -46,7 +47,7 @@ resource "aws_route53_record" "app" {
   name    = var.domain_name
   type    = "A"
   ttl     = 300
-  records = [module.single_vm.public_ip]
+  records = [module.single_vm.elastic_ip]
 }
 
 module "rds_mysql" {
