@@ -85,8 +85,8 @@ kubectl port-forward svc/devboard-frontend 8080:80 -n devboard
 
 📌 Future Improvements
 
--[] Add Ingress (custom domain)
--[] CI/CD with Jenkins or GitHub Actions
--[] Deploy to AWS (EKS + RDS)
--[] Helm chart packaging
+- [ ] Add Ingress (custom domain)
+- [ ] CI/CD with Jenkins or GitHub Actions
+- [ ] Deploy to AWS (EKS + RDS)
+- [ ] Helm chart packaging
 -[] Horizontal Pod Autoscaling
