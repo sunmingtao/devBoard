@@ -234,8 +234,8 @@ EOF
 
                         scp -O -o StrictHostKeyChecking=no ${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/${COMPOSE_FILE}
                         scp -O -o StrictHostKeyChecking=no ${params.DEPLOYMENT_MODE_DIR}/docker-compose.${params.ENVIRONMENT}.yml ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/docker-compose.${params.ENVIRONMENT}.yml
-                        scp -O -o StrictHostKeyChecking=no deploy/nginx/nginx.http.conf ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/nginx.http.conf
-                        scp -O -o StrictHostKeyChecking=no deploy/nginx/nginx.https.conf ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/nginx.https.template.conf
+                        scp -O -o StrictHostKeyChecking=no deploy/single-vm/nginx/nginx.http.conf ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/nginx.http.conf
+                        scp -O -o StrictHostKeyChecking=no deploy/single-vm/nginx/nginx.https.conf ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/nginx.https.template.conf
                         scp -O -o StrictHostKeyChecking=no ${ENV_FILE_NAME} ${params.SSH_USER}@${params.VM_IP}:${params.DEPLOY_PATH}/.env
 
                         ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.VM_IP} '
