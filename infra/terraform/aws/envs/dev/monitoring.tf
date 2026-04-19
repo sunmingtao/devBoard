@@ -9,10 +9,10 @@ resource "aws_sns_topic_subscription" "email" {
 }
 
 resource "aws_route53_health_check" "app_health" {
-  fqdn              = var.domain_name
-  port              = 443
-  type              = "HTTPS"
-  resource_path     = "/api/health"
+  fqdn          = var.domain_name
+  port          = 443
+  type          = "HTTPS"
+  resource_path = "/api/health"
 
   request_interval  = 30
   failure_threshold = 3
