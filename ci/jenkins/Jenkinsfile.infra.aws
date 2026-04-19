@@ -256,7 +256,7 @@ pipeline {
                             string(name: 'SSH_USER', value: 'ec2-user'),
                             string(name: 'DEPLOY_PATH', value: '/opt/devboard'),
                             string(name: 'SSH_CREDENTIAL_ID', value: sshCredentialId),
-                            string(name: 'DEPLOYMENT_MODE_DIR', value: 'deploy/docker-compose/single-vm'),
+                            string(name: 'DEPLOYMENT_MODE_DIR', value: 'deploy/single-vm'),
                             string(name: 'DEPLOY_MODE', value: deployMode),
 
                             string(name: 'DB_HOST', value: env.TF_DB_HOST),
