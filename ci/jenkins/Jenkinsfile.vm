@@ -121,8 +121,8 @@ pipeline {
                     test -d "${APP_FRONTEND_DIR}"
                     test -f "${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE}"
                     test -f "${params.DEPLOYMENT_MODE_DIR}/docker-compose.${params.ENVIRONMENT}.yml"
-                    test -f "deploy/nginx/nginx.http.conf"
-                    test -f "deploy/nginx/nginx.https.conf"
+                    test -f "deploy/single-vm/nginx/nginx.http.conf"
+                    test -f "deploy/single-vm/nginx/nginx.https.conf"
                 """
             }
         }
