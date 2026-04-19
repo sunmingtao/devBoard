@@ -14,7 +14,7 @@ pipeline {
         string(name: 'DEPLOY_PATH', defaultValue: '/opt/devboard', description: 'Deployment path on target VM')
         string(name: 'DOMAIN_NAME', defaultValue: 'smtdevboard.com', description: 'Public domain used for TLS certificates')
         string(name: 'LETSENCRYPT_EMAIL', defaultValue: 'sunmingtao@gmail.com', description: 'Email used for Let\'s Encrypt registration')
-        string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag override. Leave blank to use BUILD_NUMBER')
+        string(name: 'DOCKER_IMAGE_TAG', defaultValue: '44', description: 'Optional Docker image tag override. Leave blank to use BUILD_NUMBER')
         string(name: 'DEPLOYMENT_MODE_DIR', defaultValue: 'deploy/single-vm', description: 'Deployment configuration directory')
         string(name: 'SSH_CREDENTIAL_ID', defaultValue: '', description: 'Jenkins SSH credential ID')
 
