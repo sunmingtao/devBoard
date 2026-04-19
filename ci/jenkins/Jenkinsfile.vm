@@ -15,11 +15,12 @@ pipeline {
         string(name: 'DOMAIN_NAME', defaultValue: 'smtdevboard.com', description: 'Public domain used for TLS certificates')
         string(name: 'LETSENCRYPT_EMAIL', defaultValue: 'sunmingtao@gmail.com', description: 'Email used for Let\'s Encrypt registration')
         string(name: 'DOCKER_IMAGE_TAG', defaultValue: '', description: 'Optional Docker image tag override. Leave blank to use BUILD_NUMBER')
-        string(name: 'DEPLOYMENT_MODE_DIR', defaultValue: 'deploy/docker-compose/single-vm', description: 'Deployment configuration directory')
+        string(name: 'DEPLOYMENT_MODE_DIR', defaultValue: 'deploy/single-vm', description: 'Deployment configuration directory')
         string(name: 'SSH_CREDENTIAL_ID', defaultValue: '', description: 'Jenkins SSH credential ID')
 
         choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Target environment')
         choice(name: 'DEPLOY_MODE', choices: ['build_and_push', 'pull_only'], description: 'Deployment mode')
+        choice(name: 'HEALTHCHECK_SCHEME', choices: ['https', 'http'], description: 'Protocol used for post-deploy health check')
         booleanParam(name: 'AUTO_MANAGE_TLS', defaultValue: true, description: 'Automatically provision or renew TLS certificates only when required')
 
         string(name: 'DB_HOST', defaultValue: '', description: 'RDS endpoint hostname')
@@ -81,6 +82,9 @@ pipeline {
                     if (!params.DB_PASSWORD_CREDENTIAL_ID?.trim()) {
                         error("DB_PASSWORD_CREDENTIAL_ID is required")
                     }
+                    if (!params.SSH_CREDENTIAL_ID?.trim()) {
+                        error("SSH_CREDENTIAL_ID is required")
+                    }
                 }
             }
         }
@@ -116,6 +120,10 @@ pipeline {
                     test -d "${APP_BACKEND_DIR}"
                     test -d "${APP_FRONTEND_DIR}"
                     test -f "${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE}"
+                    test -f "${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE}"
+                    test -f "${params.DEPLOYMENT_MODE_DIR}/docker-compose.${params.ENVIRONMENT}.yml"
+                    test -f "deploy/nginx/nginx.http.conf"
+                    test -f "deploy/nginx/nginx.https.conf"
                 """
             }
         }
@@ -164,12 +172,12 @@ pipeline {
         }
 
         stage('Prepare Deployment Files') {
-    steps {
-        withCredentials([
-            string(credentialsId: params.DB_PASSWORD_CREDENTIAL_ID, variable: 'DB_PASSWORD')
-        ]) {
-            sh """
-                cat > ${ENV_FILE_NAME} <<EOF
+            steps {
+                withCredentials([
+                    string(credentialsId: params.DB_PASSWORD_CREDENTIAL_ID, variable: 'DB_PASSWORD')
+                ]) {
+                    sh """
+                        cat > ${ENV_FILE_NAME} <<EOF
 IMAGE_TAG=${EFFECTIVE_IMAGE_TAG}
 
 DATABASE_URL=jdbc:mysql://${params.DB_HOST}:${params.DB_PORT}/${params.DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -280,7 +288,7 @@ EOF
                             echo "Running health check..."
 
                             for i in {1..10}; do
-                                if curl -f https://${params.DOMAIN_NAME}/api/health; then
+                                if curl -f ${params.HEALTHCHECK_SCHEME}://${params.DOMAIN_NAME}/api/health; then
                                     echo "Health check passed"
                                     exit 0
                                 fi
