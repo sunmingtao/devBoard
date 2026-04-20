@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1] - 2026-04-21
+
+### Added
+
+- AWS ALB Ingress integration with domain routing via Route 53
+- HTTPS support using AWS ACM with automatic HTTP → HTTPS redirection
+
 ## [0.6.0] - 2026-04-20
 
 ### Added 

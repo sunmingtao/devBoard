@@ -4,4 +4,4 @@ metadata:
   name: devboard-frontend
   namespace: devboard
 spec:
-  type: LoadBalancer
+  type: ClusterIP

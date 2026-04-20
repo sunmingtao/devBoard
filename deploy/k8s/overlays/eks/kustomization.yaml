@@ -8,6 +8,7 @@ resources:
   - backend-configmap.yaml
   - backend-secret.yaml
   - frontend-nginx-configmap.yaml
+  - ingress.yaml
 
 patchesStrategicMerge:
   - frontend-service-patch.yaml
