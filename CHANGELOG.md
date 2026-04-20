@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-04-20
+
+### Added 
+
+- Local Kubernetes deployment using Minikube for development and testing
+- Kubernetes manifests (Deployment, Service, ConfigMap, Secret) for full-stack application
+- Ingress-based routing in local environment with Nginx Ingress Controller
+- AWS EKS deployment for cloud environment
+- Public access via AWS LoadBalancer (ELB) for frontend service
+- Integration with Amazon RDS (MySQL) in private subnets
+- Secure network configuration using AWS Security Groups for EKS ↔ RDS connectivity
+- Domain mapping via Route 53 to expose application through custom domain
+
+### Improved
+
+- Migration from Docker Compose to Kubernetes architecture
+- Separation of environments using Kustomize overlays (local vs EKS)
+- Reverse proxy setup (Nginx) to unify frontend and backend access and avoid CORS issues
+
 ## [0.5.1] - 2026-04-17
 
 ### Added

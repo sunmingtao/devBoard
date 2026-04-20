@@ -1,0 +1,24 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: devboard-eks
+  region: ap-southeast-2
+  version: "1.30"
+
+vpc:
+  id: vpc-020828e372dadaba1
+  subnets:
+    public:
+      ap-southeast-2a:
+        id: subnet-01e5a274e5a3edf00
+      ap-southeast-2b:
+        id: subnet-09d8021a37163d2e2
+
+managedNodeGroups:
+  - name: devboard-ng
+    instanceType: t3.small
+    desiredCapacity: 2
+    minSize: 1
+    maxSize: 2
+    privateNetworking: false

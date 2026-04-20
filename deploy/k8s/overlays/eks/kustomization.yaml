@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: devboard
+
+resources:
+  - ../../base
+  - backend-configmap.yaml
+  - backend-secret.yaml
+  - frontend-nginx-configmap.yaml
+
+patchesStrategicMerge:
+  - frontend-service-patch.yaml
