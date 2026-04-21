@@ -1,24 +1,83 @@
 <template>
   <div class="home">
     <header class="hero">
-      <h1 v-if="isAuthenticated">Welcome back, {{ username }}! 👋</h1>
-      <h1 v-else>Welcome to DevBoard</h1>
+      <p class="hero-badge">DevOps Portfolio Project</p>
+      <h1 v-if="isAuthenticated">Welcome back, {{ username }} 👋</h1>
+      <h1 v-else>DevBoard: From Code to Cloud</h1>
       <p class="hero-subtitle">
-        A modern task management system for developers
+        A full-stack platform showcasing CI/CD, Kubernetes, Terraform, and AWS
+        delivery practices.
       </p>
+      <div class="hero-pills">
+        <span>Vue 3 + Vite</span>
+        <span>Spring Boot 3.3</span>
+        <span>Jenkins CI/CD</span>
+        <span>Terraform IaC</span>
+        <span>AWS EKS + RDS</span>
+      </div>
       <div class="hero-actions">
         <router-link v-if="isAuthenticated" to="/tasks" class="btn btn-primary">
           View Your Tasks
         </router-link>
         <router-link v-else to="/login" class="btn btn-primary">
-          Get Started
+          Explore the Demo
         </router-link>
         <router-link to="/about" class="btn btn-secondary">
-          Learn More
+          Architecture Details
         </router-link>
       </div>
     </header>
 
+    <section class="highlights">
+      <article class="highlight-card">
+        <h3>🚀 End-to-End Delivery</h3>
+        <p>
+          Build, test, and deploy through Jenkins pipelines with environment
+          separation for development and production.
+        </p>
+      </article>
+      <article class="highlight-card">
+        <h3>☁️ Cloud-Native Infrastructure</h3>
+        <p>
+          Provisioned with Terraform and deployed on AWS using EKS, ALB ingress,
+          Route 53 DNS, ACM certificates, and RDS in private subnets.
+        </p>
+      </article>
+      <article class="highlight-card">
+        <h3>🔒 Production Readiness</h3>
+        <p>
+          HTTPS by default, secure networking, health checks, monitoring alarms,
+          and alerting workflows for operational visibility.
+        </p>
+      </article>
+    </section>
+
+    <section class="roadmap">
+      <h2>Recent DevOps Milestones</h2>
+      <div class="timeline">
+        <div class="timeline-item">
+          <p class="timeline-version">v0.6.1 · 2026-04-21</p>
+          <p>
+            Enabled ALB ingress with Route 53 domain routing and ACM-powered
+            HTTPS redirection.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <p class="timeline-version">v0.6.0 · 2026-04-20</p>
+          <p>
+            Migrated deployment model to Kubernetes (local Minikube + AWS EKS)
+            with environment overlays.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <p class="timeline-version">v0.5.x · 2026-04-15 ~ 2026-04-17</p>
+          <p>
+            Added EventBridge/Lambda scheduling, migrated database to AWS RDS,
+            and introduced health monitoring and SNS alerts.
+          </p>
+        </div>
+      </div>
+    </section>
 
     <!-- API Testing Section -->
     <section class="api-test-section">
@@ -26,7 +85,7 @@
     </section>
 
     <section class="features">
-      <h2>Features</h2>
+      <h2>Application Capabilities</h2>
       <div class="feature-grid">
         <div class="feature-card">
           <h3>🎯 Task Management</h3>
@@ -149,6 +208,18 @@
     margin-top: 1rem;
   }
 
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
 
   .api-test-section {
     margin-bottom: 3rem;
@@ -172,8 +243,25 @@
 
   .hero-subtitle {
     font-size: 1.25rem;
-    margin-bottom: 2rem;
+    margin: 1rem auto 1.5rem auto;
     opacity: 0.9;
+    max-width: 700px;
+  }
+
+  .hero-pills {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-pills span {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.88rem;
   }
 
   .hero-actions {
@@ -212,6 +300,62 @@
   .btn-secondary:hover {
     background-color: #fff;
     color: #667eea;
+  }
+
+  .highlights {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .highlight-card {
+    background: #ffffff;
+    border: 1px solid #e8eaf2;
+    border-radius: 0.8rem;
+    padding: 1.2rem;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  }
+
+  .highlight-card h3 {
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+  }
+
+  .highlight-card p {
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  .roadmap {
+    margin-bottom: 3rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 2rem;
+  }
+
+  .roadmap h2 {
+    margin-bottom: 1rem;
+    color: #111827;
+  }
+
+  .timeline {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .timeline-item {
+    border-left: 4px solid #6366f1;
+    background: #f8faff;
+    padding: 0.9rem 1rem;
+    border-radius: 0.35rem;
+  }
+
+  .timeline-version {
+    font-weight: 700;
+    color: #3730a3;
+    margin-bottom: 0.25rem;
   }
 
   .features {
@@ -254,5 +398,19 @@
   .feature-card p {
     color: #666;
     line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .home {
+      padding: 1rem;
+    }
+
+    .hero {
+      padding: 3rem 1.2rem;
+    }
+
+    .hero h1 {
+      font-size: 2.1rem;
+    }
   }
 </style>
