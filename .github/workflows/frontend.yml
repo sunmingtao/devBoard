@@ -5,12 +5,12 @@ on:
   push:
     branches: [ main, release ]
     paths:
-      - 'devboard-frontend/**'
+      - 'apps/frontend/**'
       - '.github/workflows/frontend.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'devboard-frontend/**'
+      - 'apps/frontend/**'
 
 # Environment variables
 env:
@@ -34,26 +34,26 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: devboard-frontend/package-lock.json
+          cache-dependency-path: apps/frontend/package-lock.json
 
       # Step 3: Install dependencies
       - name: Install dependencies
-        working-directory: ./devboard-frontend
+        working-directory: ./apps/frontend
         run: npm ci
 
       # Step 4: Run linting
       - name: Run ESLint
-        working-directory: ./devboard-frontend
+        working-directory: ./apps/frontend
         run: npm run lint || true  # Don't fail on lint warnings
 
       # Step 5: Run tests
       - name: Run tests
-        working-directory: ./devboard-frontend
+        working-directory: ./apps/frontend
         run: npm run test:run
 
       # Step 6: Build production bundle
       - name: Build for production
-        working-directory: ./devboard-frontend
+        working-directory: ./apps/frontend
         run: |
           npm run build
           # Verify build output
@@ -64,12 +64,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
-          path: devboard-frontend/dist/
+          path: apps/frontend/dist/
           retention-days: 7
 
       # Step 8: Check bundle size
       - name: Analyze bundle size
-        working-directory: ./devboard-frontend
+        working-directory: ./apps/frontend
         run: |
           echo "=== Bundle Size Analysis ==="
           echo "Total dist size:"
@@ -114,7 +114,7 @@ jobs:
       - name: Build Docker image (local only)
         uses: docker/build-push-action@v5
         with:
-          context: ./devboard-frontend
+          context: ./apps/frontend
           push: false  # Just build, don't push
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -150,7 +150,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: devboard-frontend/dist/
+          path: apps/frontend/dist/
 
       # Step 3: Deploy preview (placeholder for Vercel/Netlify)
       - name: Deploy Preview
@@ -185,11 +185,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: devboard-frontend/dist/
+          path: apps/frontend/dist/
 
       # Step 3: Serve the app locally
       - name: Serve app
-        working-directory: ./devboard-frontend
+        working-directory: ./apps/frontend
         run: |
           npm install -g serve
           serve -s dist -p 3000 &
@@ -204,7 +204,7 @@ jobs:
           uploadArtifacts: true
           temporaryPublicStorage: true
           # Performance budget
-          budgetPath: ./devboard-frontend/.lighthouserc.json
+          budgetPath: ./apps/frontend/.lighthouserc.json
 
       # Step 5: Comment results on PR (if applicable)
       - name: Format Lighthouse results
