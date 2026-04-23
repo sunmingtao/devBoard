@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'devboard-backend/**'
+      - 'apps/backend/**'
       - '.github/workflows/deploy-backend.yml'
 
 env:
@@ -37,11 +37,11 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
     
     - name: Run tests
-      working-directory: ./devboard-backend
+      working-directory: ./apps/backend
       run: mvn test
       
     - name: Build with Maven
-      working-directory: ./devboard-backend
+      working-directory: ./apps/backend
       run: mvn package
     
     - name: Configure AWS credentials
@@ -56,7 +56,7 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
     
     - name: Build, tag, and push image to Amazon ECR
-      working-directory: ./devboard-backend
+      working-directory: ./apps/backend
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}

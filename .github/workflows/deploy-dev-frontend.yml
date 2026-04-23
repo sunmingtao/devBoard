@@ -5,7 +5,7 @@ on:
     branches:
       - develop
     paths:
-      - 'devboard-frontend/**'
+      - 'apps/frontend/**'
       - '.github/workflows/deploy-dev-frontend.yml'
   workflow_dispatch:
 
@@ -23,11 +23,11 @@ jobs:
         node-version: '18'
     
     - name: Install dependencies
-      working-directory: ./devboard-frontend
+      working-directory: ./apps/frontend
       run: npm ci
     
     - name: Run tests
-      working-directory: ./devboard-frontend
+      working-directory: ./apps/frontend
       run: npm run test:run || echo "Tests failed but continuing deployment"
       continue-on-error: true
     
@@ -63,7 +63,7 @@ jobs:
         echo "Development CloudFront domain: $CF_DOMAIN"
 
     - name: Build frontend for development
-      working-directory: ./devboard-frontend
+      working-directory: ./apps/frontend
       env:
         # Replace placeholder with actual CloudFront domain
         VITE_API_URL: https://${{ steps.get-dev-cf-domain.outputs.DEV_CF_DOMAIN }}
@@ -93,7 +93,7 @@ jobs:
         echo "CF_DIST_ID=$CF_DIST_ID" >> $GITHUB_OUTPUT
     
     - name: Deploy to S3
-      working-directory: ./devboard-frontend
+      working-directory: ./apps/frontend
       run: |
         aws s3 sync dist/ s3://${{ steps.get-resources.outputs.S3_BUCKET }} --delete
     

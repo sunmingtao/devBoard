@@ -5,12 +5,12 @@ on:
   push:
     branches: [ main, release ]
     paths:
-      - 'devboard-backend/**'
+      - 'apps/backend/**'
       - '.github/workflows/backend.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'devboard-backend/**'
+      - 'apps/backend/**'
 
 # Environment variables available to all jobs
 env:
@@ -65,7 +65,7 @@ jobs:
 
       # Step 4: Run tests
       - name: Run Tests
-        working-directory: ./devboard-backend
+        working-directory: ./apps/backend
         run: |
           mvn clean test
         env:
@@ -76,7 +76,7 @@ jobs:
 
       # Step 5: Build application
       - name: Build with Maven
-        working-directory: ./devboard-backend
+        working-directory: ./apps/backend
         run: mvn clean package -DskipTests
 
       # Step 6: Upload JAR artifact
@@ -84,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backend-jar
-          path: devboard-backend/target/*.jar
+          path: apps/backend/target/*.jar
           retention-days: 1
 
   # Job 2: Build Docker Image (only on main branch)
@@ -104,7 +104,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-jar
-          path: devboard-backend/target
+          path: apps/backend/target
 
       # Step 3: Set up Docker Buildx
       - name: Set up Docker Buildx
@@ -137,7 +137,7 @@ jobs:
       - name: Build Docker image (local only)
         uses: docker/build-push-action@v5
         with:
-          context: ./devboard-backend
+          context: ./apps/backend
           push: false  # Just build, don't push anywhere
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

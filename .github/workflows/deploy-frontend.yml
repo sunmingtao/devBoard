@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'devboard-frontend/**'
+      - 'apps/frontend/**'
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:
@@ -22,15 +22,15 @@ jobs:
         node-version: '18'
         
     - name: Install dependencies
-      working-directory: ./devboard-frontend
+      working-directory: ./apps/frontend
       run: npm ci
       
     - name: Run tests
-      working-directory: ./devboard-frontend
+      working-directory: ./apps/frontend
       run: npm run test:run
       
     - name: Build frontend
-      working-directory: ./devboard-frontend
+      working-directory: ./apps/frontend
       run: npm run build
       
     - name: Configure AWS credentials
@@ -41,7 +41,7 @@ jobs:
         aws-region: us-east-1
         
     - name: Deploy to S3
-      working-directory: ./devboard-frontend
+      working-directory: ./apps/frontend
       run: |
         aws s3 sync dist/ s3://devboard-frontend-627073650332 --delete
         
