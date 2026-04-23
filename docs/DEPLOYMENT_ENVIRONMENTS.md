@@ -2,6 +2,50 @@
 
 This document explains how to run DevBoard in different environments using Docker Compose.
 
+## 🌿 Branch Strategy
+
+To reduce release risk, DevBoard uses a lightweight GitFlow-style branch model with clear environment mapping.
+
+| Branch | Purpose | Deployment Target | Merge Rules |
+|--------|---------|-------------------|-------------|
+| `main` | Production-ready code only | **Production** | Protected. PR required, CI green, 2 approvals (one must be Backend/Frontend owner based on changed code). |
+| `develop` | Integration branch for upcoming release | **Dev shared environment** | Protected. PR required, CI green, 1 approval. |
+| `feature/*` | New features and non-urgent changes | Preview/local + optional dev validation via PR | Branch from `develop`, merge back to `develop` only. |
+| `release/*` | Release hardening and final validation | **Staging / pre-prod** | Branch from `develop`, only bugfix/docs/versioning commits allowed, merge to `main` and back to `develop`. |
+| `hotfix/*` | Urgent production fixes | **Production (expedited)** | Branch from `main`, requires incident ticket, merge to `main` and back to `develop`. |
+
+### Versioning and promotion flow
+
+1. `feature/*` PR merged into `develop`.
+2. Create `release/x.y.z` when scope is frozen.
+3. Validate on staging and run regression checks.
+4. Merge `release/x.y.z` into `main`, tag `vX.Y.Z`, deploy to production.
+5. Merge same changes back into `develop`.
+
+## 🚢 Deployment Ownership (Who Can Ship Where)
+
+| Environment | Branch Source | Who can trigger deploy | Required approvals | Notes |
+|-------------|---------------|------------------------|--------------------|-------|
+| Local / ephemeral | `feature/*`, `develop` | Any engineer | None | For developer verification only. |
+| Dev (shared) | `develop` | Any engineer in `devboard-write` group | 1 reviewer on PR to `develop` | Auto-deploy preferred after CI passes. |
+| Staging / pre-prod | `release/*` | Release Manager, Tech Lead, DevOps | 1 code owner + QA sign-off | Must publish release notes and test summary. |
+| Production | `main` tag (`v*`) | Release Manager or DevOps on-call only | 2 approvals + change record | No direct deploy from personal branches. |
+| Production hotfix | `hotfix/*` -> `main` | DevOps on-call + Incident Commander | 1 emergency approval (post-review required within 24h) | Mandatory rollback plan before deploy. |
+
+### Recommended role mapping
+
+- **Code Owners:** service-level ownership (Backend/API, Frontend/Web, Infra/CI).
+- **Release Manager:** coordinates cut, checklist, communications, and go/no-go call.
+- **DevOps on-call:** executes production deploy, monitors telemetry, performs rollback if needed.
+- **Incident Commander (hotfix only):** approves emergency release scope.
+
+### Guardrails
+
+- Protect `main` and `develop` against force-push and direct commits.
+- Require successful CI status checks before merge/deploy.
+- Require signed tags for production releases.
+- Store deployment logs (who/when/what version) in CI artifacts and release notes.
+
 ## 🏗️ Environment Overview
 
 | Environment | Spring Profile | Database | Frontend | Use Case |
