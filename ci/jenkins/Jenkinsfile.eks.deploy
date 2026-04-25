@@ -69,22 +69,43 @@ pipeline {
 
         stage('Render Kubernetes Manifests') {
             steps {
-                sh """
-                    set -eux
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
-                    if [ -z "${params.IMAGE_TAG}" ]; then
-                    echo "ERROR: IMAGE_TAG is empty"
-                    exit 1
-                    fi
+                        if [ -z "${params.IMAGE_TAG}" ]; then
+                          echo "ERROR: IMAGE_TAG is empty"
+                          exit 1
+                        fi
 
-                    rm -rf ${env.K8S_RENDER_DIR}
-                    cp -r deploy/k8s ${env.K8S_RENDER_DIR}
+                        cd ${env.TF_DIR}
+                        terraform init -backend-config=backend.hcl
+                        DB_HOST=\$(terraform output -raw db_address)
 
-                    export IMAGE_TAG=${params.IMAGE_TAG}
+                        if [ -z "\$DB_HOST" ]; then
+                          echo "ERROR: DB_HOST is empty"
+                          exit 1
+                        fi
+                        cd -
 
-                    envsubst < ${env.BACKEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/eks/backend-deployment.yaml
-                    envsubst < ${env.FRONTEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/eks/frontend-deployment.yaml
-                """
+                        rm -rf ${env.K8S_RENDER_DIR}
+                        cp -r deploy/k8s ${env.K8S_RENDER_DIR}
+
+                        export IMAGE_TAG=${params.IMAGE_TAG}
+                        export DB_HOST=\$DB_HOST
+
+                        envsubst < ${env.BACKEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/eks/backend-deployment.yaml
+                        envsubst < ${env.FRONTEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/eks/frontend-deployment.yaml
+                        envsubst < ${env.BACKEND_CONFIG_TEMPLATE} > ${env.K8S_RENDER_DIR}/overlays/eks/backend-configmap.yaml
+                    """
+                }
             }
         }
 
@@ -108,38 +129,7 @@ pipeline {
                 }
             }
         }
-
-        stage('Inject RDS Endpoint into Backend ConfigMap') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-devboard-terraform',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    sh """
-                        set -eux
-                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
-
-                        cd ${env.TF_DIR}
-                        terraform init -backend-config=backend.hcl
-                        DB_HOST=\$(terraform output -raw db_address)
-
-                        if [ -z "\$DB_HOST" ]; then
-                          echo "ERROR: DB_HOST is empty"
-                          exit 1
-                        fi
-
-                        export DB_HOST
-                        cd -
-
-                        envsubst < ${env.BACKEND_CONFIG_TEMPLATE} | kubectl apply -f -
-                    """
-                }
-            }
-        }
-
+        
         stage('Restart Backend') {
             steps {
                 withCredentials([
