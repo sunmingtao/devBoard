@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.2] - 2026-04-25
+
+### Added
+
+- End-to-end EKS deployment workflow integrating Terraform, Kubernetes, and AWS services
+- RDS MySQL instance provisioned via Terraform with secure access from EKS (IRSA + SG rules)
+- Dynamic backend configuration using Terraform outputs and envsubst for runtime DB injection
+- Automated ALB provisioning via Kubernetes Ingress and AWS Load Balancer Controller
+- Route 53 A Alias record managed by Terraform for custom domain routing to ALB
+
+### Notes
+
+- Multi-stage Terraform apply required due to asynchronous ALB provisioning from Ingress
+- Resolved issues with Terraform state drift, Ingress finalizers, and ALB lookup limitations
+
 ## [0.6.1] - 2026-04-21
 
 ### Added

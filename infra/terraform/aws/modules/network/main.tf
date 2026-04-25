@@ -33,9 +33,13 @@ resource "aws_subnet" "public" {
   tags = merge(
     local.common_tags,
     {
-      Name = "${var.name_prefix}-public-${count.index + 1}"
-      Tier = "public"
-    }
+      Name                     = "${var.name_prefix}-public-${count.index + 1}"
+      Tier                     = "public"
+      "kubernetes.io/role/elb" = "1"
+    },
+    var.eks_cluster_name != null ? {
+      "kubernetes.io/cluster/${var.eks_cluster_name}" = "shared"
+    } : {}
   )
 }
 

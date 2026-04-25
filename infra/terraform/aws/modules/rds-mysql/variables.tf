@@ -13,9 +13,9 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "app_security_group_id" {
-  description = "Security group ID of the application VM"
-  type        = string
+variable "allowed_security_group_ids" {
+  description = "Security groups allowed to access the RDS instance"
+  type        = map(string)
 }
 
 variable "db_instance_identifier" {

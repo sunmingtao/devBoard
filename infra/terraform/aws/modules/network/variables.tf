@@ -33,3 +33,9 @@ variable "additional_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "eks_cluster_name" {
+  description = "Optional EKS cluster name for subnet tagging"
+  type        = string
+  default     = null
+}
