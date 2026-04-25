@@ -1,9 +1,3 @@
-provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  config_path            = "~/.kube/config"
-}
-
 data "aws_acm_certificate" "www" {
   domain      = "smtdevboard.com"
   statuses    = ["ISSUED"]
