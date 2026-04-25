@@ -30,10 +30,14 @@ resource "aws_iam_role_policy_attachment" "alb_attach" {
   policy_arn = aws_iam_policy.alb_controller.arn
 }
 
+data "aws_eks_cluster_auth" "this" {
+  name = var.cluster_name
+}
+
 provider "kubernetes" {
   host                   = var.cluster_endpoint
   cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
-  config_path            = "~/.kube/config"
+  token                  = data.aws_eks_cluster_auth.this.token
 }
 
 resource "kubernetes_service_account_v1" "alb_controller" {
@@ -51,7 +55,7 @@ provider "helm" {
   kubernetes = {
     host                   = var.cluster_endpoint
     cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
-    config_path            = "~/.kube/config"
+    token                  = data.aws_eks_cluster_auth.this.token
   }
 }
 

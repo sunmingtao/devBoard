@@ -31,11 +31,3 @@ variable "backend_service_port" {
   type = number
   default = 8080
 }
-
-variable "cluster_endpoint" {
-  type = string
-}
-
-variable "cluster_certificate_authority_data" {
-  type = string
-}
