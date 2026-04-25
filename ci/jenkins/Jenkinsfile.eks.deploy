@@ -9,7 +9,6 @@ pipeline {
     parameters {
         string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
         string(name: 'CLUSTER_NAME', defaultValue: 'devboard-dev-eks', description: 'EKS cluster name')
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag')
         string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
     }
 
