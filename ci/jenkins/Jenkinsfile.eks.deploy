@@ -128,6 +128,26 @@ pipeline {
             }
         }
 
+        stage('Verify Rollout') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl rollout status deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
+                        kubectl rollout status deployment/devboard-frontend -n ${env.NAMESPACE} --timeout=300s
+                    """
+                }
+            }
+        }
+
         stage('Verify Application Pods') {
             steps {
                 withCredentials([
@@ -148,25 +168,6 @@ pipeline {
             }
         }
 
-        stage('Verify Rollout') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-devboard-terraform',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    sh """
-                        set -eux
-                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
-
-                        kubectl rollout status deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
-                        kubectl rollout status deployment/devboard-frontend -n ${env.NAMESPACE} --timeout=300s
-                    """
-                }
-            }
-        }
     }
 
     post {
