@@ -45,3 +45,13 @@ variable "db_allocated_storage" {
 variable "route53_zone_id" {
   type = string
 }
+
+variable "enable_ingress" {
+  type    = bool
+  default = false
+}
+
+variable "enable_route53" {
+  type    = bool
+  default = false
+}

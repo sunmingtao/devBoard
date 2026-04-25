@@ -1,0 +1,140 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        AWS_REGION = 'ap-southeast-2'
+        TF_DIR = 'infra/terraform/aws/envs/dev-eks'
+        TF_BACKEND_CONFIG = 'backend.hcl'
+        TF_VAR_enable_ingress = "false"
+        TF_VAR_enable_route53 = "false"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Verify Tools') {
+            steps {
+                sh '''
+                    set -e
+                    echo "Checking required tools..."
+                    aws --version
+                    terraform version
+                    kubectl version --client
+                    helm version
+                '''
+            }
+        }
+
+        stage('AWS Identity') {
+            steps {
+                sh '''
+                    set -e
+                    aws sts get-caller-identity
+                '''
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh '''
+                        set -e
+                        terraform init -backend-config=${TF_BACKEND_CONFIG}
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Format Check') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh '''
+                        set -e
+                        terraform fmt -check -recursive
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh '''
+                        set -e
+                        terraform validate
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh '''
+                        set -e
+                        terraform plan -out=tfplan
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh '''
+                        set -e
+                        terraform apply -auto-approve tfplan
+                    '''
+                }
+            }
+        }
+
+        stage('Update kubeconfig') {
+            steps {
+                sh '''
+                    set -e
+                    aws eks update-kubeconfig \
+                      --region ${AWS_REGION} \
+                      --name devboard-dev-eks
+                '''
+            }
+        }
+
+        stage('Verify EKS') {
+            steps {
+                sh '''
+                    set -e
+                    kubectl get nodes
+                    kubectl get pods -n kube-system
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'EKS infrastructure apply completed successfully.'
+        }
+
+        failure {
+            echo 'EKS infrastructure apply failed. Check Terraform and AWS/EKS logs.'
+        }
+
+        always {
+            dir("${TF_DIR}") {
+                sh '''
+                    rm -f tfplan || true
+                '''
+            }
+        }
+    }
+}

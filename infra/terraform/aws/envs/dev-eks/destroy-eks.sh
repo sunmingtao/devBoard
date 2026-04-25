@@ -31,7 +31,7 @@ for i in {1..30}; do
 done
 
 echo "Deleting app resources..."
-kubectl delete -k ../../../deploy/k8s/overlays/eks --ignore-not-found=true || true
+kubectl delete -k ../../../../../deploy/k8s/overlays/eks --ignore-not-found=true || true
 
 echo "Removing ingress from Terraform state if present..."
 terraform state rm module.ingress.kubernetes_ingress_v1.this || true

@@ -1,9 +1,3 @@
-provider "kubernetes" {
-  host                   = var.cluster_endpoint
-  cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
-  config_path            = "~/.kube/config"
-}
-
 resource "kubernetes_ingress_v1" "this" {
   metadata {
     name      = var.name
