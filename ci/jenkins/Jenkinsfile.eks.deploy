@@ -15,7 +15,6 @@ pipeline {
 
     environment {
         TF_DIR = 'infra/terraform/aws/envs/dev-eks'
-        K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         NAMESPACE = 'devboard'
         BACKEND_DEPLOYMENT = 'devboard-backend'
         K8S_RENDER_DIR = '/tmp/devboard-k8s-rendered'
@@ -129,7 +128,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Restart Backend') {
             steps {
                 withCredentials([
