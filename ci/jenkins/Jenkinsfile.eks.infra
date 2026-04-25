@@ -6,12 +6,15 @@ pipeline {
         disableConcurrentBuilds()
     }
 
+    parameters {
+        string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
+    }
+
     environment {
-        AWS_REGION = 'ap-southeast-2'
         TF_DIR = 'infra/terraform/aws/envs/dev-eks'
         TF_BACKEND_CONFIG = 'backend.hcl'
-        TF_VAR_enable_ingress = "false"
-        TF_VAR_enable_route53 = "false"
+        TF_VAR_enable_ingress = 'false'
+        TF_VAR_enable_route53 = 'false'
     }
 
     stages {
@@ -25,40 +28,58 @@ pipeline {
             steps {
                 sh '''
                     set -e
-                    echo "Checking required tools..."
                     aws --version
                     terraform version
                     kubectl version --client
                     helm version
+                    envsubst --version
                 '''
             }
         }
 
         stage('AWS Identity') {
             steps {
-                sh '''
-                    set -e
-                    aws sts get-caller-identity
-                '''
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                        aws sts get-caller-identity
+                    """
+                }
             }
         }
 
         stage('Terraform Init') {
             steps {
-                dir("${TF_DIR}") {
-                    sh '''
-                        set -e
-                        terraform init -backend-config=${TF_BACKEND_CONFIG}
-                    '''
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform init -backend-config=${env.TF_BACKEND_CONFIG}
+                        """
+                    }
                 }
             }
         }
 
         stage('Terraform Format Check') {
             steps {
-                dir("${TF_DIR}") {
+                dir("${env.TF_DIR}") {
                     sh '''
-                        set -e
+                        set -eux
                         terraform fmt -check -recursive
                     '''
                 }
@@ -67,70 +88,107 @@ pipeline {
 
         stage('Terraform Validate') {
             steps {
-                dir("${TF_DIR}") {
-                    sh '''
-                        set -e
-                        terraform validate
-                    '''
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform validate
+                        """
+                    }
                 }
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                dir("${TF_DIR}") {
-                    sh '''
-                        set -e
-                        terraform plan -out=tfplan
-                    '''
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform plan -out=tfplan
+                        """
+                    }
                 }
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                dir("${TF_DIR}") {
-                    sh '''
-                        set -e
-                        terraform apply -auto-approve tfplan
-                    '''
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            terraform apply -auto-approve tfplan
+                        """
+                    }
                 }
             }
         }
 
         stage('Update kubeconfig') {
             steps {
-                sh '''
-                    set -e
-                    aws eks update-kubeconfig \
-                      --region ${AWS_REGION} \
-                      --name devboard-dev-eks
-                '''
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                        aws eks update-kubeconfig \
+                          --region ${params.AWS_REGION} \
+                          --name devboard-dev-eks
+                    """
+                }
             }
         }
 
         stage('Verify EKS') {
             steps {
-                sh '''
-                    set -e
-                    kubectl get nodes
-                    kubectl get pods -n kube-system
-                '''
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                        kubectl get nodes
+                        kubectl get pods -n kube-system
+                    """
+                }
             }
         }
     }
 
     post {
-        success {
-            echo 'EKS infrastructure apply completed successfully.'
-        }
-
-        failure {
-            echo 'EKS infrastructure apply failed. Check Terraform and AWS/EKS logs.'
-        }
-
         always {
-            dir("${TF_DIR}") {
+            dir("${env.TF_DIR}") {
                 sh '''
                     rm -f tfplan || true
                 '''
