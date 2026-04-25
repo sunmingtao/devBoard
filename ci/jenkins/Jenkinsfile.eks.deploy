@@ -99,8 +99,8 @@ pipeline {
                         export IMAGE_TAG=${params.IMAGE_TAG}
                         export DB_HOST=\$DB_HOST
 
-                        envsubst < ${env.BACKEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/eks/backend-deployment.yaml
-                        envsubst < ${env.FRONTEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/eks/frontend-deployment.yaml
+                        envsubst < ${env.BACKEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/backend-deployment.yaml
+                        envsubst < ${env.FRONTEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/frontend-deployment.yaml
                         envsubst < ${env.BACKEND_CONFIG_TEMPLATE} > ${env.K8S_RENDER_DIR}/overlays/eks/backend-configmap.yaml
                     """
                 }
