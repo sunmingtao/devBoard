@@ -9,6 +9,8 @@ pipeline {
     parameters {
         string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
         string(name: 'CLUSTER_NAME', defaultValue: 'devboard-dev-eks', description: 'EKS cluster name')
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag')
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
     }
 
     environment {
@@ -16,7 +18,11 @@ pipeline {
         K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         NAMESPACE = 'devboard'
         BACKEND_DEPLOYMENT = 'devboard-backend'
+        K8S_RENDER_DIR = '/tmp/devboard-k8s-rendered'
+        K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         BACKEND_CONFIG_TEMPLATE = 'deploy/k8s/overlays/eks/backend-configmap.yaml'
+        BACKEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/eks/backend-deployment.yaml'
+        FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/eks/frontend-deployment.yaml'
     }
 
     stages {
@@ -61,6 +67,27 @@ pipeline {
             }
         }
 
+        stage('Render Kubernetes Manifests') {
+            steps {
+                sh """
+                    set -eux
+
+                    if [ -z "${params.IMAGE_TAG}" ]; then
+                    echo "ERROR: IMAGE_TAG is empty"
+                    exit 1
+                    fi
+
+                    rm -rf ${env.K8S_RENDER_DIR}
+                    cp -r deploy/k8s ${env.K8S_RENDER_DIR}
+
+                    export IMAGE_TAG=${params.IMAGE_TAG}
+
+                    envsubst < ${env.BACKEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/eks/backend-deployment.yaml
+                    envsubst < ${env.FRONTEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/eks/frontend-deployment.yaml
+                """
+            }
+        }
+
         stage('Deploy Kubernetes Resources') {
             steps {
                 withCredentials([
@@ -74,7 +101,7 @@ pipeline {
                         set -eux
                         export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
-                        kubectl apply -k ${env.K8S_OVERLAY_DIR}
+                        kubectl apply -k ${env.K8S_RENDER_DIR}/overlays/eks
                         kubectl get svc -n ${env.NAMESPACE}
                         kubectl get pods -n ${env.NAMESPACE}
                     """
@@ -100,8 +127,8 @@ pipeline {
                         DB_HOST=\$(terraform output -raw db_address)
 
                         if [ -z "\$DB_HOST" ]; then
-                        echo "ERROR: DB_HOST is empty"
-                        exit 1
+                          echo "ERROR: DB_HOST is empty"
+                          exit 1
                         fi
 
                         export DB_HOST

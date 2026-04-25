@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: sunmingtao/devboard-frontend:latest
+          image: sunmingtao/devboard-frontend:${IMAGE_TAG}
           ports:
             - containerPort: 80
           volumeMounts:

@@ -1,0 +1,100 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        DOCKERHUB_REPO_BACKEND  = 'sunmingtao/devboard-backend'
+        DOCKERHUB_REPO_FRONTEND = 'sunmingtao/devboard-frontend'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Set Image Tag') {
+            steps {
+                script {
+                    // 用 git commit short sha 作为 tag
+                    env.IMAGE_TAG = sh(
+                        script: "git rev-parse --short HEAD",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "IMAGE_TAG=${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        set -eux
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Build Backend Image') {
+            steps {
+                sh """
+                    set -eux
+                    docker build -t ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG} apps/backend/
+                """
+            }
+        }
+
+        stage('Build Frontend Image') {
+            steps {
+                sh """
+                    set -eux
+                    docker build -t ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG} apps/frontend/
+                """
+            }
+        }
+
+        stage('Push Images') {
+            steps {
+                sh """
+                    set -eux
+                    docker push ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}
+                    docker push ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}
+                """
+            }
+        }
+
+        stage('Tag Latest (optional)') {
+            steps {
+                sh """
+                    set -eux
+                    docker tag ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG} ${DOCKERHUB_REPO_BACKEND}:latest
+                    docker tag ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG} ${DOCKERHUB_REPO_FRONTEND}:latest
+
+                    docker push ${DOCKERHUB_REPO_BACKEND}:latest
+                    docker push ${DOCKERHUB_REPO_FRONTEND}:latest
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build & push successful: ${env.IMAGE_TAG}"
+        }
+    }
+}
