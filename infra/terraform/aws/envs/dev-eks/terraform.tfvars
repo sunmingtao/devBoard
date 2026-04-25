@@ -7,7 +7,7 @@ db_name                = "devboard"
 db_username            = "devboard_user"
 db_password            = "devboard_password"
 
-db_instance_class          = "db.t3.micro"
+db_instance_class = "db.t3.micro"
 
 additional_tags = {
   Owner      = "Mingtao"
