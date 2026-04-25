@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.3] - 2026-04-25
+
+### Added
+
+* Jenkins CI/CD pipeline for EKS infrastructure provisioning, application build, deployment, and ingress setup
+* Dedicated EKS pipeline stages for Terraform infra apply, Docker image build/push, Kubernetes deployment, and Route 53/ALB integration
+* Dynamic deployment configuration using Terraform outputs, envsubst, and image tags
+* Automated health checks for HTTPS frontend access and backend `/api/health` endpoint
+
+### Improved
+
+* Replaced manual EKS deployment steps with repeatable Jenkins jobs
+* Added validation checks to prevent empty runtime values such as DB endpoints and image tags
+* Improved deployment traceability by deploying versioned Docker image tags instead of relying only on `latest`
+
 ## [0.6.2] - 2026-04-25
 
 ### Added

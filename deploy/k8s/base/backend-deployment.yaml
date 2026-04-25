@@ -45,12 +45,16 @@ spec:
                   name: devboard-backend-config
                   key: CORS_ALLOWED_ORIGINS
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /api/health
               port: 8080
             initialDelaySeconds: 20
             periodSeconds: 10
+
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /api/health
               port: 8080
-            initialDelaySeconds: 40
-            periodSeconds: 20
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3          
