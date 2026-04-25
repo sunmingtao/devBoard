@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.4] - 2026-04-26
+
+### Added
+
+- Kubernetes Horizontal Pod Autoscaler (HPA) for backend service based on CPU utilization
+- Metrics Server integration to enable resource-based autoscaling
+- Load testing validation demonstrating automatic scale-up and scale-down behavior
+
 ## [0.6.3] - 2026-04-25
 
 ### Added
