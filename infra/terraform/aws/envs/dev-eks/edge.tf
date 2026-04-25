@@ -25,6 +25,9 @@ module "ingress" {
 
   backend_service_name = "devboard-backend"
   backend_service_port = 8080
+
+  cluster_endpoint                   = module.eks.cluster_endpoint
+  cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
 }
 
 data "aws_elb_hosted_zone_id" "this" {}
