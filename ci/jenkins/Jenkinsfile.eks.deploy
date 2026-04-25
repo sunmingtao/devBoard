@@ -19,8 +19,8 @@ pipeline {
         K8S_RENDER_DIR = '/tmp/devboard-k8s-rendered'
         K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         BACKEND_CONFIG_TEMPLATE = 'deploy/k8s/overlays/eks/backend-configmap.yaml'
-        BACKEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/eks/backend-deployment.yaml'
-        FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/eks/frontend-deployment.yaml'
+        BACKEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/backend-deployment.yaml'
+        FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/frontend-deployment.yaml'
     }
 
     stages {
