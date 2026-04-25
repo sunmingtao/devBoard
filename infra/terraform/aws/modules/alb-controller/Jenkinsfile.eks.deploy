@@ -1,0 +1,140 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
+        string(name: 'CLUSTER_NAME', defaultValue: 'devboard-dev-eks', description: 'EKS cluster name')
+    }
+
+    environment {
+        TF_DIR = 'infra/terraform/aws/envs/dev-eks'
+        K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
+        NAMESPACE = 'devboard'
+        BACKEND_DEPLOYMENT = 'devboard-backend'
+        BACKEND_CONFIG_TEMPLATE = 'deploy/k8s/overlays/eks/backend-configmap.yaml'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Verify Tools') {
+            steps {
+                sh '''
+                    set -e
+                    aws --version
+                    terraform version
+                    kubectl version --client
+                    envsubst --version
+                '''
+            }
+        }
+
+        stage('Configure kubeconfig') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        aws eks update-kubeconfig \
+                          --region ${params.AWS_REGION} \
+                          --name ${params.CLUSTER_NAME}
+
+                        kubectl get nodes
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Kubernetes Resources') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl apply -k ${env.K8S_OVERLAY_DIR}
+                        kubectl get svc -n ${env.NAMESPACE}
+                        kubectl get pods -n ${env.NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Inject RDS Endpoint into Backend ConfigMap') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        cd ${env.TF_DIR}
+                        export DB_HOST=\$(terraform output -raw db_address)
+                        cd -
+
+                        envsubst < ${env.BACKEND_CONFIG_TEMPLATE} | kubectl apply -f -
+                    """
+                }
+            }
+        }
+
+        stage('Restart Backend') {
+            steps {
+                sh """
+                    set -eux
+
+                    kubectl rollout restart deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE}
+                    kubectl rollout status deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=180s
+                """
+            }
+        }
+
+        stage('Verify Application Pods') {
+            steps {
+                sh """
+                    set -eux
+
+                    kubectl get pods -n ${env.NAMESPACE}
+                    kubectl logs deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --tail=100
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'EKS application deployment completed successfully.'
+        }
+
+        failure {
+            echo 'EKS application deployment failed. Check kubectl logs and rollout status.'
+        }
+    }
+}
