@@ -96,7 +96,15 @@ pipeline {
                         export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
                         cd ${env.TF_DIR}
-                        export DB_HOST=\$(terraform output -raw db_address)
+                        terraform init -backend-config=backend.hcl
+                        DB_HOST=\$(terraform output -raw db_address)
+
+                        if [ -z "\$DB_HOST" ]; then
+                        echo "ERROR: DB_HOST is empty"
+                        exit 1
+                        fi
+
+                        export DB_HOST
                         cd -
 
                         envsubst < ${env.BACKEND_CONFIG_TEMPLATE} | kubectl apply -f -
