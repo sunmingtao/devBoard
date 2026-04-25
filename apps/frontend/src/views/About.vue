@@ -7,7 +7,9 @@
         <p>
           DevBoard is a modern task management system designed specifically for
           developers. It combines the simplicity of a Kanban board with powerful
-          features to help you manage your development workflow effectively.
+          features to help you manage your development workflow effectively. We
+          also build with a DevOps mindset, so teams can ship faster with
+          confidence and visibility.
         </p>
       </section>
 
@@ -38,6 +40,44 @@
               <li>MySQL 8.0 (Production)</li>
               <li>H2 (Development)</li>
               <li>Docker Compose</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="devops">
+        <h2>DevOps Skills & Practices</h2>
+        <div class="devops-grid">
+          <div class="devops-item">
+            <h3>CI/CD Automation</h3>
+            <ul>
+              <li>Automated lint, test, and build pipelines</li>
+              <li>Branch-based quality gates before merge</li>
+              <li>Release workflows for consistent deployments</li>
+            </ul>
+          </div>
+          <div class="devops-item">
+            <h3>Cloud-Native Delivery</h3>
+            <ul>
+              <li>Dockerized services for environment parity</li>
+              <li>Configuration through environment variables</li>
+              <li>Scalable API-first architecture</li>
+            </ul>
+          </div>
+          <div class="devops-item">
+            <h3>Observability & Reliability</h3>
+            <ul>
+              <li>Application health checks and uptime monitoring</li>
+              <li>Structured logging for faster incident response</li>
+              <li>Resilient design focused on operational stability</li>
+            </ul>
+          </div>
+          <div class="devops-item">
+            <h3>Security & Governance</h3>
+            <ul>
+              <li>Dependency hygiene and secure coding standards</li>
+              <li>Role-aware access patterns for team workflows</li>
+              <li>Shift-left quality and security validation</li>
             </ul>
           </div>
         </div>
@@ -129,6 +169,7 @@
   }
 
   .tech-stack h2,
+  .devops h2,
   .features h2,
   .navigation h2 {
     font-size: 2rem;
@@ -181,6 +222,45 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
+  }
+
+  .devops-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .devops-item {
+    padding: 1.5rem;
+    border: 1px solid #e1e5e9;
+    border-radius: 0.5rem;
+    background: linear-gradient(145deg, #f8f9fa, #f3f5ff);
+    border-left: 4px solid #667eea;
+  }
+
+  .devops-item h3 {
+    margin-bottom: 0.75rem;
+    color: #2f3a56;
+  }
+
+  .devops-item ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .devops-item li {
+    padding: 0.35rem 0 0.35rem 1rem;
+    color: #556;
+    position: relative;
+  }
+
+  .devops-item li::before {
+    content: '⚙';
+    position: absolute;
+    left: 0;
+    color: #667eea;
+    font-size: 0.85rem;
   }
 
   .feature {

@@ -56,6 +56,14 @@
       <h2>Recent DevOps Milestones</h2>
       <div class="timeline">
         <div class="timeline-item">
+          <p class="timeline-version">v0.6.2 · 2026-04-25</p>
+          <p>
+            Delivered end-to-end EKS automation with Terraform-managed RDS
+            connectivity, dynamic backend DB injection, ALB provisioning via
+            Ingress, and Route 53 alias routing.
+          </p>
+        </div>
+        <div class="timeline-item">
           <p class="timeline-version">v0.6.1 · 2026-04-21</p>
           <p>
             Enabled ALB ingress with Route 53 domain routing and ACM-powered
