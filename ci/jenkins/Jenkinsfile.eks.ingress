@@ -1,0 +1,178 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
+        string(name: 'CLUSTER_NAME', defaultValue: 'devboard-dev-eks', description: 'EKS cluster name')
+        string(name: 'APP_URL', defaultValue: 'https://www.smtdevboard.com', description: 'Application URL')
+    }
+
+    environment {
+        TF_DIR = 'infra/terraform/aws/envs/dev-eks'
+        NAMESPACE = 'devboard'
+        INGRESS_NAME = 'devboard-ingress'
+
+        TF_VAR_enable_ingress = 'true'
+        TF_VAR_enable_route53 = 'false'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Verify Tools') {
+            steps {
+                sh '''
+                    set -e
+                    aws --version
+                    terraform version
+                    kubectl version --client
+                    curl --version
+                '''
+            }
+        }
+
+        stage('Configure kubeconfig') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        aws eks update-kubeconfig \
+                          --region ${params.AWS_REGION} \
+                          --name ${params.CLUSTER_NAME}
+
+                        kubectl get nodes
+                        kubectl get svc -n ${env.NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Create Ingress') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            export TF_VAR_enable_ingress=true
+                            export TF_VAR_enable_route53=false
+
+                            terraform init -backend-config=backend.hcl
+                            terraform plan -out=tfplan-ingress
+                            terraform apply -auto-approve tfplan-ingress
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Wait for ALB') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        for i in \$(seq 1 30); do
+                          ALB_HOST=\$(kubectl get ingress ${env.INGRESS_NAME} -n ${env.NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' || true)
+
+                          if [ -n "\$ALB_HOST" ]; then
+                            echo "ALB_HOST=\$ALB_HOST"
+                            exit 0
+                          fi
+
+                          echo "Waiting for ALB hostname..."
+                          sleep 10
+                        done
+
+                        echo "ERROR: ALB hostname was not assigned"
+                        kubectl describe ingress ${env.INGRESS_NAME} -n ${env.NAMESPACE} || true
+                        exit 1
+                    """
+                }
+            }
+        }
+
+        stage('Apply Route53') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    dir("${env.TF_DIR}") {
+                        sh """
+                            set -eux
+                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
+                            export TF_VAR_enable_ingress=true
+                            export TF_VAR_enable_route53=true
+
+                            terraform plan -out=tfplan-route53
+                            terraform apply -auto-approve tfplan-route53
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Verify HTTPS') {
+            steps {
+                sh """
+                    set -eux
+
+                    curl -I ${params.APP_URL}
+                    curl -f ${params.APP_URL}/api/health
+                """
+            }
+        }
+    }
+
+    post {
+        always {
+            dir("${env.TF_DIR}") {
+                sh '''
+                    rm -f tfplan-ingress tfplan-route53 || true
+                '''
+            }
+        }
+
+        success {
+            echo 'EKS ingress and Route53 deployment completed successfully.'
+        }
+
+        failure {
+            echo 'EKS ingress/Route53 deployment failed. Check Ingress, ALB controller, and Route53.'
+        }
+    }
+}
