@@ -107,23 +107,41 @@ pipeline {
 
         stage('Restart Backend') {
             steps {
-                sh """
-                    set -eux
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
-                    kubectl rollout restart deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE}
-                    kubectl rollout status deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=180s
-                """
+                        kubectl rollout restart deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE}
+                        kubectl rollout status deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=180s
+                    """
+                }
             }
         }
 
         stage('Verify Application Pods') {
             steps {
-                sh """
-                    set -eux
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
-                    kubectl get pods -n ${env.NAMESPACE}
-                    kubectl logs deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --tail=100
-                """
+                        kubectl get pods -n ${env.NAMESPACE}
+                        kubectl logs deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --tail=100
+                    """
+                }
             }
         }
     }
