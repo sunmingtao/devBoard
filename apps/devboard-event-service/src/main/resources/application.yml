@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: devboard-event-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:devboard-event-service}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+devboard:
+  kafka:
+    topics:
+      task-events: ${TASK_EVENTS_TOPIC:devboard.tasks}
