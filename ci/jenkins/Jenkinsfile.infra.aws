@@ -9,14 +9,14 @@ pipeline {
 
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
-        choice(name: 'ENVIRONMENT', choices: ['dev-vm', 'prod'], description: 'Target environment')
+        choice(name: 'ENVIRONMENT', choices: ['dev-vm', 'prod-vm'], description: 'Target environment')
         choice(name: 'TF_ACTION', choices: ['plan', 'apply'], description: 'Terraform action')
         string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
     }
 
     environment {
         GIT_REPO_URL = 'https://github.com/sunmingtao/devBoard.git'
-        TF_DIR       = "infra/terraform/aws/envs/${params.ENVIRONMENT}"
+        TF_DIR       = "infra/terraform/aws/envs/${params.ENVIRONMENT}-vm"
     }
 
     stages {
