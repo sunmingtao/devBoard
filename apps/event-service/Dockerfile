@@ -3,17 +3,11 @@ FROM eclipse-temurin:25-jdk-jammy AS builder
 
 WORKDIR /build
 
-# 先复制 Maven wrapper 和 pom.xml（利用缓存）
 COPY .mvn ./.mvn
 COPY mvnw pom.xml ./
-
-# 下载依赖（加速后续 build）
 RUN ./mvnw dependency:go-offline
 
-# 再复制源码
 COPY src ./src
-
-# 构建 jar
 RUN ./mvnw clean package -DskipTests
 
 
@@ -22,14 +16,8 @@ FROM eclipse-temurin:25-jre-jammy
 
 WORKDIR /app
 
-# 从 build 阶段复制 jar
-COPY --from=builder /build/target/devboard-*.jar app.jar
+COPY --from=builder /build/target/event-service-*.jar app.jar
 
-# 暴露端口
-EXPOSE 8080
+ENV JAVA_OPTS="-XX:+UseContainerSupport -Xmx256m"
 
-# JVM 优化
-ENV JAVA_OPTS="-XX:+UseContainerSupport -Xmx512m"
-
-# 启动
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

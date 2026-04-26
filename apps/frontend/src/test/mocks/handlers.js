@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-const API_BASE = 'http://localhost:8080/api'
+const API_BASE = '/api'
 
 // Mock data
 const mockTasks = [

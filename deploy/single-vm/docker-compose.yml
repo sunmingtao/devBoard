@@ -18,6 +18,19 @@ services:
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      TASK_EVENTS_TOPIC: ${TASK_EVENTS_TOPIC:-devboard.tasks}
+    networks:
+      - devboard-network
+
+  event-service:
+    image: sunmingtao/devboard-event-service:${IMAGE_TAG}
+    container_name: devboard-event-service
+    restart: unless-stopped
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      KAFKA_CONSUMER_GROUP: ${KAFKA_CONSUMER_GROUP:-event-service}
+      TASK_EVENTS_TOPIC: ${TASK_EVENTS_TOPIC:-devboard.tasks}
     networks:
       - devboard-network
 
@@ -39,4 +52,5 @@ services:
 
 networks:
   devboard-network:
+    name: devboard-network
     driver: bridge

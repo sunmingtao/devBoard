@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.6] - 2026-04-27
+
+### Added
+
+- Docker image build and single-VM deployment support for event-service
+
+### Changed
+
+- Upgraded backend and event-service Java build target to Java 25
+- Updated backend and event-service Spring Boot parent to 3.5.14
+- Refreshed Java build tooling dependencies for Java 25 compatibility, including Lombok, Mockito, Byte Buddy, and JaCoCo
+- Updated frontend dependencies within the current major versions, including Vue, Vue Router, Axios, Vite, Vitest, ESLint, Prettier, MSW, and Vue test tooling
+
+### Fixed
+
+- Aligned frontend MSW test handlers with the app's relative `/api` base URL after dependency updates
+
 ## [0.6.5] - 2026-04-26
 
 ### Added

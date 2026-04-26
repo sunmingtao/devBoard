@@ -2,5 +2,8 @@ services:
   backend:
     restart: unless-stopped
 
+  event-service:
+    restart: unless-stopped
+
   frontend:
     restart: unless-stopped

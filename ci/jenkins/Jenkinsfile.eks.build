@@ -9,6 +9,7 @@ pipeline {
     environment {
         DOCKERHUB_REPO_BACKEND  = 'sunmingtao/devboard-backend'
         DOCKERHUB_REPO_FRONTEND = 'sunmingtao/devboard-frontend'
+        DOCKERHUB_REPO_EVENT_SERVICE = 'sunmingtao/devboard-event-service'
     }
 
     stages {
@@ -68,12 +69,22 @@ pipeline {
             }
         }
 
+        stage('Build Event Service Image') {
+            steps {
+                sh """
+                    set -eux
+                    docker build -t ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG} apps/event-service/
+                """
+            }
+        }
+
         stage('Push Images') {
             steps {
                 sh """
                     set -eux
                     docker push ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}
                     docker push ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}
+                    docker push ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG}
                 """
             }
         }
@@ -84,9 +95,11 @@ pipeline {
                     set -eux
                     docker tag ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG} ${DOCKERHUB_REPO_BACKEND}:latest
                     docker tag ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG} ${DOCKERHUB_REPO_FRONTEND}:latest
+                    docker tag ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG} ${DOCKERHUB_REPO_EVENT_SERVICE}:latest
 
                     docker push ${DOCKERHUB_REPO_BACKEND}:latest
                     docker push ${DOCKERHUB_REPO_FRONTEND}:latest
+                    docker push ${DOCKERHUB_REPO_EVENT_SERVICE}:latest
                 """
             }
         }

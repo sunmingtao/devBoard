@@ -3,5 +3,8 @@ services:
   backend:
     restart: always
 
+  event-service:
+    restart: always
+
   frontend:
     restart: always
