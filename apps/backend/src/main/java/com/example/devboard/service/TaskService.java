@@ -29,6 +29,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final TaskEventProducer taskEventProducer;
     
     public List<TaskResponse> getAllTasks() {
         return taskRepository.findAll().stream()
@@ -159,6 +160,7 @@ public class TaskService {
         }
         
         Task savedTask = taskRepository.save(task);
+        taskEventProducer.publishTaskCreatedEvent(savedTask.getId(), creatorId);
         return convertToResponse(savedTask);
     }
     
@@ -193,6 +195,7 @@ public class TaskService {
         }
         
         Task updatedTask = taskRepository.save(task);
+        taskEventProducer.publishTaskUpdatedEvent(updatedTask.getId(), userId);
         return convertToResponse(updatedTask);
     }
     
