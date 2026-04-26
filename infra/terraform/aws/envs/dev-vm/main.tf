@@ -53,9 +53,9 @@ resource "aws_route53_record" "app" {
 module "rds_mysql" {
   source = "../../modules/rds-mysql"
 
-  environment                = var.environment
-  vpc_id                     = module.network.vpc_id
-  subnet_ids                 = module.network.private_db_subnet_ids
+  environment = var.environment
+  vpc_id      = module.network.vpc_id
+  subnet_ids  = module.network.private_db_subnet_ids
   allowed_security_group_ids = {
     app_vm = module.single_vm.vm_security_group_id
   }
