@@ -1,6 +1,8 @@
 package com.example.devboard.service;
 
 import com.example.devboard.dto.TaskResponse;
+import com.example.devboard.dto.TaskCreateRequest;
+import com.example.devboard.dto.TaskUpdateRequest;
 import com.example.devboard.entity.Task;
 import com.example.devboard.entity.User;
 import com.example.devboard.repository.CommentRepository;
@@ -16,8 +18,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +35,9 @@ class TaskServiceTest {
 
     @Mock
     private CommentRepository commentRepository;
+
+    @Mock
+    private TaskEventProducer taskEventProducer;
 
     @InjectMocks
     private TaskService taskService;
@@ -353,5 +360,85 @@ class TaskServiceTest {
 
         // Assert - Should return all tasks as whitespace search is ignored
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void createTask_PublishesTaskCreatedEvent() {
+        // Arrange
+        TaskCreateRequest request = TaskCreateRequest.builder()
+                .title("New Task")
+                .description("Task Description")
+                .status("TODO")
+                .priority("MEDIUM")
+                .assigneeId(2L)
+                .build();
+
+        Task savedTask = Task.builder()
+                .id(100L)
+                .title("New Task")
+                .description("Task Description")
+                .status(Task.TaskStatus.TODO)
+                .priority(Task.TaskPriority.MEDIUM)
+                .creator(user1)
+                .assignee(user2)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user1));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user2));
+        when(taskRepository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenReturn(savedTask);
+        when(commentRepository.countByTaskId(100L)).thenReturn(0L);
+
+        // Act
+        TaskResponse response = taskService.createTask(request, 1L);
+
+        // Assert
+        assertThat(response.getId()).isEqualTo(100L);
+        verify(taskEventProducer).publishTaskCreatedEvent(100L, 1L);
+    }
+
+    @Test
+    void updateTask_PublishesTaskUpdatedEvent() {
+        // Arrange
+        TaskUpdateRequest request = TaskUpdateRequest.builder()
+                .title("Updated Task")
+                .status("IN_PROGRESS")
+                .build();
+
+        Task existingTask = Task.builder()
+                .id(200L)
+                .title("Original Task")
+                .description("Original Description")
+                .status(Task.TaskStatus.TODO)
+                .priority(Task.TaskPriority.HIGH)
+                .creator(user1)
+                .assignee(user2)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        Task updatedTask = Task.builder()
+                .id(200L)
+                .title("Updated Task")
+                .description("Original Description")
+                .status(Task.TaskStatus.IN_PROGRESS)
+                .priority(Task.TaskPriority.HIGH)
+                .creator(user1)
+                .assignee(user2)
+                .createdAt(existingTask.getCreatedAt())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(taskRepository.findById(200L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(existingTask)).thenReturn(updatedTask);
+        when(commentRepository.countByTaskId(200L)).thenReturn(0L);
+
+        // Act
+        TaskResponse response = taskService.updateTask(200L, request, 99L);
+
+        // Assert
+        assertThat(response.getStatus()).isEqualTo("IN_PROGRESS");
+        verify(taskEventProducer).publishTaskUpdatedEvent(200L, 99L);
     }
 }
