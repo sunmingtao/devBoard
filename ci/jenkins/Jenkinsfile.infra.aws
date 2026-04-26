@@ -16,7 +16,7 @@ pipeline {
 
     environment {
         GIT_REPO_URL = 'https://github.com/sunmingtao/devBoard.git'
-        TF_DIR       = "infra/terraform/aws/envs/${params.ENVIRONMENT}"
+        TF_DIR       = "infra/terraform/aws/envs/dev-vm/${params.ENVIRONMENT}"
     }
 
     stages {
