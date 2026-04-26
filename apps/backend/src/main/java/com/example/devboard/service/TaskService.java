@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -160,7 +162,7 @@ public class TaskService {
         }
         
         Task savedTask = taskRepository.save(task);
-        taskEventProducer.publishTaskCreatedEvent(savedTask.getId(), creatorId);
+        publishEventAfterCommit(() -> taskEventProducer.publishTaskCreatedEvent(savedTask.getId(), creatorId));
         return convertToResponse(savedTask);
     }
     
@@ -195,7 +197,7 @@ public class TaskService {
         }
         
         Task updatedTask = taskRepository.save(task);
-        taskEventProducer.publishTaskUpdatedEvent(updatedTask.getId(), userId);
+        publishEventAfterCommit(() -> taskEventProducer.publishTaskUpdatedEvent(updatedTask.getId(), userId));
         return convertToResponse(updatedTask);
     }
     
@@ -296,5 +298,19 @@ public class TaskService {
         
         log.info("Admin deleting task: {} ({})", task.getId(), task.getTitle());
         taskRepository.delete(task);
+    }
+
+    private void publishEventAfterCommit(Runnable eventPublisher) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.run();
+                }
+            });
+            return;
+        }
+
+        eventPublisher.run();
     }
 }
