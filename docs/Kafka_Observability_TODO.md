@@ -27,7 +27,7 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
 
 ### New Microservice (Consumer)
 
-* [ ] Create new service: `devboard-event-service`
+* [ ] Create new service: `event-service`
 * [ ] Add Spring Kafka dependency
 * [ ] Implement Kafka listener:
 

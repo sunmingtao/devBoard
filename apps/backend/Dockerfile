@@ -1,5 +1,5 @@
 # ---------- Stage 1: Build ----------
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
+FROM maven:3.9.9-eclipse-temurin-25 AS builder
 
 WORKDIR /build
 
@@ -17,7 +17,7 @@ RUN mvn clean package -DskipTests
 
 
 # ---------- Stage 2: Runtime ----------
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 
 WORKDIR /app
 

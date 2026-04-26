@@ -29,7 +29,7 @@
             <h3>Backend</h3>
             <ul>
               <li>Spring Boot 3.3.0</li>
-              <li>Java 21</li>
+              <li>Java 25</li>
               <li>Spring Data JPA</li>
               <li>RESTful API</li>
             </ul>

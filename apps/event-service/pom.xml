@@ -11,13 +11,13 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>devboard-event-service</artifactId>
+    <artifactId>event-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>devboard-event-service</name>
+    <name>event-service</name>
     <description>Kafka event consumer service for DevBoard</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
     </properties>
 
     <dependencies>
