@@ -124,7 +124,7 @@ pipeline {
                         variable: 'TF_VAR_public_key'
                     ),
                     string(
-                        credentialsId: "devboard-${params.ENVIRONMENT}-db-password",
+                        credentialsId: "devboard-dev-db-password",
                         variable: 'TF_VAR_db_password'
                     )
                 ]) {
