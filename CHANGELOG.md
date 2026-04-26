@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.5] - 2026-04-26
+
+### Added
+
+- Local Kafka integration for DevBoard task events
+- Spring Boot Kafka producer in backend for publishing task created and updated events
+- New event-service microservice with Kafka consumer for processing task events
+- Verified local event-driven flow from backend producer to Kafka topic and event-service consumer
+
 ## [0.6.4] - 2026-04-26
 
 ### Added

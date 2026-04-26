@@ -67,3 +67,5 @@ replay_pid*
 rds-password.txt
 infrastructure/rds-credentials.md
 .terraform/
+
+infra/terraform/vultr/main.tf:Zone.Identifier
