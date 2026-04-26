@@ -8,6 +8,7 @@ export default defineConfig(({ command, mode }) => {
   
   // Determine if we're in production mode
   const isProduction = mode === 'production'
+  const apiTarget = env.VITE_API_URL || 'http://localhost:8080'
   
   return {
     plugins: [vue()],
@@ -39,6 +40,12 @@ export default defineConfig(({ command, mode }) => {
       port: parseInt(env.VITE_DEV_SERVER_PORT) || 5173,
       hmr: {
         port: parseInt(env.VITE_DEV_SERVER_PORT) || 5173
+      },
+      proxy: {
+        '/api': {
+          target: apiTarget,
+          changeOrigin: true
+        }
       }
     },
     
