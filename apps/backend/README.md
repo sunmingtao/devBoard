@@ -5,7 +5,7 @@ Spring Boot REST API for the DevBoard task management system.
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Java 21+
+- Java 25+
 - Maven 3.9+ (or use included Maven wrapper)
 - MySQL 8+ (production) or H2 (development)
 

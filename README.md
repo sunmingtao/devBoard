@@ -5,7 +5,7 @@ DevBoard is a full-stack task board application with a Spring Boot backend and a
 ## Tech stack
 
 - **Frontend:** Vue 3 + Vite + Vue Router (`apps/frontend`)
-- **Backend:** Spring Boot 3.3 (Java 21), Spring Security, JWT, JPA (`apps/backend`)
+- **Backend:** Spring Boot 3.3 (Java 25), Spring Security, JWT, JPA (`apps/backend`)
 - **Data stores:** H2 (dev/test), MySQL (container/mysql profile), Redis-ready config
 - **Infra/Deploy:** Docker Compose (`deploy/docker-compose/single-vm`), Terraform (`infra/terraform`), Jenkins pipelines (`ci/jenkins`)
 
