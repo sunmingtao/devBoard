@@ -26,8 +26,18 @@ spring:
       enabled: true
       path: /h2-console
 
+  # Kafka Producer Configuration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 # DevBoard Application Configuration
 devboard:
   app:
     jwtSecret: ${JWT_SECRET:defaultSecretKeyForDevelopmentOnly}
     jwtExpirationMs: ${JWT_EXPIRATION_MS:86400000} # 24 hours
+  kafka:
+    topics:
+      task-events: ${TASK_EVENTS_TOPIC:devboard.task.events}
