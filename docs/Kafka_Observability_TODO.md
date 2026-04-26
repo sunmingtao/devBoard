@@ -10,18 +10,18 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
 
 ### Backend (Producer)
 
-* [ ] Add Kafka dependency to backend (Spring Boot)
-* [ ] Configure Kafka producer (bootstrap servers, serializers)
-* [ ] Publish events on key actions:
+* [x] Add Kafka dependency to backend (Spring Boot)
+* [x] Configure Kafka producer (bootstrap servers, serializers)
+* [x] Publish events on key actions:
 
-  * [ ] Task created
-  * [ ] Task updated
-* [ ] Define event schema (JSON)
+  * [x] Task created
+  * [x] Task updated
+* [x] Define event schema (JSON)
 
-  * [ ] eventType
-  * [ ] taskId
-  * [ ] timestamp
-  * [ ] userId (optional)
+  * [x] eventType
+  * [x] taskId
+  * [x] timestamp
+  * [x] userId (optional)
 
 ---
 

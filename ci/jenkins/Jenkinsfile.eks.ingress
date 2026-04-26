@@ -152,15 +152,15 @@ pipeline {
                     set -eux
 
                     for i in \$(seq 1 30); do
-                    getent hosts www.smtdevboard.com || true
+                        getent hosts www.smtdevboard.com || true
 
-                    if curl -fsS ${params.APP_URL}/api/health; then
-                        echo "Health check passed"
-                        exit 0
-                    fi
+                        if curl -fsS ${params.APP_URL}/api/health; then
+                            echo "Health check passed"
+                            exit 0
+                        fi
 
-                    echo "Waiting for DNS/ALB/application readiness... attempt \$i/30"
-                    sleep 10
+                        echo "Waiting for DNS/ALB/application readiness... attempt \$i/30"
+                        sleep 10
                     done
 
                     echo "ERROR: Health check failed after retries"
