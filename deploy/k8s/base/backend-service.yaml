@@ -3,10 +3,13 @@ kind: Service
 metadata:
   name: devboard-backend
   namespace: devboard
+  labels:
+    app: devboard-backend
 spec:
   selector:
     app: devboard-backend
   ports:
-    - port: 8080
+    - name: http
+      port: 8080
       targetPort: 8080
   type: ClusterIP

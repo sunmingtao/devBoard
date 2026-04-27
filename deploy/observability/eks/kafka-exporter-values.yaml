@@ -1,0 +1,17 @@
+kafkaServer:
+  - devboard-kafka.devboard.svc.cluster.local:9092
+
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 10s
+  labels:
+    release: devboard-monitoring
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi

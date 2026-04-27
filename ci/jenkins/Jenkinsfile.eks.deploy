@@ -19,6 +19,11 @@ pipeline {
         EVENT_SERVICE_DEPLOYMENT = 'devboard-event-service'
         KAFKA_RELEASE = 'devboard-kafka'
         KAFKA_HELM_TIMEOUT = '20m'
+        MONITORING_NAMESPACE = 'monitoring'
+        MONITORING_RELEASE = 'devboard-monitoring'
+        KAFKA_EXPORTER_RELEASE = 'devboard-kafka-exporter'
+        OBSERVABILITY_DIR = 'deploy/observability/eks'
+        MONITORING_HELM_TIMEOUT = '20m'
         K8S_RENDER_DIR = '/tmp/devboard-k8s-rendered'
         K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         BACKEND_CONFIG_TEMPLATE = 'deploy/k8s/overlays/eks/backend-configmap.yaml'
@@ -116,6 +121,42 @@ pipeline {
             }
         }
 
+        stage('Install Observability') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl create namespace ${env.MONITORING_NAMESPACE} \
+                          --dry-run=client \
+                          -o yaml | kubectl apply -f -
+
+                        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
+                        helm repo update
+
+                        helm upgrade --install ${env.MONITORING_RELEASE} prometheus-community/kube-prometheus-stack \
+                          --namespace ${env.MONITORING_NAMESPACE} \
+                          --wait \
+                          --timeout ${env.MONITORING_HELM_TIMEOUT} \
+                          -f ${env.OBSERVABILITY_DIR}/kube-prometheus-stack-values.yaml
+
+                        helm upgrade --install ${env.KAFKA_EXPORTER_RELEASE} prometheus-community/prometheus-kafka-exporter \
+                          --namespace ${env.MONITORING_NAMESPACE} \
+                          --wait \
+                          --timeout ${env.MONITORING_HELM_TIMEOUT} \
+                          -f ${env.OBSERVABILITY_DIR}/kafka-exporter-values.yaml
+                    """
+                }
+            }
+        }
+
         stage('Render Kubernetes Manifests') {
             steps {
                 withCredentials([
@@ -183,6 +224,27 @@ pipeline {
                         kubectl apply -k ${env.K8S_RENDER_DIR}/overlays/eks
                         kubectl get svc -n ${env.NAMESPACE}
                         kubectl get pods -n ${env.NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Observability Resources') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl apply -k ${env.OBSERVABILITY_DIR}
+                        kubectl get pods -n ${env.MONITORING_NAMESPACE}
+                        kubectl get servicemonitor -n ${env.MONITORING_NAMESPACE}
                     """
                 }
             }
