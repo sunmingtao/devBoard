@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: devboard-backend
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - 172.29.240.60:8080
+
+  - job_name: devboard-event-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - 172.29.240.60:8081
