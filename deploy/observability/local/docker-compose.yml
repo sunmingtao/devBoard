@@ -1,4 +1,16 @@
 services:
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.8.0
+    container_name: devboard-kafka-exporter
+    restart: unless-stopped
+    command:
+      - "--kafka.server=kafka:29092"
+    ports:
+      - "9308:9308"
+    networks:
+      - default
+      - devboard-network
+
   prometheus:
     image: prom/prometheus:v3.1.0
     container_name: devboard-prometheus
@@ -31,7 +43,12 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
+      - kafka-exporter
       - prometheus
+
+networks:
+  devboard-network:
+    external: true
 
 volumes:
   prometheus-data:

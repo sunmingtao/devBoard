@@ -523,12 +523,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "max by (client_id, topic, partition) (kafka_consumer_fetch_manager_records_lag_max{job=\"devboard-event-service\"})",
-          "legendFormat": "{{client_id}} {{topic}}-{{partition}}",
+          "expr": "sum by (consumergroup, topic) (kafka_consumergroup_lag{job=\"kafka-exporter\"})",
+          "legendFormat": "{{consumergroup}} {{topic}}",
           "refId": "A"
         }
       ],
-      "title": "Kafka Consumer Lag Max",
+      "title": "Kafka Consumer Group Lag",
       "type": "timeseries"
     }
   ],
@@ -555,4 +555,3 @@
   "version": 1,
   "weekStart": ""
 }
-
