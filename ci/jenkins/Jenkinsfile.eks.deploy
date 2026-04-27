@@ -95,6 +95,9 @@ pipeline {
                           --namespace ${env.NAMESPACE} \
                           --wait \
                           --timeout ${env.KAFKA_HELM_TIMEOUT} \
+                          --set global.security.allowInsecureImages=true \
+                          --set image.registry=docker.io \
+                          --set image.repository=bitnamilegacy/kafka \
                           --set controller.replicaCount=1 \
                           --set broker.replicaCount=0 \
                           --set listeners.client.protocol=PLAINTEXT \
