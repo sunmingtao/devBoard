@@ -64,12 +64,12 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
 
 ### Kafka Metrics
 
-* [ ] Enable Kafka consumer metrics
-* [ ] Validate key metrics:
+* [x] Enable Kafka consumer metrics
+* [x] Validate key metrics:
 
-  * [ ] `kafka_consumer_records_consumed_total`
-  * [ ] `kafka_consumer_records_lag_max`
-  * [ ] `kafka_consumer_fetch_latency`
+  * [x] `kafka_consumer_records_consumed_total`
+  * [x] `kafka_consumer_records_lag_max`
+  * [x] `kafka_consumer_fetch_latency`
 
 ---
 
@@ -95,6 +95,8 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
   * [ ] Kafka consumer lag
   * [ ] message throughput
   * [ ] error rate
+
+### Kafka-exporter
 
 ---
 
