@@ -51,14 +51,14 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
 
 ### Metrics (Micrometer + Actuator)
 
-* [ ] Add dependencies:
+* [x] Add dependencies:
 
-  * [ ] `spring-boot-starter-actuator`
-  * [ ] `micrometer-registry-prometheus`
-* [ ] Enable endpoint:
+  * [x] `spring-boot-starter-actuator`
+  * [x] `micrometer-registry-prometheus`
+* [x] Enable endpoint:
 
-  * [ ] `/actuator/prometheus`
-* [ ] Verify metrics exposed
+  * [x] `/actuator/prometheus`
+* [x] Verify metrics exposed
 
 ---
 

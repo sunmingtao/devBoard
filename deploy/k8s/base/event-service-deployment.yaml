@@ -16,6 +16,9 @@ spec:
       containers:
         - name: event-service
           image: sunmingtao/devboard-event-service:${IMAGE_TAG}
+          ports:
+            - containerPort: 8081
+              name: http
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               valueFrom:

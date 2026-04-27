@@ -9,7 +9,17 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
+server:
+  port: ${SERVER_PORT:8081}
+
 devboard:
   kafka:
     topics:
       task-events: ${TASK_EVENTS_TOPIC:devboard.tasks}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+      base-path: /actuator
