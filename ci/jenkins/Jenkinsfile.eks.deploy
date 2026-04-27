@@ -19,6 +19,7 @@ pipeline {
         K8S_RENDER_DIR = '/tmp/devboard-k8s-rendered'
         K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         BACKEND_CONFIG_TEMPLATE = 'deploy/k8s/overlays/eks/backend-configmap.yaml'
+        BACKEND_SECRET_TEMPLATE = 'deploy/k8s/overlays/eks/backend-secret.yaml'
         BACKEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/backend-deployment.yaml'
         FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/frontend-deployment.yaml'
     }
@@ -72,6 +73,10 @@ pipeline {
                         credentialsId: 'aws-devboard-terraform',
                         usernameVariable: 'AWS_ACCESS_KEY_ID',
                         passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ),
+                    string(
+                        credentialsId: 'devboard-dev-eks-db-password',
+                        variable: 'DB_PASSWORD'
                     )
                 ]) {
                     sh """
@@ -98,10 +103,14 @@ pipeline {
 
                         export IMAGE_TAG=${params.IMAGE_TAG}
                         export DB_HOST=\$DB_HOST
+                        set +x
+                        export DB_PASSWORD="\$DB_PASSWORD"
+                        set -x
 
                         envsubst < ${env.BACKEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/backend-deployment.yaml
                         envsubst < ${env.FRONTEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/frontend-deployment.yaml
                         envsubst < ${env.BACKEND_CONFIG_TEMPLATE} > ${env.K8S_RENDER_DIR}/overlays/eks/backend-configmap.yaml
+                        envsubst < ${env.BACKEND_SECRET_TEMPLATE} > ${env.K8S_RENDER_DIR}/overlays/eks/backend-secret.yaml
                     """
                 }
             }
