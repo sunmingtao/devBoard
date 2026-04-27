@@ -96,7 +96,8 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
   * [ ] message throughput
   * [ ] error rate
 
-### Kafka-exporter
+### Kafka Exporter
+### JMX Exporter
 
 ---
 
