@@ -18,6 +18,7 @@ pipeline {
         BACKEND_DEPLOYMENT = 'devboard-backend'
         EVENT_SERVICE_DEPLOYMENT = 'devboard-event-service'
         KAFKA_RELEASE = 'devboard-kafka'
+        KAFKA_HELM_TIMEOUT = '20m'
         K8S_RENDER_DIR = '/tmp/devboard-k8s-rendered'
         K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         BACKEND_CONFIG_TEMPLATE = 'deploy/k8s/overlays/eks/backend-configmap.yaml'
@@ -90,14 +91,23 @@ pipeline {
                         helm repo add bitnami https://charts.bitnami.com/bitnami --force-update
                         helm repo update
 
-                        helm upgrade --install ${env.KAFKA_RELEASE} bitnami/kafka \
+                        if ! helm upgrade --install ${env.KAFKA_RELEASE} bitnami/kafka \
                           --namespace ${env.NAMESPACE} \
                           --wait \
-                          --timeout 10m \
+                          --timeout ${env.KAFKA_HELM_TIMEOUT} \
                           --set controller.replicaCount=1 \
                           --set broker.replicaCount=0 \
                           --set listeners.client.protocol=PLAINTEXT \
-                          --set controller.persistence.enabled=false
+                          --set controller.persistence.enabled=false; then
+
+                          echo "Kafka Helm install failed. Collecting diagnostics..."
+                          helm status ${env.KAFKA_RELEASE} -n ${env.NAMESPACE} || true
+                          kubectl get pods -n ${env.NAMESPACE} -l app.kubernetes.io/instance=${env.KAFKA_RELEASE} -o wide || true
+                          kubectl describe pods -n ${env.NAMESPACE} -l app.kubernetes.io/instance=${env.KAFKA_RELEASE} || true
+                          kubectl get events -n ${env.NAMESPACE} --sort-by=.lastTimestamp || true
+                          kubectl logs -n ${env.NAMESPACE} -l app.kubernetes.io/instance=${env.KAFKA_RELEASE} --all-containers --tail=200 || true
+                          exit 1
+                        fi
                     """
                 }
             }
