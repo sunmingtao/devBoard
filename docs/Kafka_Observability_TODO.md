@@ -27,23 +27,23 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
 
 ### New Microservice (Consumer)
 
-* [ ] Create new service: `event-service`
-* [ ] Add Spring Kafka dependency
-* [ ] Implement Kafka listener:
+* [x] Create new service: `event-service`
+* [x] Add Spring Kafka dependency
+* [x] Implement Kafka listener:
 
-  * [ ] Subscribe to topic `devboard.tasks`
-  * [ ] Log consumed events
+  * [x] Subscribe to topic `devboard.tasks`
+  * [x] Log consumed events
 * [ ] (Optional) Persist events into DB (audit log)
 
 ---
 
 ### Kafka Infrastructure
 
-* [ ] Run Kafka locally (Docker Compose or Bitnami chart)
-* [ ] Deploy Kafka to EKS (Helm)
-* [ ] Create topic:
+* [x] Run Kafka locally (Docker Compose or Bitnami chart)
+* [x] Deploy Kafka to EKS (Helm)
+* [x] Create topic:
 
-  * [ ] `devboard.tasks`
+  * [x] `devboard.tasks`
 
 ---
 
