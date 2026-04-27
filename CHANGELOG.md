@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Docker image build and single-VM deployment support for event-service
+- Kafka Helm installation and event-service deployment support for EKS
 
 ### Changed
 

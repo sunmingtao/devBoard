@@ -7,6 +7,7 @@ resources:
   - ../../base
   - backend-configmap.yaml
   - backend-secret.yaml
+  - event-service-configmap.yaml
   - frontend-nginx-configmap.yaml
   - ingress.yaml
 

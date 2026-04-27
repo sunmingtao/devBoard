@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devboard-event-service
+  namespace: devboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devboard-event-service
+  template:
+    metadata:
+      labels:
+        app: devboard-event-service
+    spec:
+      containers:
+        - name: event-service
+          image: sunmingtao/devboard-event-service:${IMAGE_TAG}
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: devboard-event-service-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: KAFKA_CONSUMER_GROUP
+              valueFrom:
+                configMapKeyRef:
+                  name: devboard-event-service-config
+                  key: KAFKA_CONSUMER_GROUP
+            - name: TASK_EVENTS_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: devboard-event-service-config
+                  key: TASK_EVENTS_TOPIC
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

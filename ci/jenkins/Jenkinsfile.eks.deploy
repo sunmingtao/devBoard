@@ -16,11 +16,14 @@ pipeline {
         TF_DIR = 'infra/terraform/aws/envs/dev-eks'
         NAMESPACE = 'devboard'
         BACKEND_DEPLOYMENT = 'devboard-backend'
+        EVENT_SERVICE_DEPLOYMENT = 'devboard-event-service'
+        KAFKA_RELEASE = 'devboard-kafka'
         K8S_RENDER_DIR = '/tmp/devboard-k8s-rendered'
         K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         BACKEND_CONFIG_TEMPLATE = 'deploy/k8s/overlays/eks/backend-configmap.yaml'
         BACKEND_SECRET_TEMPLATE = 'deploy/k8s/overlays/eks/backend-secret.yaml'
         BACKEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/backend-deployment.yaml'
+        EVENT_SERVICE_DEPLOY_TEMPLATE = 'deploy/k8s/base/event-service-deployment.yaml'
         FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/frontend-deployment.yaml'
     }
 
@@ -38,6 +41,7 @@ pipeline {
                     aws --version
                     terraform version
                     kubectl version --client
+                    helm version
                     envsubst --version
                 '''
             }
@@ -61,6 +65,39 @@ pipeline {
                           --name ${params.CLUSTER_NAME}
 
                         kubectl get nodes
+                    """
+                }
+            }
+        }
+
+        stage('Install Kafka') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl create namespace ${env.NAMESPACE} \
+                          --dry-run=client \
+                          -o yaml | kubectl apply -f -
+
+                        helm repo add bitnami https://charts.bitnami.com/bitnami --force-update
+                        helm repo update
+
+                        helm upgrade --install ${env.KAFKA_RELEASE} bitnami/kafka \
+                          --namespace ${env.NAMESPACE} \
+                          --wait \
+                          --timeout 10m \
+                          --set controller.replicaCount=1 \
+                          --set broker.replicaCount=0 \
+                          --set listeners.client.protocol=PLAINTEXT \
+                          --set controller.persistence.enabled=false
                     """
                 }
             }
@@ -108,6 +145,7 @@ pipeline {
                         set -x
 
                         envsubst < ${env.BACKEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/backend-deployment.yaml
+                        envsubst < ${env.EVENT_SERVICE_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/event-service-deployment.yaml
                         envsubst < ${env.FRONTEND_DEPLOY_TEMPLATE} > ${env.K8S_RENDER_DIR}/base/frontend-deployment.yaml
                         envsubst < ${env.BACKEND_CONFIG_TEMPLATE} > ${env.K8S_RENDER_DIR}/overlays/eks/backend-configmap.yaml
                         envsubst < ${env.BACKEND_SECRET_TEMPLATE} > ${env.K8S_RENDER_DIR}/overlays/eks/backend-secret.yaml
@@ -151,6 +189,7 @@ pipeline {
                         export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
                         kubectl rollout status deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
+                        kubectl rollout status deployment/${env.EVENT_SERVICE_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
                         kubectl rollout status deployment/devboard-frontend -n ${env.NAMESPACE} --timeout=300s
                     """
                 }
@@ -172,6 +211,7 @@ pipeline {
 
                         kubectl get pods -n ${env.NAMESPACE}
                         kubectl logs deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --tail=100
+                        kubectl logs deployment/${env.EVENT_SERVICE_DEPLOYMENT} -n ${env.NAMESPACE} --tail=100
                     """
                 }
             }
