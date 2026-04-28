@@ -77,23 +77,23 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
 
 ### Prometheus
 
-* [ ] Deploy Prometheus (Helm)
-* [ ] Configure scrape target:
+* [x] Deploy Prometheus (Helm)
+* [x] Configure scrape target:
 
-  * [ ] backend service
-  * [ ] event-service
-* [ ] Verify metrics collection
+  * [x] backend service
+  * [x] event-service
+* [x] Verify metrics collection
 
 ---
 
 ### Grafana
 
-* [ ] Deploy Grafana
-* [ ] Connect Prometheus data source
-* [ ] Create dashboard:
+* [x] Deploy Grafana
+* [x] Connect Prometheus data source
+* [x] Create dashboard:
 
-  * [ ] Kafka consumer lag
-  * [ ] message throughput
+  *[x] Kafka consumer lag
+  * [x] message throughput
   * [ ] error rate
 
 ### Kafka Exporter
@@ -122,34 +122,34 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
 
 ## 🔥 Phase 5 — Demo Scenario (Interview Killer)
 
-* [ ] Simulate failure:
+* [x] Simulate failure:
 
-  * [ ] Stop consumer / kill pod
-* [ ] Observe:
+  * [x] Stop consumer / kill pod
+* [x] Observe:
 
-  * [ ] lag increases in Grafana
-* [ ] Recover:
+  * [x] lag increases in Grafana
+* [x] Recover:
 
-  * [ ] restart consumer
-  * [ ] lag drops
+  * [x] restart consumer
+  * [x] lag drops
 
 ---
 
 ## 🎯 Final Outcome
 
-* [ ] Event-driven microservice architecture (Kafka)
-* [ ] Real-time observability (Prometheus + Grafana)
-* [ ] Self-healing and monitored system (K8s + probes)
+* [x] Event-driven microservice architecture (Kafka)
+* [x] Real-time observability (Prometheus + Grafana)
+* [x] Self-healing and monitored system (K8s + probes)
 
 ---
 
 ## 🧠 Key Learning Outcomes
 
-* [ ] Kafka producer/consumer fundamentals
-* [ ] Consumer lag monitoring
-* [ ] Observability pipeline (metrics → Prometheus → Grafana)
-* [ ] Debugging distributed systems
-* [ ] Designing resilient microservices
+* [x] Kafka producer/consumer fundamentals
+* [x] Consumer lag monitoring
+* [x] Observability pipeline (metrics → Prometheus → Grafana)
+* [x] Debugging distributed systems
+* [x] Designing resilient microservices
 
 ---
 
