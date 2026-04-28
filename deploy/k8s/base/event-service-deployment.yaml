@@ -35,6 +35,19 @@ spec:
                 configMapKeyRef:
                   name: devboard-event-service-config
                   key: TASK_EVENTS_TOPIC
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
           resources:
             requests:
               cpu: "50m"
