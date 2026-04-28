@@ -106,7 +106,11 @@ pipeline {
                           --set controller.replicaCount=1 \
                           --set broker.replicaCount=0 \
                           --set listeners.client.protocol=PLAINTEXT \
-                          --set controller.persistence.enabled=false; then
+                          --set controller.persistence.enabled=false \
+                          --set defaultReplicationFactor=1 \
+                          --set offsetsTopicReplicationFactor=1 \
+                          --set transactionStateLogReplicationFactor=1 \
+                          --set transactionStateLogMinIsr=1; then
 
                           echo "Kafka Helm install failed. Collecting diagnostics..."
                           helm status ${env.KAFKA_RELEASE} -n ${env.NAMESPACE} || true

@@ -18,7 +18,7 @@ vpc:
 managedNodeGroups:
   - name: devboard-ng
     instanceType: t3.small
-    desiredCapacity: 2
+    desiredCapacity: 3
     minSize: 1
-    maxSize: 2
+    maxSize: 3
     privateNetworking: false

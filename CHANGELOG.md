@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.7] - 2026-04-28
+
+### Added
+
+- Added EKS Grafana Kafka observability panels for messages produced, messages consumed, throughput, and consumer group lag
+- Added EKS observability troubleshooting notes for Kafka exporter, broker visibility, and cluster scheduling issues
+
+### Changed
+
+- Increased dev EKS node group capacity to three `t3.small` nodes for the full app, Kafka, ALB controller, metrics, and monitoring stack
+- Updated Jenkins EKS Kafka install settings for single-broker development clusters, including internal topic replication factors
+
+### Fixed
+
+- Fixed Kafka consumer group support in single-node EKS Kafka by setting offsets and transaction state replication factors to `1`
+- Restored consumer lag visibility by ensuring the `__consumer_offsets` topic can be created in the dev Kafka broker
+
 ## [0.6.6] - 2026-04-27
 
 ### Added

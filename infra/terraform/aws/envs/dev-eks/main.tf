@@ -63,9 +63,9 @@ module "eks" {
   subnet_ids = data.terraform_remote_state.dev_vm.outputs.public_subnet_ids
 
   node_group_name = "devboard-ng"
-  desired_size    = 2
+  desired_size    = 3
   min_size        = 1
-  max_size        = 2
+  max_size        = 3
   instance_types  = ["t3.small"]
 
   additional_tags = var.additional_tags
