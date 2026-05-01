@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - 00-namespace.yaml
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.0/manifests/install.yaml
+
+namespace: argocd
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+    target:
+      kind: Deployment
+      name: argocd-server
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 1Gi
+    target:
+      kind: Deployment
+      name: argocd-repo-server

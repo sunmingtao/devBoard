@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devboard
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: devboard
+    app.kubernetes.io/part-of: devboard
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sunmingtao/devBoard.git
+    targetRevision: main
+    path: deploy/k8s/overlays/local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devboard
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

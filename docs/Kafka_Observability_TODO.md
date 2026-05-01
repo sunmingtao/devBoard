@@ -105,8 +105,8 @@ Extend DevBoard into an **event-driven architecture** using Kafka and implement 
 
 ### Health Checks
 
-* [ ] Add readinessProbe for Kafka consumer
-* [ ] Add livenessProbe for Kafka consumer
+* [x] Add readinessProbe for Kafka consumer
+* [x] Add livenessProbe for Kafka consumer
 
 ---
 
