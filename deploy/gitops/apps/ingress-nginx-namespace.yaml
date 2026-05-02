@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx-namespace
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ingress-nginx-namespace
+    app.kubernetes.io/part-of: devboard
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sunmingtao/devBoard.git
+    targetRevision: main
+    path: deploy/gitops/namespaces
+    directory:
+      include: ingress-nginx-namespace.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
