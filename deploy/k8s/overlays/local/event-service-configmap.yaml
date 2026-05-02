@@ -4,6 +4,6 @@ metadata:
   name: devboard-event-service-config
   namespace: devboard
 data:
-  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  KAFKA_BOOTSTRAP_SERVERS: "devboard-kafka:9092"
   KAFKA_CONSUMER_GROUP: "event-service"
   TASK_EVENTS_TOPIC: "devboard.tasks"

@@ -14,3 +14,26 @@ resources:
   - event-service-configmap.yaml
   - frontend-nginx-configmap.yaml
   - ingress.yaml
+
+patches:
+  - target:
+      kind: Deployment
+      name: devboard-backend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: sunmingtao/devboard-backend:latest
+  - target:
+      kind: Deployment
+      name: devboard-frontend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: sunmingtao/devboard-frontend:latest
+  - target:
+      kind: Deployment
+      name: devboard-event-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: sunmingtao/devboard-event-service:latest

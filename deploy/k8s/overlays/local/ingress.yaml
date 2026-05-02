@@ -4,6 +4,7 @@ metadata:
   name: devboard-ingress
   namespace: devboard
 spec:
+  ingressClassName: nginx
   rules:
     - host: devboard.local
       http:

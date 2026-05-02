@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devboard-kafka
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: devboard-kafka
+    app.kubernetes.io/part-of: devboard
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: kafka
+    targetRevision: 30.1.8
+    helm:
+      releaseName: devboard-kafka
+      values: |
+        global:
+          security:
+            allowInsecureImages: true
+
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/kafka
+
+        controller:
+          replicaCount: 1
+          persistence:
+            enabled: false
+
+        broker:
+          replicaCount: 0
+          pdb:
+            create: false
+
+        listeners:
+          client:
+            protocol: PLAINTEXT
+
+        defaultReplicationFactor: 1
+        offsetsTopicReplicationFactor: 1
+        transactionStateLogReplicationFactor: 1
+        transactionStateLogMinIsr: 1
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devboard
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
