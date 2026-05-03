@@ -6,10 +6,18 @@ pipeline {
         disableConcurrentBuilds()
     }
 
+    triggers {
+        pollSCM('H/5 * * * *')
+    }
+
     environment {
         DOCKERHUB_REPO_BACKEND  = 'sunmingtao/devboard-backend'
         DOCKERHUB_REPO_FRONTEND = 'sunmingtao/devboard-frontend'
         DOCKERHUB_REPO_EVENT_SERVICE = 'sunmingtao/devboard-event-service'
+        K8S_EKS_KUSTOMIZATION = 'deploy/k8s/overlays/eks/kustomization.yaml'
+        GITOPS_TARGET_BRANCH = 'main'
+        GITOPS_COMMIT_USER_NAME = 'jenkins'
+        GITOPS_COMMIT_USER_EMAIL = 'jenkins@devboard.local'
     }
 
     stages {
@@ -20,10 +28,31 @@ pipeline {
             }
         }
 
-        stage('Set Image Tag') {
+        stage('Detect GitOps Commit') {
             steps {
                 script {
-                    // 用 git commit short sha 作为 tag
+                    def commitMessage = sh(
+                        script: 'git log -1 --pretty=%B',
+                        returnStdout: true
+                    ).trim()
+                    def isSkipCommit = (commitMessage =~ /(?i)\[(skip ci|ci skip)\]/).find()
+
+                    env.SKIP_BUILD = isSkipCommit ? 'true' : 'false'
+
+                    if (env.SKIP_BUILD == 'true') {
+                        currentBuild.description = 'Skipped GitOps image tag commit'
+                        echo 'Skipping image build for [skip ci] commit.'
+                    }
+                }
+            }
+        }
+
+        stage('Set Image Tag') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
+            steps {
+                script {
                     env.IMAGE_TAG = sh(
                         script: "git rev-parse --short HEAD",
                         returnStdout: true
@@ -35,6 +64,9 @@ pipeline {
         }
 
         stage('Docker Login') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
             steps {
                 withCredentials([
                     usernamePassword(
@@ -52,6 +84,9 @@ pipeline {
         }
 
         stage('Build Backend Image') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
             steps {
                 sh """
                     set -eux
@@ -61,6 +96,9 @@ pipeline {
         }
 
         stage('Build Frontend Image') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
             steps {
                 sh """
                     set -eux
@@ -70,6 +108,9 @@ pipeline {
         }
 
         stage('Build Event Service Image') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
             steps {
                 sh """
                     set -eux
@@ -79,6 +120,9 @@ pipeline {
         }
 
         stage('Push Images') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
             steps {
                 sh """
                     set -eux
@@ -89,7 +133,39 @@ pipeline {
             }
         }
 
+        stage('Update EKS Desired State') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
+            steps {
+                sh """
+                    set -eux
+
+                    sed -i -E "s#value: ${DOCKERHUB_REPO_BACKEND}:.*#value: ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
+                    sed -i -E "s#value: ${DOCKERHUB_REPO_FRONTEND}:.*#value: ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
+                    sed -i -E "s#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:.*#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
+
+                    git diff -- ${K8S_EKS_KUSTOMIZATION}
+
+                    if git diff --quiet -- ${K8S_EKS_KUSTOMIZATION}; then
+                        echo "EKS desired state already points to ${IMAGE_TAG}."
+                        exit 0
+                    fi
+
+                    git config user.name "${GITOPS_COMMIT_USER_NAME}"
+                    git config user.email "${GITOPS_COMMIT_USER_EMAIL}"
+
+                    git add ${K8S_EKS_KUSTOMIZATION}
+                    git commit -m "chore(gitops): update EKS image tag to ${IMAGE_TAG} [skip ci]"
+                    git push origin HEAD:${GITOPS_TARGET_BRANCH}
+                """
+            }
+        }
+
         stage('Tag Latest (optional)') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
             steps {
                 sh """
                     set -eux
@@ -107,7 +183,13 @@ pipeline {
 
     post {
         success {
-            echo "Build & push successful: ${env.IMAGE_TAG}"
+            script {
+                if (env.SKIP_BUILD == 'true') {
+                    echo 'Build skipped for GitOps image tag commit.'
+                } else {
+                    echo "Build & push successful: ${env.IMAGE_TAG}"
+                }
+            }
         }
     }
 }
