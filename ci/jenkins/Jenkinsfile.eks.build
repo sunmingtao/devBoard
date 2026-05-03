@@ -167,7 +167,17 @@ pipeline {
                         git commit -m "chore(gitops): update EKS image tag to ${IMAGE_TAG} [skip ci]"
 
                         set +x
-                        git push "https://${GIT_USERNAME}:${GIT_PASSWORD}@${GIT_REPO_URL#https://}" "HEAD:${GITOPS_TARGET_BRANCH}"
+                        cat > .git-askpass <<'EOF'
+#!/bin/sh
+case "$1" in
+  *Username*) printf '%s\n' "$GIT_USERNAME" ;;
+  *Password*) printf '%s\n' "$GIT_PASSWORD" ;;
+esac
+EOF
+                        chmod 700 .git-askpass
+                        trap 'rm -f .git-askpass' EXIT
+
+                        GIT_ASKPASS="$PWD/.git-askpass" git push "${GIT_REPO_URL}" "HEAD:${GITOPS_TARGET_BRANCH}"
                     '''
                 }
             }
