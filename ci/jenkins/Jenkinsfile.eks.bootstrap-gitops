@@ -9,11 +9,15 @@ pipeline {
     parameters {
         string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
         string(name: 'CLUSTER_NAME', defaultValue: 'devboard-dev-eks', description: 'EKS cluster name')
+        string(name: 'APP_HOST', defaultValue: 'www.smtdevboard.com', description: 'Public application host name')
+        string(name: 'APP_URL', defaultValue: 'https://www.smtdevboard.com', description: 'Public application URL')
+        string(name: 'ROUTE53_ZONE_ID', defaultValue: 'Z02400223BOTRAEUO0YCG', description: 'Route53 hosted zone ID')
     }
 
     environment {
         ARGOCD_NAMESPACE = 'argocd'
         DEVBOARD_NAMESPACE = 'devboard'
+        DEVBOARD_INGRESS_NAME = 'devboard-ingress'
         ARGOCD_MANIFEST_DIR = 'deploy/gitops/argocd'
         KAFKA_APP_MANIFEST = 'deploy/gitops/apps/kafka.yaml'
         DEVBOARD_APP_MANIFEST = 'deploy/gitops/apps/devboard-eks.yaml'
@@ -32,6 +36,7 @@ pipeline {
                     set -e
                     aws --version
                     kubectl version --client
+                    curl --version
                 '''
             }
         }
@@ -185,6 +190,117 @@ pipeline {
                         wait_for_app devboard
                     """
                 }
+            }
+        }
+
+        stage('Wait for ALB') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eu
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        for i in \$(seq 1 60); do
+                          ALB_HOST="\$(kubectl get ingress ${env.DEVBOARD_INGRESS_NAME} \
+                            -n ${env.DEVBOARD_NAMESPACE} \
+                            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)"
+
+                          if [ -n "\$ALB_HOST" ]; then
+                            echo "\$ALB_HOST" > alb-host.txt
+                            echo "ALB_HOST=\$ALB_HOST"
+                            exit 0
+                          fi
+
+                          echo "Waiting for ALB hostname... attempt \$i/60"
+                          sleep 10
+                        done
+
+                        echo "ERROR: ALB hostname was not assigned"
+                        kubectl describe ingress ${env.DEVBOARD_INGRESS_NAME} -n ${env.DEVBOARD_NAMESPACE} || true
+                        exit 1
+                    """
+                }
+            }
+        }
+
+        stage('Apply Route53') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eu
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        ALB_HOST="\$(cat alb-host.txt)"
+                        ALB_ZONE_ID="\$(aws elbv2 describe-load-balancers \
+                          --query "LoadBalancers[?DNSName=='\$ALB_HOST'].CanonicalHostedZoneId | [0]" \
+                          --output text)"
+
+                        if [ -z "\$ALB_ZONE_ID" ] || [ "\$ALB_ZONE_ID" = "None" ]; then
+                          echo "ERROR: Could not find ALB canonical hosted zone ID for \$ALB_HOST"
+                          exit 1
+                        fi
+
+                        cat > route53-change-batch.json <<EOF
+                        {
+                          "Comment": "Point ${params.APP_HOST} to Argo-managed DevBoard ALB",
+                          "Changes": [
+                            {
+                              "Action": "UPSERT",
+                              "ResourceRecordSet": {
+                                "Name": "${params.APP_HOST}",
+                                "Type": "A",
+                                "AliasTarget": {
+                                  "HostedZoneId": "\$ALB_ZONE_ID",
+                                  "DNSName": "dualstack.\$ALB_HOST",
+                                  "EvaluateTargetHealth": true
+                                }
+                              }
+                            }
+                          ]
+                        }
+EOF
+
+                        aws route53 change-resource-record-sets \
+                          --hosted-zone-id ${params.ROUTE53_ZONE_ID} \
+                          --change-batch file://route53-change-batch.json
+                    """
+                }
+            }
+        }
+
+        stage('Verify HTTPS') {
+            steps {
+                sh """
+                    set -eu
+
+                    for i in \$(seq 1 60); do
+                        getent hosts ${params.APP_HOST} || true
+
+                        if curl -fsS ${params.APP_URL}/api/health; then
+                            echo "Health check passed"
+                            exit 0
+                        fi
+
+                        echo "Waiting for DNS/ALB/application readiness... attempt \$i/60"
+                        sleep 10
+                    done
+
+                    echo "ERROR: Health check failed after retries"
+                    curl -Iv ${params.APP_URL} || true
+                    exit 1
+                """
             }
         }
 

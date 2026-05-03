@@ -13,12 +13,8 @@ pipeline {
     }
 
     environment {
-        TF_DIR = 'infra/terraform/aws/envs/dev-eks'
         NAMESPACE = 'devboard'
         INGRESS_NAME = 'devboard-ingress'
-
-        TF_VAR_enable_ingress = 'true'
-        TF_VAR_enable_route53 = 'false'
     }
 
     stages {
@@ -33,7 +29,6 @@ pipeline {
                 sh '''
                     set -e
                     aws --version
-                    terraform version
                     kubectl version --client
                     curl --version
                 '''
@@ -60,31 +55,6 @@ pipeline {
                         kubectl get nodes
                         kubectl get svc -n ${env.NAMESPACE}
                     """
-                }
-            }
-        }
-
-        stage('Create Ingress') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-devboard-terraform',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    dir("${env.TF_DIR}") {
-                        sh """
-                            set -eux
-                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
-                            export TF_VAR_enable_ingress=true
-                            export TF_VAR_enable_route53=false
-
-                            terraform init -backend-config=backend.hcl
-                            terraform plan -out=tfplan-ingress
-                            terraform apply -auto-approve tfplan-ingress
-                        """
-                    }
                 }
             }
         }
@@ -122,30 +92,6 @@ pipeline {
             }
         }
 
-        stage('Apply Route53') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-devboard-terraform',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    dir("${env.TF_DIR}") {
-                        sh """
-                            set -eux
-                            export AWS_DEFAULT_REGION=${params.AWS_REGION}
-                            export TF_VAR_enable_ingress=true
-                            export TF_VAR_enable_route53=true
-
-                            terraform plan -out=tfplan-route53
-                            terraform apply -auto-approve tfplan-route53
-                        """
-                    }
-                }
-            }
-        }
-
         stage('Verify HTTPS') {
             steps {
                 sh """
@@ -172,20 +118,12 @@ pipeline {
     }
 
     post {
-        always {
-            dir("${env.TF_DIR}") {
-                sh '''
-                    rm -f tfplan-ingress tfplan-route53 || true
-                '''
-            }
-        }
-
         success {
-            echo 'EKS ingress and Route53 deployment completed successfully.'
+            echo 'EKS ingress verification completed successfully.'
         }
 
         failure {
-            echo 'EKS ingress/Route53 deployment failed. Check Ingress, ALB controller, and Route53.'
+            echo 'EKS ingress verification failed. Check Argo CD Ingress, ALB controller, Route53, and HTTPS.'
         }
     }
 }
