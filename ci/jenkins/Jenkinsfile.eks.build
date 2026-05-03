@@ -15,6 +15,7 @@ pipeline {
         DOCKERHUB_REPO_FRONTEND = 'sunmingtao/devboard-frontend'
         DOCKERHUB_REPO_EVENT_SERVICE = 'sunmingtao/devboard-event-service'
         K8S_EKS_KUSTOMIZATION = 'deploy/k8s/overlays/eks/kustomization.yaml'
+        GIT_REPO_URL = 'https://github.com/sunmingtao/devBoard.git'
         GITOPS_TARGET_BRANCH = 'main'
         GITOPS_COMMIT_USER_NAME = 'jenkins'
         GITOPS_COMMIT_USER_EMAIL = 'jenkins@devboard.local'
@@ -138,27 +139,37 @@ pipeline {
                 expression { env.SKIP_BUILD != 'true' }
             }
             steps {
-                sh """
-                    set -eux
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'devboard-repo',
+                        usernameVariable: 'GIT_USERNAME',
+                        passwordVariable: 'GIT_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        set -eux
 
-                    sed -i -E "s#value: ${DOCKERHUB_REPO_BACKEND}:.*#value: ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
-                    sed -i -E "s#value: ${DOCKERHUB_REPO_FRONTEND}:.*#value: ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
-                    sed -i -E "s#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:.*#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
+                        sed -i -E "s#value: ${DOCKERHUB_REPO_BACKEND}:.*#value: ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
+                        sed -i -E "s#value: ${DOCKERHUB_REPO_FRONTEND}:.*#value: ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
+                        sed -i -E "s#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:.*#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
 
-                    git diff -- ${K8S_EKS_KUSTOMIZATION}
+                        git diff -- ${K8S_EKS_KUSTOMIZATION}
 
-                    if git diff --quiet -- ${K8S_EKS_KUSTOMIZATION}; then
-                        echo "EKS desired state already points to ${IMAGE_TAG}."
-                        exit 0
-                    fi
+                        if git diff --quiet -- ${K8S_EKS_KUSTOMIZATION}; then
+                            echo "EKS desired state already points to ${IMAGE_TAG}."
+                            exit 0
+                        fi
 
-                    git config user.name "${GITOPS_COMMIT_USER_NAME}"
-                    git config user.email "${GITOPS_COMMIT_USER_EMAIL}"
+                        git config user.name "${GITOPS_COMMIT_USER_NAME}"
+                        git config user.email "${GITOPS_COMMIT_USER_EMAIL}"
 
-                    git add ${K8S_EKS_KUSTOMIZATION}
-                    git commit -m "chore(gitops): update EKS image tag to ${IMAGE_TAG} [skip ci]"
-                    git push origin HEAD:${GITOPS_TARGET_BRANCH}
-                """
+                        git add ${K8S_EKS_KUSTOMIZATION}
+                        git commit -m "chore(gitops): update EKS image tag to ${IMAGE_TAG} [skip ci]"
+
+                        set +x
+                        git push "https://${GIT_USERNAME}:${GIT_PASSWORD}@${GIT_REPO_URL#https://}" "HEAD:${GITOPS_TARGET_BRANCH}"
+                    '''
+                }
             }
         }
 
