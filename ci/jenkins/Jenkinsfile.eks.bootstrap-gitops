@@ -1,0 +1,221 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        string(name: 'AWS_REGION', defaultValue: 'ap-southeast-2', description: 'AWS region')
+        string(name: 'CLUSTER_NAME', defaultValue: 'devboard-dev-eks', description: 'EKS cluster name')
+    }
+
+    environment {
+        ARGOCD_NAMESPACE = 'argocd'
+        DEVBOARD_NAMESPACE = 'devboard'
+        ARGOCD_MANIFEST_DIR = 'deploy/gitops/argocd'
+        KAFKA_APP_MANIFEST = 'deploy/gitops/apps/kafka.yaml'
+        DEVBOARD_APP_MANIFEST = 'deploy/gitops/apps/devboard-eks.yaml'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Verify Tools') {
+            steps {
+                sh '''
+                    set -e
+                    aws --version
+                    kubectl version --client
+                '''
+            }
+        }
+
+        stage('Configure kubeconfig') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        aws eks update-kubeconfig \
+                          --region ${params.AWS_REGION} \
+                          --name ${params.CLUSTER_NAME}
+
+                        kubectl get nodes
+                    """
+                }
+            }
+        }
+
+        stage('Install Argo CD') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl apply -k ${env.ARGOCD_MANIFEST_DIR}
+                        kubectl wait \
+                          --for condition=Established \
+                          crd/applications.argoproj.io \
+                          --timeout=180s
+
+                        kubectl rollout status deployment/argocd-server \
+                          -n ${env.ARGOCD_NAMESPACE} \
+                          --timeout=300s
+
+                        kubectl rollout status deployment/argocd-repo-server \
+                          -n ${env.ARGOCD_NAMESPACE} \
+                          --timeout=300s
+
+                        kubectl rollout status statefulset/argocd-application-controller \
+                          -n ${env.ARGOCD_NAMESPACE} \
+                          --timeout=300s
+                    """
+                }
+            }
+        }
+
+        stage('Create DevBoard Secret') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ),
+                    string(
+                        credentialsId: 'devboard-dev-eks-db-password',
+                        variable: 'RDS_EKS_DB_PASSWORD'
+                    )
+                ]) {
+                    sh """
+                        set -eu
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl create namespace ${env.DEVBOARD_NAMESPACE} \
+                          --dry-run=client \
+                          -o yaml | kubectl apply -f -
+
+                        kubectl create secret generic devboard-backend-secret \
+                          -n ${env.DEVBOARD_NAMESPACE} \
+                          --from-literal=DATABASE_PASSWORD="\${RDS_EKS_DB_PASSWORD}" \
+                          --dry-run=client \
+                          -o yaml | kubectl apply -f -
+                    """
+                }
+            }
+        }
+
+        stage('Apply Argo CD Applications') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl apply -f ${env.KAFKA_APP_MANIFEST}
+                        kubectl apply -f ${env.DEVBOARD_APP_MANIFEST}
+
+                        kubectl get applications -n ${env.ARGOCD_NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Wait for Applications') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eu
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        wait_for_app() {
+                          app_name="\$1"
+
+                          for i in \$(seq 1 60); do
+                            sync_status="\$(kubectl get application "\$app_name" -n ${env.ARGOCD_NAMESPACE} -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
+                            health_status="\$(kubectl get application "\$app_name" -n ${env.ARGOCD_NAMESPACE} -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
+
+                            echo "\$app_name sync=\${sync_status:-unknown} health=\${health_status:-unknown}"
+
+                            if [ "\$sync_status" = "Synced" ] && [ "\$health_status" = "Healthy" ]; then
+                              return 0
+                            fi
+
+                            sleep 10
+                          done
+
+                          echo "ERROR: Argo CD application \$app_name did not become Synced and Healthy"
+                          kubectl describe application "\$app_name" -n ${env.ARGOCD_NAMESPACE} || true
+                          return 1
+                        }
+
+                        wait_for_app devboard-kafka
+                        wait_for_app devboard
+                    """
+                }
+            }
+        }
+
+        stage('Verify DevBoard') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl get pods -n ${env.DEVBOARD_NAMESPACE}
+                        kubectl get ingress -n ${env.DEVBOARD_NAMESPACE}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'EKS GitOps bootstrap completed successfully.'
+        }
+
+        failure {
+            echo 'EKS GitOps bootstrap failed. Check Argo CD applications, DevBoard secret, and pod events.'
+        }
+    }
+}
