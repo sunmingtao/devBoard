@@ -31,10 +31,10 @@ Move the working local Argo CD setup toward EKS without mixing local-only choice
   - [x] Option A: use fixed tags in EKS overlay patches, similar to local
   - [ ] Option B: have Jenkins update Kustomize image tags in Git after image build
   - [ ] Option C: add Argo CD Image Updater later
-- [ ] Remove or replace unresolved placeholders:
+- [x] Remove or replace unresolved placeholders:
   - [x] `${IMAGE_TAG}`
   - [x] `${DB_HOST}`
-  - [ ] `${DB_PASSWORD}`
+  - [x] `${DB_PASSWORD}`
 Run ```
 kubectl create secret generic devboard-backend-secret \
   -n devboard \
@@ -50,12 +50,12 @@ kubectl create secret generic devboard-backend-secret \
 ## 3. Decide How EKS Secrets Are Managed
 
 - [x] Do not commit real database passwords to Git
-- [ ] Replace `backend-secret.yaml` strategy
+- [x] Replace `backend-secret.yaml` strategy
   - [x] Option A: manually create `devboard-backend-secret` in EKS before Argo sync
   - [ ] Option B: use External Secrets Operator with AWS Secrets Manager
   - [ ] Option C: use Sealed Secrets
 - [ ] Document which secret strategy is used for the interview demo
-- [ ] Ensure Argo CD does not overwrite manually managed secrets unless intended
+- [x] Ensure Argo CD does not overwrite manually managed secrets unless intended
 
 ---
 
@@ -66,8 +66,8 @@ kubectl create secret generic devboard-backend-secret \
   - [x] Put non-secret RDS endpoint directly in EKS ConfigMap
   - [ ] Generate/update ConfigMap in Git from Terraform output
   - [ ] Use External Secrets/Config operator pattern later
-- [ ] Confirm backend can connect to RDS from EKS nodes
-- [ ] Confirm RDS security group allows EKS access
+- [x] Confirm backend can connect to RDS from EKS nodes
+- [x] Confirm RDS security group allows EKS access
 
 ---
 
@@ -79,26 +79,26 @@ kubectl create secret generic devboard-backend-secret \
   - [x] service account in `kube-system`
   - [x] Helm release in `kube-system`
   - [x] Do not also manage this controller with Argo CD
-- [ ] Confirm controller is running:
-  - [ ] `kubectl get pods -n kube-system | grep aws-load-balancer-controller`
-- [ ] Confirm EKS Ingress uses ALB annotations:
-  - [ ] `kubernetes.io/ingress.class: alb`
-  - [ ] `alb.ingress.kubernetes.io/scheme: internet-facing`
-  - [ ] `alb.ingress.kubernetes.io/target-type: ip`
-  - [ ] certificate ARN
-- [ ] Add ALB health check annotations to the EKS ingress manifest:
-  - [ ] `alb.ingress.kubernetes.io/healthcheck-path: /api/health`
-  - [ ] `alb.ingress.kubernetes.io/success-codes: "200"`
+- [x] Confirm controller is running:
+  - [x] `kubectl get pods -n kube-system | grep aws-load-balancer-controller`
+- [x] Confirm EKS Ingress uses ALB annotations:
+  - [x] `kubernetes.io/ingress.class: alb`
+  - [x] `alb.ingress.kubernetes.io/scheme: internet-facing`
+  - [x] `alb.ingress.kubernetes.io/target-type: ip`
+  - [x] certificate ARN
+- [x] Add ALB health check annotations to the EKS ingress manifest:
+  - [x] `alb.ingress.kubernetes.io/healthcheck-path: /api/health`
+  - [x] `alb.ingress.kubernetes.io/success-codes: "200"`
 
 ---
 
 ## 6. Convert Kafka Ownership From Jenkins to Argo CD
 
 - [x] Stop installing Kafka in `Jenkinsfile.eks.deploy`
-- [ ] Use the existing Argo CD Kafka app for EKS as well, or create `devboard-kafka-eks.yaml`
-- [ ] Confirm Kafka service DNS matches app config:
-  - [ ] `devboard-kafka.devboard.svc.cluster.local:9092`
-- [ ] Decide persistence for EKS Kafka:
+- [x] Use the existing Argo CD Kafka app for EKS as well, or create `devboard-kafka-eks.yaml`
+- [x] Confirm Kafka service DNS matches app config:
+  - [x] `devboard-kafka.devboard.svc.cluster.local:9092`
+- [x] Decide persistence for EKS Kafka:
   - [x] demo mode: persistence disabled
   - [ ] more realistic mode: persistence enabled with EBS-backed storage class
 - [ ] Document why Kafka is single-node for demo
@@ -139,21 +139,21 @@ kubectl create secret generic devboard-backend-secret \
 
 ## 9. EKS Validation Checklist
 
-- [ ] Terraform EKS infra applied
-- [ ] AWS Load Balancer Controller running
-- [ ] Argo CD installed on EKS
+- [x] Terraform EKS infra applied
+- [x] AWS Load Balancer Controller running
+- [x] Argo CD installed on EKS
 - [ ] Private Git repo credentials configured in Argo CD, if needed
-- [ ] Namespace apps synced
-- [ ] Kafka app synced and healthy
-- [ ] DevBoard EKS app synced and healthy
-- [ ] Ingress has ALB hostname:
-  - [ ] `kubectl get ingress devboard-ingress -n devboard`
-- [ ] DNS points to ALB
-- [ ] HTTPS works:
-  - [ ] `curl -I https://www.smtdevboard.com`
-- [ ] Backend health works:
-  - [ ] `curl https://www.smtdevboard.com/api/health`
-- [ ] Frontend loads in browser
+- [x] Namespace apps synced
+- [x] Kafka app synced and healthy
+- [x] DevBoard EKS app synced and healthy
+- [x] Ingress has ALB hostname:
+  - [x] `kubectl get ingress devboard-ingress -n devboard`
+- [x] DNS points to ALB
+- [x] HTTPS works:
+  - [x] `curl -I https://www.smtdevboard.com`
+- [x] Backend health works:
+  - [x] `curl https://www.smtdevboard.com/api/health`
+- [x] Frontend loads in browser
 
 ---
 
