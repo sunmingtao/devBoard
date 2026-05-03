@@ -10,6 +10,8 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-2:627073650332:certificate/ccc54f68-f0d5-4a68-aecb-32bfe354a903
     alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    alb.ingress.kubernetes.io/success-codes: '200'
 spec:
   rules:
     - host: www.smtdevboard.com

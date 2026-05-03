@@ -6,9 +6,30 @@ namespace: devboard
 resources:
   - ../../base
   - backend-configmap.yaml
-  - backend-secret.yaml
   - event-service-configmap.yaml
   - frontend-nginx-configmap.yaml
+  - ingress.yaml
 
 patches:
   - path: frontend-service-patch.yaml
+  - target:
+      kind: Deployment
+      name: devboard-backend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: sunmingtao/devboard-backend:latest
+  - target:
+      kind: Deployment
+      name: devboard-frontend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: sunmingtao/devboard-frontend:latest
+  - target:
+      kind: Deployment
+      name: devboard-event-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: sunmingtao/devboard-event-service:latest
