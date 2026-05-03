@@ -29,6 +29,25 @@ pipeline {
             }
         }
 
+        stage('Verify GitHub SSH') {
+            steps {
+                sshagent(credentials: ['github-ssh-key']) {
+                    sh '''
+                        set +e
+                        ssh -T git@github.com
+                        status=$?
+                        set -e
+
+                        # GitHub returns 1 for successful auth because it does not provide shell access.
+                        if [ "$status" -ne 1 ]; then
+                            exit "$status"
+                        fi
+                    '''
+                }
+            }
+        }
+
+
         stage('Detect GitOps Commit') {
             steps {
                 script {
