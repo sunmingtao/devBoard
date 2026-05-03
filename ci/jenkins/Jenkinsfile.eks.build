@@ -15,7 +15,7 @@ pipeline {
         DOCKERHUB_REPO_FRONTEND = 'sunmingtao/devboard-frontend'
         DOCKERHUB_REPO_EVENT_SERVICE = 'sunmingtao/devboard-event-service'
         K8S_EKS_KUSTOMIZATION = 'deploy/k8s/overlays/eks/kustomization.yaml'
-        GIT_REPO_URL = 'https://github.com/sunmingtao/devBoard.git'
+        GIT_REPO_SSH_URL = 'git@github.com:sunmingtao/devBoard.git'
         GITOPS_TARGET_BRANCH = 'main'
         GITOPS_COMMIT_USER_NAME = 'jenkins'
         GITOPS_COMMIT_USER_EMAIL = 'jenkins@devboard.local'
@@ -139,13 +139,7 @@ pipeline {
                 expression { env.SKIP_BUILD != 'true' }
             }
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'devboard-repo',
-                        usernameVariable: 'GIT_USERNAME',
-                        passwordVariable: 'GIT_PASSWORD'
-                    )
-                ]) {
+                sshagent(credentials: ['github-ssh-key']) {
                     sh '''
                         set -eux
 
@@ -166,18 +160,7 @@ pipeline {
                         git add ${K8S_EKS_KUSTOMIZATION}
                         git commit -m "chore(gitops): update EKS image tag to ${IMAGE_TAG} [skip ci]"
 
-                        set +x
-                        cat > .git-askpass <<'EOF'
-#!/bin/sh
-case "$1" in
-  *Username*) printf '%s\n' "$GIT_USERNAME" ;;
-  *Password*) printf '%s\n' "$GIT_PASSWORD" ;;
-esac
-EOF
-                        chmod 700 .git-askpass
-                        trap 'rm -f .git-askpass' EXIT
-
-                        GIT_ASKPASS="$PWD/.git-askpass" git push "${GIT_REPO_URL}" "HEAD:${GITOPS_TARGET_BRANCH}"
+                        git push "${GIT_REPO_SSH_URL}" "HEAD:${GITOPS_TARGET_BRANCH}"
                     '''
                 }
             }
