@@ -9,7 +9,7 @@
           developers. It combines the simplicity of a Kanban board with powerful
           features to help you manage your development workflow effectively. We
           also build with a DevOps mindset, so teams can ship faster with
-          confidence and visibility.
+          confidence, traceability, and a clear GitOps ownership model.
         </p>
       </section>
 
@@ -37,9 +37,17 @@
           <div class="tech-item">
             <h3>Database</h3>
             <ul>
-              <li>MySQL 8.0 (Production)</li>
+              <li>MySQL 8.0 / Amazon RDS</li>
               <li>H2 (Development)</li>
               <li>Docker Compose</li>
+            </ul>
+          </div>
+          <div class="tech-item">
+            <h3>Platform</h3>
+            <ul>
+              <li>Kubernetes with Kustomize overlays</li>
+              <li>AWS EKS, ALB, Route 53, and ACM</li>
+              <li>Argo CD GitOps reconciliation</li>
             </ul>
           </div>
         </div>
@@ -51,17 +59,17 @@
           <div class="devops-item">
             <h3>CI/CD Automation</h3>
             <ul>
-              <li>Automated lint, test, and build pipelines</li>
-              <li>Branch-based quality gates before merge</li>
-              <li>Release workflows for consistent deployments</li>
+              <li>Jenkins SCM polling for localhost CI triggers</li>
+              <li>Immutable Docker images tagged with Git short SHA</li>
+              <li>Automated GitOps commits for image promotion</li>
             </ul>
           </div>
           <div class="devops-item">
             <h3>Cloud-Native Delivery</h3>
             <ul>
-              <li>Dockerized services for environment parity</li>
-              <li>Configuration through environment variables</li>
-              <li>Scalable API-first architecture</li>
+              <li>Argo CD reconciles EKS from Git desired state</li>
+              <li>Kustomize overlays separate local and EKS concerns</li>
+              <li>Jenkins produces artifacts without mutating the cluster</li>
             </ul>
           </div>
           <div class="devops-item">

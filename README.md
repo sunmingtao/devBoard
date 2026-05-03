@@ -1,27 +1,42 @@
 # DevBoard
 
-DevBoard is a full-stack task board application with a Spring Boot backend and a Vue 3 frontend, plus deployment assets for Docker Compose, Jenkins, and Terraform.
+DevBoard is a full-stack task board application with a Spring Boot backend, a Vue 3 frontend, an event-service, and deployment assets for Docker Compose, Jenkins, Terraform, Kubernetes, and Argo CD.
 
 ## Tech stack
 
 - **Frontend:** Vue 3 + Vite + Vue Router (`apps/frontend`)
 - **Backend:** Spring Boot 3.3 (Java 25), Spring Security, JWT, JPA (`apps/backend`)
-- **Data stores:** H2 (dev/test), MySQL (container/mysql profile), Redis-ready config
-- **Infra/Deploy:** Docker Compose (`deploy/docker-compose/single-vm`), Terraform (`infra/terraform`), Jenkins pipelines (`ci/jenkins`)
+- **Eventing:** Kafka-backed event-service (`apps/event-service`)
+- **Data stores:** H2 (dev/test), MySQL/RDS, Redis-ready config
+- **Infra/Deploy:** Docker Compose, Kubernetes/Kustomize, Terraform, Jenkins, Argo CD, AWS EKS/ALB/RDS
 
 ## Repository layout
 
 ```text
 .
 ├── apps/
-│   ├── backend/     # Spring Boot API
-│   └── frontend/    # Vue SPA
+│   ├── backend/        # Spring Boot API
+│   ├── event-service/  # Kafka consumer service
+│   └── frontend/       # Vue SPA
 ├── deploy/
-│   └── docker-compose/single-vm/
+│   ├── docker-compose/single-vm/
+│   ├── gitops/
+│   └── k8s/
 ├── ci/jenkins/
 ├── infra/terraform/
 └── docs/
 ```
+
+## EKS GitOps delivery
+
+The EKS delivery path now follows a GitOps ownership model:
+
+1. A commit to `main` is detected by the Jenkins EKS build job through SCM polling.
+2. Jenkins builds and pushes backend, frontend, and event-service Docker images tagged with the Git short SHA.
+3. Jenkins updates `deploy/k8s/overlays/eks/kustomization.yaml` with the new immutable image tag and pushes a `[skip ci]` GitOps commit.
+4. Argo CD watches the EKS overlay and reconciles the cluster to the new desired state.
+
+In short: Jenkins produces artifacts; Argo CD owns deployment reconciliation.
 
 ## Quick start (local development)
 
@@ -88,7 +103,7 @@ Notes:
 
 - Backend details: `apps/backend/README.md`
 - Frontend details: `apps/frontend/README.md`
-- Deployment docs: `docs/CONTAINER_DEPLOYMENT.md`, `docs/DEPLOYMENT_ENVIRONMENTS.md`
+- Deployment docs: `docs/CONTAINER_DEPLOYMENT.md`, `docs/DEPLOYMENT_ENVIRONMENTS.md`, `docs/EKS_GITOPS_TODO.md`
 
 ## Current status
 

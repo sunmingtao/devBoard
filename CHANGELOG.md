@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.8] - 2026-05-04
+
+### Added
+
+- Completed the EKS GitOps delivery loop from source commit to cluster reconciliation
+- Added Jenkins SCM polling for localhost-based CI triggers when GitHub webhooks are not reachable
+- Added Jenkins image tag handoff that updates the EKS Kustomize desired state in Git after Docker images are pushed
+- Added SSH-based Git push support for Jenkins using the `github-ssh-key` credential and GitHub host key verification
+
+### Changed
+
+- Reframed Jenkins as the CI artifact producer and Argo CD as the owner of EKS deployment reconciliation
+- Updated the EKS image promotion flow to use immutable Git short SHA tags in Git instead of relying on mutable runtime deployment steps
+
 ## [0.6.7] - 2026-04-28
 
 ### Added

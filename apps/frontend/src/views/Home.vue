@@ -5,13 +5,14 @@
       <h1 v-if="isAuthenticated">Welcome back, {{ username }} 👋</h1>
       <h1 v-else>DevBoard: From Code to Cloud</h1>
       <p class="hero-subtitle">
-        A full-stack platform showcasing CI/CD, Kubernetes, Terraform, and AWS
-        delivery practices.
+        A full-stack platform showcasing CI, GitOps delivery, Kubernetes,
+        Terraform, and AWS operations.
       </p>
       <div class="hero-pills">
         <span>Vue 3 + Vite</span>
         <span>Spring Boot 3.3</span>
-        <span>Jenkins CI/CD</span>
+        <span>Jenkins CI</span>
+        <span>Argo CD GitOps</span>
         <span>Terraform IaC</span>
         <span>AWS EKS + RDS</span>
       </div>
@@ -32,8 +33,8 @@
       <article class="highlight-card">
         <h3>🚀 End-to-End Delivery</h3>
         <p>
-          Build, test, and deploy through Jenkins pipelines with environment
-          separation for development and production.
+          Jenkins detects source changes, builds immutable Docker images, and
+          updates Git desired state for Argo CD to reconcile.
         </p>
       </article>
       <article class="highlight-card">
@@ -55,6 +56,22 @@
     <section class="roadmap">
       <h2>Recent DevOps Milestones</h2>
       <div class="timeline">
+        <div class="timeline-item">
+          <p class="timeline-version">v0.6.8 · 2026-05-04</p>
+          <p>
+            Completed the EKS GitOps pipeline: commits trigger Jenkins image
+            builds, Jenkins updates Kustomize image tags in Git, and Argo CD
+            reconciles the cluster from the new desired state.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <p class="timeline-version">v0.6.7 · 2026-04-28</p>
+          <p>
+            Added Kafka observability dashboards and tuned the EKS development
+            cluster for the full application, Kafka, ALB controller, metrics,
+            and monitoring stack.
+          </p>
+        </div>
         <div class="timeline-item">
           <p class="timeline-version">v0.6.2 · 2026-04-25</p>
           <p>
