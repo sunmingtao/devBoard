@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: devboard-event-frontend
+  namespace: devboard
+  labels:
+    app: devboard-event-frontend
+spec:
+  selector:
+    app: devboard-event-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: ClusterIP

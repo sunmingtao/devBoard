@@ -17,6 +17,20 @@ spec:
     - host: www.smtdevboard.com
       http:
         paths:
+          - path: /api/events
+            pathType: Prefix
+            backend:
+              service:
+                name: devboard-event-service
+                port:
+                  number: 8081
+          - path: /events
+            pathType: Prefix
+            backend:
+              service:
+                name: devboard-event-frontend
+                port:
+                  number: 80
           - path: /api
             pathType: Prefix
             backend:

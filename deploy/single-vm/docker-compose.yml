@@ -37,6 +37,15 @@ services:
     networks:
       - devboard-network
 
+  event-frontend:
+    image: sunmingtao/devboard-event-frontend:${IMAGE_TAG}
+    container_name: devboard-event-frontend
+    restart: unless-stopped
+    depends_on:
+      - event-service
+    networks:
+      - devboard-network
+
   frontend:
     image: sunmingtao/devboard-frontend:${IMAGE_TAG}
     container_name: devboard-frontend
@@ -46,6 +55,7 @@ services:
       - "${FRONTEND_HTTPS_PORT:-443}:443"
     depends_on:
       - backend
+      - event-frontend
     volumes:
       - ./active.nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./certbot/conf:/etc/letsencrypt

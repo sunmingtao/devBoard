@@ -14,6 +14,7 @@ pipeline {
         DOCKERHUB_REPO_BACKEND  = 'sunmingtao/devboard-backend'
         DOCKERHUB_REPO_FRONTEND = 'sunmingtao/devboard-frontend'
         DOCKERHUB_REPO_EVENT_SERVICE = 'sunmingtao/devboard-event-service'
+        DOCKERHUB_REPO_EVENT_FRONTEND = 'sunmingtao/devboard-event-frontend'
         K8S_EKS_KUSTOMIZATION = 'deploy/k8s/overlays/eks/kustomization.yaml'
         GIT_REPO_SSH_URL = 'git@github.com:sunmingtao/devBoard.git'
         GITOPS_TARGET_BRANCH = 'main'
@@ -133,6 +134,18 @@ pipeline {
             }
         }
 
+        stage('Build Event Frontend Image') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
+            steps {
+                sh """
+                    set -eux
+                    docker build -t ${DOCKERHUB_REPO_EVENT_FRONTEND}:${IMAGE_TAG} apps/event-frontend/
+                """
+            }
+        }
+
         stage('Push Images') {
             when {
                 expression { env.SKIP_BUILD != 'true' }
@@ -143,6 +156,7 @@ pipeline {
                     docker push ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}
                     docker push ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}
                     docker push ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG}
+                    docker push ${DOCKERHUB_REPO_EVENT_FRONTEND}:${IMAGE_TAG}
                 """
             }
         }
@@ -159,6 +173,7 @@ pipeline {
                         sed -i -E "s#value: ${DOCKERHUB_REPO_BACKEND}:.*#value: ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
                         sed -i -E "s#value: ${DOCKERHUB_REPO_FRONTEND}:.*#value: ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
                         sed -i -E "s#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:.*#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
+                        sed -i -E "s#value: ${DOCKERHUB_REPO_EVENT_FRONTEND}:.*#value: ${DOCKERHUB_REPO_EVENT_FRONTEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
 
                         git diff -- ${K8S_EKS_KUSTOMIZATION}
 
@@ -190,10 +205,12 @@ pipeline {
                     docker tag ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG} ${DOCKERHUB_REPO_BACKEND}:latest
                     docker tag ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG} ${DOCKERHUB_REPO_FRONTEND}:latest
                     docker tag ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG} ${DOCKERHUB_REPO_EVENT_SERVICE}:latest
+                    docker tag ${DOCKERHUB_REPO_EVENT_FRONTEND}:${IMAGE_TAG} ${DOCKERHUB_REPO_EVENT_FRONTEND}:latest
 
                     docker push ${DOCKERHUB_REPO_BACKEND}:latest
                     docker push ${DOCKERHUB_REPO_FRONTEND}:latest
                     docker push ${DOCKERHUB_REPO_EVENT_SERVICE}:latest
+                    docker push ${DOCKERHUB_REPO_EVENT_FRONTEND}:latest
                 """
             }
         }

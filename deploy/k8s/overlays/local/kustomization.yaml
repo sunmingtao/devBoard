@@ -37,3 +37,10 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/image
         value: sunmingtao/devboard-event-service:latest
+  - target:
+      kind: Deployment
+      name: devboard-event-frontend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: sunmingtao/devboard-event-frontend:latest

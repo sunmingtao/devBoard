@@ -6,5 +6,8 @@ services:
   event-service:
     restart: always
 
+  event-frontend:
+    restart: always
+
   frontend:
     restart: always

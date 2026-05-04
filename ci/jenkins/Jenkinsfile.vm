@@ -34,11 +34,13 @@ pipeline {
         IMAGE_NAME_BACKEND  = 'sunmingtao/devboard-backend'
         IMAGE_NAME_FRONTEND = 'sunmingtao/devboard-frontend'
         IMAGE_NAME_EVENT_SERVICE = 'sunmingtao/devboard-event-service'
+        IMAGE_NAME_EVENT_FRONTEND = 'sunmingtao/devboard-event-frontend'
         EFFECTIVE_IMAGE_TAG = "${params.DOCKER_IMAGE_TAG ?: env.BUILD_NUMBER}"
         GIT_REPO_URL        = 'https://github.com/sunmingtao/devBoard.git'
         APP_BACKEND_DIR     = 'apps/backend'
         APP_FRONTEND_DIR    = 'apps/frontend'
         APP_EVENT_SERVICE_DIR = 'apps/event-service'
+        APP_EVENT_FRONTEND_DIR = 'apps/event-frontend'
         ENV_FILE_NAME       = '.env'
         COMPOSE_FILE        = 'docker-compose.yml'
     }
@@ -122,6 +124,7 @@ pipeline {
                     test -d "${APP_BACKEND_DIR}"
                     test -d "${APP_FRONTEND_DIR}"
                     test -d "${APP_EVENT_SERVICE_DIR}"
+                    test -d "${APP_EVENT_FRONTEND_DIR}"
                     test -f "${params.DEPLOYMENT_MODE_DIR}/${COMPOSE_FILE}"
                     test -f "${params.DEPLOYMENT_MODE_DIR}/docker-compose.${params.ENVIRONMENT}.yml"
                     test -f "deploy/single-vm/nginx/nginx.http.conf"
@@ -140,6 +143,7 @@ pipeline {
                     docker build -t devboard-backend:latest ./${APP_BACKEND_DIR}
                     docker build -t devboard-frontend:latest ./${APP_FRONTEND_DIR}
                     docker build -t devboard-event-service:latest ./${APP_EVENT_SERVICE_DIR}
+                    docker build -t devboard-event-frontend:latest ./${APP_EVENT_FRONTEND_DIR}
                 '''
             }
         }
@@ -172,6 +176,11 @@ pipeline {
                         docker tag devboard-event-service:latest ${IMAGE_NAME_EVENT_SERVICE}:${EFFECTIVE_IMAGE_TAG}
                         docker push ${IMAGE_NAME_EVENT_SERVICE}:latest
                         docker push ${IMAGE_NAME_EVENT_SERVICE}:${EFFECTIVE_IMAGE_TAG}
+
+                        docker tag devboard-event-frontend:latest ${IMAGE_NAME_EVENT_FRONTEND}:latest
+                        docker tag devboard-event-frontend:latest ${IMAGE_NAME_EVENT_FRONTEND}:${EFFECTIVE_IMAGE_TAG}
+                        docker push ${IMAGE_NAME_EVENT_FRONTEND}:latest
+                        docker push ${IMAGE_NAME_EVENT_FRONTEND}:${EFFECTIVE_IMAGE_TAG}
 
                         docker logout
                     """

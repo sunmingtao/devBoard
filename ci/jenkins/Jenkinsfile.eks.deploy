@@ -17,6 +17,7 @@ pipeline {
         NAMESPACE = 'devboard'
         BACKEND_DEPLOYMENT = 'devboard-backend'
         EVENT_SERVICE_DEPLOYMENT = 'devboard-event-service'
+        EVENT_FRONTEND_DEPLOYMENT = 'devboard-event-frontend'
         KAFKA_RELEASE = 'devboard-kafka'
         KAFKA_HELM_TIMEOUT = '20m'
         MONITORING_NAMESPACE = 'monitoring'
@@ -30,6 +31,7 @@ pipeline {
         BACKEND_SECRET_TEMPLATE = 'deploy/k8s/overlays/eks/backend-secret.yaml'
         BACKEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/backend-deployment.yaml'
         EVENT_SERVICE_DEPLOY_TEMPLATE = 'deploy/k8s/base/event-service-deployment.yaml'
+        EVENT_FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/event-frontend-deployment.yaml'
         FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/frontend-deployment.yaml'
     }
 
@@ -91,6 +93,7 @@ pipeline {
 
                         kubectl rollout status deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
                         kubectl rollout status deployment/${env.EVENT_SERVICE_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
+                        kubectl rollout status deployment/${env.EVENT_FRONTEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
                         kubectl rollout status deployment/devboard-frontend -n ${env.NAMESPACE} --timeout=300s
                     """
                 }

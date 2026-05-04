@@ -5,5 +5,8 @@ services:
   event-service:
     restart: unless-stopped
 
+  event-frontend:
+    restart: unless-stopped
+
   frontend:
     restart: unless-stopped

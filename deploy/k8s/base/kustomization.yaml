@@ -8,5 +8,7 @@ resources:
   - backend-hpa.yaml
   - event-service-deployment.yaml
   - event-service-service.yaml
+  - event-frontend-deployment.yaml
+  - event-frontend-service.yaml
   - frontend-deployment.yaml
   - frontend-service.yaml

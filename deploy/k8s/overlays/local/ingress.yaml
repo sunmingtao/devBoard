@@ -9,6 +9,22 @@ spec:
     - host: devboard.local
       http:
         paths:
+          - path: /api/events
+            pathType: Prefix
+            backend:
+              service:
+                name: devboard-event-service
+                port:
+                  number: 8081
+
+          - path: /events
+            pathType: Prefix
+            backend:
+              service:
+                name: devboard-event-frontend
+                port:
+                  number: 80
+
           - path: /
             pathType: Prefix
             backend:
