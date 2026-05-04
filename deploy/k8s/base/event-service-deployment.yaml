@@ -35,6 +35,21 @@ spec:
                 configMapKeyRef:
                   name: devboard-event-service-config
                   key: TASK_EVENTS_TOPIC
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: devboard-event-service-config
+                  key: DATABASE_URL
+            - name: DATABASE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: devboard-event-service-config
+                  key: DATABASE_USERNAME
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: devboard-backend-secret
+                  key: DATABASE_PASSWORD
           readinessProbe:
             httpGet:
               path: /actuator/health

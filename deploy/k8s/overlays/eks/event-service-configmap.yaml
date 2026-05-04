@@ -7,3 +7,5 @@ data:
   KAFKA_BOOTSTRAP_SERVERS: "devboard-kafka.devboard.svc.cluster.local:9092"
   KAFKA_CONSUMER_GROUP: "event-service"
   TASK_EVENTS_TOPIC: "devboard.tasks"
+  DATABASE_URL: "jdbc:mysql://devboard-dev-eks-db.ctigw2agmnko.ap-southeast-2.rds.amazonaws.com:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+  DATABASE_USERNAME: "devboard_user"
