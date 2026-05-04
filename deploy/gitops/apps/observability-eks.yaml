@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-eks
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+  labels:
+    app.kubernetes.io/name: observability-eks
+    app.kubernetes.io/part-of: devboard
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sunmingtao/devBoard.git
+    targetRevision: main
+    path: deploy/observability/eks
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

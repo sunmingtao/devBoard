@@ -76,63 +76,6 @@ pipeline {
             }
         }
 
-        stage('Install Observability') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-devboard-terraform',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    sh """
-                        set -eux
-                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
-
-                        kubectl create namespace ${env.MONITORING_NAMESPACE} \
-                          --dry-run=client \
-                          -o yaml | kubectl apply -f -
-
-                        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
-                        helm repo update
-
-                        helm upgrade --install ${env.MONITORING_RELEASE} prometheus-community/kube-prometheus-stack \
-                          --namespace ${env.MONITORING_NAMESPACE} \
-                          --wait \
-                          --timeout ${env.MONITORING_HELM_TIMEOUT} \
-                          -f ${env.OBSERVABILITY_DIR}/kube-prometheus-stack-values.yaml
-
-                        helm upgrade --install ${env.KAFKA_EXPORTER_RELEASE} prometheus-community/prometheus-kafka-exporter \
-                          --namespace ${env.MONITORING_NAMESPACE} \
-                          --wait \
-                          --timeout ${env.MONITORING_HELM_TIMEOUT} \
-                          -f ${env.OBSERVABILITY_DIR}/kafka-exporter-values.yaml
-                    """
-                }
-            }
-        }
-
-        stage('Deploy Observability Resources') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-devboard-terraform',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    sh """
-                        set -eux
-                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
-
-                        kubectl apply -k ${env.OBSERVABILITY_DIR}
-                        kubectl get pods -n ${env.MONITORING_NAMESPACE}
-                        kubectl get servicemonitor -n ${env.MONITORING_NAMESPACE}
-                    """
-                }
-            }
-        }
-
         stage('Verify Rollout') {
             steps {
                 withCredentials([

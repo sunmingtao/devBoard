@@ -111,13 +111,13 @@ kubectl create secret generic devboard-backend-secret \
   - [x] test
   - [x] build Docker images
   - [x] push image tags
-  - [ ] scan images later
+  - [x] scan images later
 - [x] Remove direct `kubectl apply -k` deployment from Jenkins EKS pipeline
 - [x] Remove direct `helm upgrade --install` for Kafka from Jenkins EKS pipeline
-- [ ] Add GitOps handoff:
-  - [ ] Jenkins updates image tag in Git
-  - [ ] Jenkins pushes commit
-  - [ ] Argo CD reconciles EKS cluster from Git
+- [x] Add GitOps handoff:
+  - [x] Jenkins updates image tag in Git
+  - [x] Jenkins pushes commit
+  - [x] Argo CD reconciles EKS cluster from Git
 - [ ] Add a clear interview sentence:
   - [ ] "Jenkins produces artifacts; Argo CD owns deployment reconciliation."
 
@@ -125,15 +125,15 @@ kubectl create secret generic devboard-backend-secret \
 
 ## 8. Observability GitOps Plan
 
-- [ ] Add Argo CD app for EKS observability, for example:
-  - [ ] `deploy/gitops/apps/observability-eks.yaml`
-- [ ] Point it to:
-  - [ ] `deploy/observability/eks`
-- [ ] Decide how Helm-installed monitoring moves from Jenkins to GitOps:
-  - [ ] kube-prometheus-stack as Argo CD Helm app
-  - [ ] kafka-exporter as Argo CD Helm app
-  - [ ] dashboards and ServiceMonitors from `deploy/observability/eks`
-- [ ] Avoid mixing Jenkins Helm ownership and Argo CD ownership
+- [x] Add Argo CD app for EKS observability, for example:
+  - [x] `deploy/gitops/apps/observability-eks.yaml`
+- [x] Point it to:
+  - [x] `deploy/observability/eks`
+- [x] Decide how Helm-installed monitoring moves from Jenkins to GitOps:
+  - [x] kube-prometheus-stack as Argo CD Helm app
+  - [x] kafka-exporter as Argo CD Helm app
+  - [x] dashboards and ServiceMonitors from `deploy/observability/eks`
+- [x] Avoid mixing Jenkins Helm ownership and Argo CD ownership
 
 ---
 
