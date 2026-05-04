@@ -42,15 +42,7 @@ pipeline {
 
                         export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=${PWD}/.ssh/known_hosts -o StrictHostKeyChecking=yes"
 
-                        set +e
-                        ssh -o UserKnownHostsFile="${PWD}/.ssh/known_hosts" -o StrictHostKeyChecking=yes -T git@github.com
-                        status=$?
-                        set -e
-
-                        # GitHub returns 1 for successful auth because it does not provide shell access.
-                        if [ "$status" -ne 1 ]; then
-                            exit "$status"
-                        fi
+                        git ls-remote "${GIT_REPO_SSH_URL}" HEAD >/dev/null
                     '''
                 }
             }
@@ -170,12 +162,6 @@ pipeline {
                 sshagent(credentials: ['github-ssh-key']) {
                     sh '''
                         set -eux
-
-                        mkdir -p .ssh
-                        ssh-keyscan github.com > .ssh/known_hosts
-                        chmod 700 .ssh
-                        chmod 600 .ssh/known_hosts
-                        export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=${PWD}/.ssh/known_hosts -o StrictHostKeyChecking=yes"
 
                         sed -i -E "s#value: ${DOCKERHUB_REPO_BACKEND}:.*#value: ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
                         sed -i -E "s#value: ${DOCKERHUB_REPO_FRONTEND}:.*#value: ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}

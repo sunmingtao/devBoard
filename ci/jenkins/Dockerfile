@@ -44,4 +44,13 @@ RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | b
 RUN apt-get update && apt-get install -y gettext-base && \
     rm -rf /var/lib/apt/lists/*
     
+# Install SSH client and trust GitHub host key for Jenkins user
+RUN apt-get update && apt-get install -y openssh-client && \
+    mkdir -p /var/jenkins_home/.ssh && \
+    ssh-keyscan github.com > /var/jenkins_home/.ssh/known_hosts && \
+    chown -R jenkins:jenkins /var/jenkins_home/.ssh && \
+    chmod 700 /var/jenkins_home/.ssh && \
+    chmod 600 /var/jenkins_home/.ssh/known_hosts && \
+    rm -rf /var/lib/apt/lists/*
+    
 USER jenkins
