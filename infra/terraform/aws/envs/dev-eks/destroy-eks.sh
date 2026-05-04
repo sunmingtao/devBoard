@@ -4,23 +4,33 @@ set -euo pipefail
 REGION="ap-southeast-2"
 CLUSTER_NAME="devboard-dev-eks"
 NAMESPACE="devboard"
+MONITORING_NAMESPACE="monitoring"
 INGRESS_NAME="devboard-ingress"
 ARGOCD_NAMESPACE="argocd"
-DEVBOARD_APP="devboard"
-KAFKA_APP="devboard-kafka"
+ARGOCD_APPS=(
+  observability-eks
+  devboard-kafka-exporter
+  devboard-monitoring
+  devboard
+  devboard-kafka
+  ingress-nginx
+  ingress-nginx-namespace
+)
 
 echo "Updating kubeconfig..."
 aws eks update-kubeconfig --region "$REGION" --name "$CLUSTER_NAME" || true
 
 echo "Stopping Argo CD reconciliation if apps exist..."
-kubectl patch application "$DEVBOARD_APP" -n "$ARGOCD_NAMESPACE" \
-  --type=merge \
-  -p '{"spec":{"syncPolicy":null}}' >/dev/null 2>&1 || true
-kubectl patch application "$KAFKA_APP" -n "$ARGOCD_NAMESPACE" \
-  --type=merge \
-  -p '{"spec":{"syncPolicy":null}}' >/dev/null 2>&1 || true
-kubectl delete application "$DEVBOARD_APP" -n "$ARGOCD_NAMESPACE" --ignore-not-found=true || true
-kubectl delete application "$KAFKA_APP" -n "$ARGOCD_NAMESPACE" --ignore-not-found=true || true
+for app in "${ARGOCD_APPS[@]}"; do
+  kubectl patch application "$app" -n "$ARGOCD_NAMESPACE" \
+    --type=merge \
+    -p '{"spec":{"syncPolicy":null}}' >/dev/null 2>&1 || true
+done
+
+echo "Deleting Argo CD Applications if they exist..."
+for app in "${ARGOCD_APPS[@]}"; do
+  kubectl delete application "$app" -n "$ARGOCD_NAMESPACE" --ignore-not-found=true || true
+done
 
 echo "Deleting ingress if exists..."
 kubectl delete ingress "$INGRESS_NAME" -n "$NAMESPACE" --ignore-not-found=true || true
@@ -43,8 +53,27 @@ for i in {1..30}; do
   fi
 done
 
-echo "Deleting app resources..."
+echo "Deleting DevBoard app resources..."
 kubectl delete -k ../../../../../deploy/k8s/overlays/eks --ignore-not-found=true || true
+
+echo "Deleting observability resources..."
+kubectl delete -k ../../../../../deploy/observability/eks --ignore-not-found=true || true
+
+echo "Deleting Argo-managed Kafka resources..."
+kubectl delete statefulset,svc,cm,secret,sa,role,rolebinding,pdb \
+  -n "$NAMESPACE" \
+  -l app.kubernetes.io/instance=devboard-kafka \
+  --ignore-not-found=true || true
+
+echo "Deleting monitoring and devboard namespaces if they still exist..."
+kubectl delete namespace "$MONITORING_NAMESPACE" --ignore-not-found=true --wait=false || true
+kubectl delete namespace "$NAMESPACE" --ignore-not-found=true --wait=false || true
+
+echo "Deleting cluster-scoped monitoring resources..."
+kubectl delete \
+  clusterrole,clusterrolebinding,customresourcedefinition,mutatingwebhookconfiguration,validatingwebhookconfiguration \
+  -l app.kubernetes.io/instance=devboard-monitoring \
+  --ignore-not-found=true || true
 
 echo "Removing ingress from Terraform state if present..."
 if terraform state list | grep -q '^module\.ingress'; then
