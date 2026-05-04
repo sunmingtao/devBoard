@@ -34,14 +34,6 @@ pipeline {
                 sshagent(credentials: ['github-ssh-key']) {
                     sh '''
                         set -eu
-
-                        mkdir -p .ssh
-                        ssh-keyscan github.com > .ssh/known_hosts
-                        chmod 700 .ssh
-                        chmod 600 .ssh/known_hosts
-
-                        export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=${PWD}/.ssh/known_hosts -o StrictHostKeyChecking=yes"
-
                         git ls-remote "${GIT_REPO_SSH_URL}" HEAD >/dev/null
                     '''
                 }
