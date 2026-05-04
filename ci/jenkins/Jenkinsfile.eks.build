@@ -34,6 +34,7 @@ pipeline {
                 sshagent(credentials: ['github-ssh-key']) {
                     sh '''
                         set -eu
+                        export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=${PWD}/.ssh/known_hosts -o StrictHostKeyChecking=yes"
                         git ls-remote "${GIT_REPO_SSH_URL}" HEAD >/dev/null
                     '''
                 }
@@ -172,6 +173,7 @@ pipeline {
                         git add ${K8S_EKS_KUSTOMIZATION}
                         git commit -m "chore(gitops): update EKS image tag to ${IMAGE_TAG} [skip ci]"
 
+                        export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=${PWD}/.ssh/known_hosts -o StrictHostKeyChecking=yes"
                         git push "${GIT_REPO_SSH_URL}" "HEAD:${GITOPS_TARGET_BRANCH}"
                     '''
                 }
