@@ -1,12 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: observability-eks
+  name: observability-local
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "30"
   labels:
-    app.kubernetes.io/name: observability-eks
+    app.kubernetes.io/name: observability-local
     app.kubernetes.io/part-of: devboard
 spec:
   project: default
