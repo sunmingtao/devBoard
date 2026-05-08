@@ -27,11 +27,14 @@ spec:
           replicaCount: 1
           persistence:
             enabled: false
-          extraConfig: |
-            default.replication.factor=1
-            offsets.topic.replication.factor=1
-            transaction.state.log.replication.factor=1
-            transaction.state.log.min.isr=1
+          heapOpts: "-Xmx384m -Xms384m"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 750m
+              memory: 768Mi
 
         broker:
           replicaCount: 0
@@ -41,6 +44,12 @@ spec:
         listeners:
           client:
             protocol: PLAINTEXT
+
+        extraConfigYaml:
+          default.replication.factor: 1
+          offsets.topic.replication.factor: 1
+          transaction.state.log.replication.factor: 1
+          transaction.state.log.min.isr: 1
   destination:
     server: https://kubernetes.default.svc
     namespace: devboard
