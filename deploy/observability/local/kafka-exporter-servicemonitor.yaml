@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: devboard-kafka-exporter
+  namespace: monitoring
+  labels:
+    release: devboard-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: prometheus-kafka-exporter
+      release: devboard-kafka-exporter
+  endpoints:
+    - port: exporter-port
+      interval: 10s

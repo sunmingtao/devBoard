@@ -1,0 +1,37 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: devboard-backend-actuator
+  namespace: monitoring
+  labels:
+    release: devboard-monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - devboard
+  selector:
+    matchLabels:
+      app: devboard-backend
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: devboard-event-service-actuator
+  namespace: monitoring
+  labels:
+    release: devboard-monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - devboard
+  selector:
+    matchLabels:
+      app: devboard-event-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 10s
