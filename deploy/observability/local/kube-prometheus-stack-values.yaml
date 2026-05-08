@@ -1,0 +1,36 @@
+grafana:
+  adminUser: admin
+  adminPassword: admin
+  defaultDashboardsTimezone: browser
+  service:
+    type: ClusterIP
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: monitoring
+  serviceMonitor:
+    interval: 10s
+    scrapeTimeout: 10s
+  additionalDataSources:
+    - name: DevBoard Prometheus
+      type: prometheus
+      uid: devboard-prometheus
+      access: proxy
+      url: http://devboard-monitoring-kube-p-prometheus.monitoring:9090/
+      isDefault: false
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+    retention: 7d
+    scrapeInterval: 10s
+
+alertmanager:
+  enabled: false
