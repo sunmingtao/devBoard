@@ -17,7 +17,7 @@ spec:
       helm:
         releaseName: devboard-kafka-exporter
         valueFiles:
-          - $values/deploy/observability/eks/kafka-exporter-values.yaml
+          - $values/deploy/observability/local/kafka-exporter-values.yaml
     - repoURL: https://github.com/sunmingtao/devBoard.git
       targetRevision: main
       ref: values
