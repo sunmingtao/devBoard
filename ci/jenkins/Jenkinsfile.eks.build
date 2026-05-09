@@ -146,6 +146,32 @@ pipeline {
             }
         }
 
+        stage('Scan Images with Trivy') {
+            when {
+                expression { env.SKIP_BUILD != 'true' }
+            }
+            steps {
+                sh '''
+                    set -eux
+                    mkdir -p trivy-reports
+
+                    scan_failed=0
+
+                    trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output trivy-reports/backend.json "${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}" || scan_failed=1
+                    trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output trivy-reports/frontend.json "${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}" || scan_failed=1
+                    trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output trivy-reports/event-service.json "${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG}" || scan_failed=1
+                    trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output trivy-reports/event-frontend.json "${DOCKERHUB_REPO_EVENT_FRONTEND}:${IMAGE_TAG}" || scan_failed=1
+
+                    exit "${scan_failed}"
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true, fingerprint: true
+                }
+            }
+        }
+
         stage('Push Images') {
             when {
                 expression { env.SKIP_BUILD != 'true' }
