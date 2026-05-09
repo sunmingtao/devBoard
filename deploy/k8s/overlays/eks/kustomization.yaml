@@ -18,25 +18,25 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-backend:d81d06c
+        value: sunmingtao/devboard-backend:3a8bf56
   - target:
       kind: Deployment
       name: devboard-frontend
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-frontend:d81d06c
+        value: sunmingtao/devboard-frontend:3a8bf56
   - target:
       kind: Deployment
       name: devboard-event-service
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-event-service:f26606c
+        value: sunmingtao/devboard-event-service:3a8bf56
   - target:
       kind: Deployment
       name: devboard-event-frontend
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-event-frontend:f26606c
+        value: sunmingtao/devboard-event-frontend:3a8bf56
