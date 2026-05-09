@@ -33,4 +33,38 @@ prometheus:
     scrapeInterval: 10s
 
 alertmanager:
-  enabled: false
+  enabled: true
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: demo-null
+      group_by:
+        - namespace
+        - alertname
+        - job
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - receiver: demo-null
+          matchers:
+            - alertname = "Watchdog"
+          repeat_interval: 12h
+    receivers:
+      - name: demo-null
+
+    # Optional Slack receiver:
+    # 1. Create a secret outside git, for example:
+    #    kubectl create secret generic alertmanager-slack-webhook \
+    #      -n monitoring \
+    #      --from-literal=webhook-url='https://hooks.slack.com/services/...'
+    # 2. Mount that secret with alertmanager.alertmanagerSpec.secrets.
+    # 3. Add a slack_configs entry that reads /etc/alertmanager/secrets/alertmanager-slack-webhook/webhook-url.
+    #
+    # Optional email receiver:
+    # 1. Create an SMTP password secret outside git.
+    # 2. Mount that secret with alertmanager.alertmanagerSpec.secrets.
+    # 3. Add an email_configs entry that reads the mounted password file.
+  alertmanagerSpec:
+    retention: 120h

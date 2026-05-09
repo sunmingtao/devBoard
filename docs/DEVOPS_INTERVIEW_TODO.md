@@ -117,14 +117,14 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 
 ### Alertmanager Setup
 
-* [ ] Enable or configure Alertmanager in kube-prometheus-stack
-* [ ] Add notification route:
+* [x] Enable or configure Alertmanager in kube-prometheus-stack
+* [x] Add notification route:
 
-  * [ ] local/demo route
-  * [ ] optional Slack webhook
-  * [ ] optional email receiver
-* [ ] Document how to view active alerts
-* [ ] Document how to silence alerts during demos
+  * [x] local/demo route
+  * [x] optional Slack webhook
+  * [x] optional email receiver
+* [x] Document how to view active alerts
+* [x] Document how to silence alerts during demos
 
 ---
 

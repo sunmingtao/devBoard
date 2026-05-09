@@ -69,3 +69,72 @@ Stop the local observability stack:
 ```bash
 docker compose down
 ```
+
+## Alertmanager on local Kubernetes
+
+The local kube-prometheus-stack values enable Alertmanager with a `demo-null`
+receiver. This keeps alerts visible in Prometheus, Grafana, and Alertmanager
+without sending external notifications during interview demos.
+
+Install or upgrade the local Kubernetes stack:
+
+```bash
+helm upgrade --install devboard-monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --wait \
+  --timeout 20m \
+  -f deploy/observability/local/kube-prometheus-stack-values.yaml
+```
+
+Open Alertmanager locally:
+
+```bash
+kubectl port-forward -n monitoring svc/devboard-monitoring-kube-p-alertmanager 9093:9093
+```
+
+Then browse to `http://localhost:9093`.
+
+View active alerts from the CLI:
+
+```bash
+kubectl port-forward -n monitoring svc/devboard-monitoring-kube-p-prometheus 9090:9090
+curl -fsS 'http://localhost:9090/api/v1/alerts'
+curl -fsS 'http://localhost:9093/api/v2/alerts'
+```
+
+Create a temporary demo silence:
+
+```bash
+amtool --alertmanager.url=http://localhost:9093 silence add alertname=Watchdog \
+  --duration=2h \
+  --comment='demo silence' \
+  --author='devboard-demo'
+```
+
+List and expire silences:
+
+```bash
+amtool --alertmanager.url=http://localhost:9093 silence query
+amtool --alertmanager.url=http://localhost:9093 silence expire <silence-id>
+```
+
+Optional Slack notifications should use a Kubernetes secret, not a committed
+webhook URL:
+
+```bash
+kubectl create secret generic alertmanager-slack-webhook \
+  -n monitoring \
+  --from-literal=webhook-url='https://hooks.slack.com/services/...'
+```
+
+Then add the secret name under `alertmanager.alertmanagerSpec.secrets` and add
+a `slack_configs` receiver that reads:
+
+```text
+/etc/alertmanager/secrets/alertmanager-slack-webhook/webhook-url
+```
+
+Optional email notifications follow the same pattern: create an SMTP password
+secret outside git, mount it through `alertmanager.alertmanagerSpec.secrets`,
+and use `auth_password_file` in an `email_configs` receiver.
