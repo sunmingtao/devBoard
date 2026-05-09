@@ -16,6 +16,11 @@ It is used for:
 - Docker image build & deployment
 - Container image vulnerability scanning
 
+The EKS build pipeline scans backend, frontend, event-service, and event-frontend
+images with Trivy after local image builds and before Docker Hub pushes. The
+pipeline fails on HIGH or CRITICAL vulnerabilities and archives JSON reports from
+`trivy-reports/*.json`.
+
 ---
 
 ## 📦 Prerequisites
@@ -46,4 +51,10 @@ terraform version
 aws --version
 git --version
 trivy --version
+```
+
+Run a local image scan:
+
+```
+trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 <image>:<tag>
 ```

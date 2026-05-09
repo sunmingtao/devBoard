@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.9] - 2026-05-09
+
+### Added
+
+- Added Trivy to the custom Jenkins image for repeatable container security scanning in CI
+- Added a Jenkins EKS build pipeline stage that scans backend, frontend, event-service, and event-frontend images before pushing them
+- Archived Trivy JSON reports from Jenkins builds for vulnerability review and auditability
+
+### Changed
+
+- Promoted the Jenkins EKS image build flow to fail before image push when HIGH or CRITICAL vulnerabilities are detected
+
 ## [0.6.8] - 2026-05-04
 
 ### Added

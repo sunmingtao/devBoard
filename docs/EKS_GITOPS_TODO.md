@@ -111,15 +111,15 @@ kubectl create secret generic devboard-backend-secret \
   - [x] test
   - [x] build Docker images
   - [x] push image tags
-  - [x] scan images later
+  - [x] scan images with Trivy before push
 - [x] Remove direct `kubectl apply -k` deployment from Jenkins EKS pipeline
 - [x] Remove direct `helm upgrade --install` for Kafka from Jenkins EKS pipeline
 - [x] Add GitOps handoff:
   - [x] Jenkins updates image tag in Git
   - [x] Jenkins pushes commit
   - [x] Argo CD reconciles EKS cluster from Git
-- [ ] Add a clear interview sentence:
-  - [ ] "Jenkins produces artifacts; Argo CD owns deployment reconciliation."
+- [x] Add a clear interview sentence:
+  - [x] "Jenkins produces and verifies artifacts; Argo CD owns deployment reconciliation."
 
 ---
 

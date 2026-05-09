@@ -5,13 +5,14 @@
       <h1 v-if="isAuthenticated">Welcome back, {{ username }} 👋</h1>
       <h1 v-else>DevBoard: From Code to Cloud</h1>
       <p class="hero-subtitle">
-        A full-stack platform showcasing CI, GitOps delivery, Kubernetes,
-        Terraform, and AWS operations.
+        A full-stack platform showcasing CI, container security, GitOps
+        delivery, Kubernetes, Terraform, and AWS operations.
       </p>
       <div class="hero-pills">
         <span>Vue 3 + Vite</span>
         <span>Spring Boot 3.3</span>
         <span>Jenkins CI</span>
+        <span>Trivy Security Gate</span>
         <span>Argo CD GitOps</span>
         <span>Terraform IaC</span>
         <span>AWS EKS + RDS</span>
@@ -33,8 +34,8 @@
       <article class="highlight-card">
         <h3>🚀 End-to-End Delivery</h3>
         <p>
-          Jenkins detects source changes, builds immutable Docker images, and
-          updates Git desired state for Argo CD to reconcile.
+          Jenkins detects source changes, builds immutable Docker images, scans
+          them with Trivy, and updates Git desired state for Argo CD.
         </p>
       </article>
       <article class="highlight-card">
@@ -47,8 +48,8 @@
       <article class="highlight-card">
         <h3>🔒 Production Readiness</h3>
         <p>
-          HTTPS by default, secure networking, health checks, monitoring alarms,
-          and alerting workflows for operational visibility.
+          HTTPS by default, Trivy image scanning, secure networking, health
+          checks, monitoring alarms, and alerting workflows.
         </p>
       </article>
     </section>
@@ -56,6 +57,13 @@
     <section class="roadmap">
       <h2>Recent DevOps Milestones</h2>
       <div class="timeline">
+        <div class="timeline-item">
+          <p class="timeline-version">v0.6.9 · 2026-05-09</p>
+          <p>
+            Added a Trivy security gate to the Jenkins EKS build pipeline so
+            HIGH and CRITICAL image vulnerabilities stop promotion before push.
+          </p>
+        </div>
         <div class="timeline-item">
           <p class="timeline-version">v0.6.8 · 2026-05-04</p>
           <p>
@@ -161,7 +169,7 @@
       watch(() => route.path, updateAuthInfo)
 
       // Listen for storage changes (handles logout from any component)
-      const handleStorageChange = (e) => {
+      const handleStorageChange = e => {
         if (e.key === 'token' || e.key === 'user') {
           updateAuthInfo()
         }
@@ -175,36 +183,38 @@
       // Check token expiry and warn user
       const checkTokenExpiry = () => {
         if (!isAuthenticated.value) return
-        
+
         const token = authService.getToken()
         if (authService.isTokenExpiringSoon(token)) {
           const minutesLeft = authService.getTokenExpiryTime(token)
           console.warn(`Token expires in ${minutesLeft} minutes`)
-          
+
           // Dispatch warning event
-          window.dispatchEvent(new CustomEvent('auth-error', {
-            detail: { 
-              status: 'warning', 
-              message: `Your session will expire in ${minutesLeft} minute(s). Please save your work.`,
-              redirectTo: null
-            }
-          }))
+          window.dispatchEvent(
+            new CustomEvent('auth-error', {
+              detail: {
+                status: 'warning',
+                message: `Your session will expire in ${minutesLeft} minute(s). Please save your work.`,
+                redirectTo: null,
+              },
+            })
+          )
         }
       }
 
       // Initialize auth info on mount
       onMounted(() => {
         updateAuthInfo()
-        
+
         // Listen for localStorage changes (works across tabs too)
         window.addEventListener('storage', handleStorageChange)
-        
+
         // Listen for custom logout events from same tab
         window.addEventListener('logout', handleLogoutEvent)
-        
+
         // Check token expiry every minute
         const tokenCheckInterval = setInterval(checkTokenExpiry, 60000)
-        
+
         // Cleanup interval on unmount
         onUnmounted(() => {
           clearInterval(tokenCheckInterval)
@@ -219,9 +229,9 @@
 
       return {
         isAuthenticated,
-        username
+        username,
       }
-    }
+    },
   }
 </script>
 

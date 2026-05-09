@@ -67,13 +67,14 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 
 ### Container Image Scanning
 
-* [ ] Add Trivy scan for backend image
-* [ ] Add Trivy scan for frontend image
-* [ ] Add Trivy scan for event-service image
-* [ ] Fail CI on critical vulnerabilities
-* [ ] Decide threshold for high vulnerabilities:
+* [x] Add Trivy scan for backend image
+* [x] Add Trivy scan for frontend image
+* [x] Add Trivy scan for event-service image
+* [x] Add Trivy scan for event-frontend image
+* [x] Fail CI on critical vulnerabilities
+* [x] Decide threshold for high vulnerabilities:
 
-  * [ ] fail build
+  * [x] fail build
   * [ ] warn only
 
 ---
@@ -84,7 +85,7 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 * [ ] Scan Maven dependencies
 * [ ] Scan npm dependencies
 * [ ] Generate readable CI output
-* [ ] Store scan reports as build artifacts
+* [x] Store image scan reports as build artifacts
 
 ---
 
@@ -104,11 +105,11 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 
 ### CI Integration
 
-* [ ] Add Trivy stage to Jenkins EKS build pipeline
-* [ ] Add clear pass/fail logs
-* [ ] Prevent deploy when scan fails
-* [ ] Add local command examples for running scans manually
-* [ ] Update CI documentation with security gate behavior
+* [x] Add Trivy stage to Jenkins EKS build pipeline
+* [x] Add clear pass/fail logs
+* [x] Prevent deploy when scan fails
+* [x] Add local command examples for running scans manually
+* [x] Update CI documentation with security gate behavior
 
 ---
 

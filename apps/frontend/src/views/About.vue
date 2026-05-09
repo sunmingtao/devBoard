@@ -47,6 +47,7 @@
             <ul>
               <li>Kubernetes with Kustomize overlays</li>
               <li>AWS EKS, ALB, Route 53, and ACM</li>
+              <li>Jenkins CI with Trivy image scanning</li>
               <li>Argo CD GitOps reconciliation</li>
             </ul>
           </div>
@@ -61,6 +62,7 @@
             <ul>
               <li>Jenkins SCM polling for localhost CI triggers</li>
               <li>Immutable Docker images tagged with Git short SHA</li>
+              <li>Trivy security gate before image push</li>
               <li>Automated GitOps commits for image promotion</li>
             </ul>
           </div>
@@ -69,7 +71,7 @@
             <ul>
               <li>Argo CD reconciles EKS from Git desired state</li>
               <li>Kustomize overlays separate local and EKS concerns</li>
-              <li>Jenkins produces artifacts without mutating the cluster</li>
+              <li>Jenkins verifies artifacts without mutating the cluster</li>
             </ul>
           </div>
           <div class="devops-item">
@@ -83,7 +85,8 @@
           <div class="devops-item">
             <h3>Security & Governance</h3>
             <ul>
-              <li>Dependency hygiene and secure coding standards</li>
+              <li>HIGH and CRITICAL image vulnerability gating</li>
+              <li>Archived Trivy reports for CI security review</li>
               <li>Role-aware access patterns for team workflows</li>
               <li>Shift-left quality and security validation</li>
             </ul>

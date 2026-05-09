@@ -8,7 +8,7 @@ DevBoard is a full-stack task board application with a Spring Boot backend, a Vu
 - **Backend:** Spring Boot 3.3 (Java 25), Spring Security, JWT, JPA (`apps/backend`)
 - **Eventing:** Kafka-backed event-service (`apps/event-service`)
 - **Data stores:** H2 (dev/test), MySQL/RDS, Redis-ready config
-- **Infra/Deploy:** Docker Compose, Kubernetes/Kustomize, Terraform, Jenkins, Argo CD, AWS EKS/ALB/RDS
+- **Infra/Deploy:** Docker Compose, Kubernetes/Kustomize, Terraform, Jenkins, Trivy, Argo CD, AWS EKS/ALB/RDS
 
 ## Repository layout
 
@@ -32,11 +32,12 @@ DevBoard is a full-stack task board application with a Spring Boot backend, a Vu
 The EKS delivery path now follows a GitOps ownership model:
 
 1. A commit to `main` is detected by the Jenkins EKS build job through SCM polling.
-2. Jenkins builds and pushes backend, frontend, and event-service Docker images tagged with the Git short SHA.
-3. Jenkins updates `deploy/k8s/overlays/eks/kustomization.yaml` with the new immutable image tag and pushes a `[skip ci]` GitOps commit.
-4. Argo CD watches the EKS overlay and reconciles the cluster to the new desired state.
+2. Jenkins builds backend, frontend, event-service, and event-frontend Docker images tagged with the Git short SHA.
+3. Jenkins scans the images with Trivy and fails the build before push if HIGH or CRITICAL vulnerabilities are detected.
+4. Jenkins pushes the verified images, updates `deploy/k8s/overlays/eks/kustomization.yaml` with the new immutable image tag, and pushes a `[skip ci]` GitOps commit.
+5. Argo CD watches the EKS overlay and reconciles the cluster to the new desired state.
 
-In short: Jenkins produces artifacts; Argo CD owns deployment reconciliation.
+In short: Jenkins produces and verifies artifacts; Argo CD owns deployment reconciliation.
 
 ## Quick start (local development)
 
