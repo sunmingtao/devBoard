@@ -48,7 +48,8 @@ RUN npm run build && \
 FROM nginx:alpine AS production-stage
 
 # Install dumb-init for proper signal handling (optional but recommended)
-RUN apk add --no-cache dumb-init
+RUN apk upgrade --no-cache && \
+    apk add --no-cache dumb-init
 
 # Remove default Nginx content and config
 RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf

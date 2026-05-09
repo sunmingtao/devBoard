@@ -55,11 +55,11 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
   * [ ] Argo CD detects drift
   * [ ] Argo CD syncs manifests into EKS
   * [ ] rollback using Git history
-* [ ] Add screenshots or command output examples:
+* [x] Add screenshots or command output examples:
 
-  * [ ] app healthy
-  * [ ] app synced
-  * [ ] app out-of-sync demo
+  * [x] app healthy
+  * [x] app synced
+  * [x] app out-of-sync demo
 
 ---
 
