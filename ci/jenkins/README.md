@@ -8,11 +8,13 @@ The Jenkins container is preconfigured with:
 - Docker Compose (v2)
 - Terraform
 - AWS CLI
+- Trivy
 
 It is used for:
 - CI/CD pipelines
 - Terraform infrastructure provisioning
 - Docker image build & deployment
+- Container image vulnerability scanning
 
 ---
 
@@ -43,4 +45,5 @@ docker compose version
 terraform version
 aws --version
 git --version
+trivy --version
 ```
