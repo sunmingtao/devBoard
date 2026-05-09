@@ -1,0 +1,57 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: devboard-kafka-alerts
+  namespace: monitoring
+  labels:
+    release: devboard-monitoring
+spec:
+  groups:
+    - name: devboard.kafka.rules
+      rules:
+        - alert: DevBoardKafkaConsumerLagHigh
+          expr: |
+            sum by (consumergroup, topic) (
+              kafka_consumergroup_lag{topic="devboard.tasks"}
+            ) > 50
+          for: 5m
+          labels:
+            severity: warning
+            service: event-service
+          annotations:
+            summary: DevBoard Kafka consumer lag is high
+            description: Consumer group {{ $labels.consumergroup }} has more than 50 queued messages on topic {{ $labels.topic }} for 5 minutes.
+
+        - alert: DevBoardKafkaNoMessagesConsumed
+          expr: |
+            sum(rate(spring_kafka_listener_seconds_count{job="devboard-event-service", result="success"}[10m])) == 0
+          for: 15m
+          labels:
+            severity: warning
+            service: event-service
+          annotations:
+            summary: DevBoard event-service is not consuming Kafka messages
+            description: The event-service Kafka listener has not recorded a successful message consumption for 15 minutes.
+
+        - alert: DevBoardKafkaExporterDown
+          expr: |
+            up{job="devboard-kafka-exporter-prometheus-kafka-exporter"} == 0
+            or absent(up{job="devboard-kafka-exporter-prometheus-kafka-exporter"})
+          for: 2m
+          labels:
+            severity: critical
+            service: kafka-exporter
+          annotations:
+            summary: DevBoard Kafka exporter is down
+            description: Prometheus cannot scrape the Kafka exporter, so Kafka lag metrics may be stale or unavailable.
+
+        - alert: DevBoardKafkaListenerErrors
+          expr: |
+            sum(increase(spring_kafka_listener_seconds_count{job="devboard-event-service", result!="success"}[5m])) > 0
+          for: 2m
+          labels:
+            severity: warning
+            service: event-service
+          annotations:
+            summary: DevBoard event-service Kafka listener is failing
+            description: The event-service Kafka listener recorded one or more non-success listener results in the last 5 minutes.

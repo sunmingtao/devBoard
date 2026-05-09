@@ -8,4 +8,6 @@ resources:
   - kafka-exporter-servicemonitor.yaml
   - spring-actuator-servicemonitors.yaml
   - application-alert-rules.yaml
+  - kafka-alert-rules.yaml
+  - http-alert-rules.yaml
   - grafana-dashboard-kafka-lag.yaml

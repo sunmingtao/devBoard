@@ -103,7 +103,8 @@ curl -fsS 'http://localhost:9090/api/v1/alerts'
 curl -fsS 'http://localhost:9093/api/v2/alerts'
 ```
 
-DevBoard application alerts are installed by `application-alert-rules.yaml`:
+DevBoard custom alerts are installed by `application-alert-rules.yaml`,
+`kafka-alert-rules.yaml`, and `http-alert-rules.yaml`:
 
 - `DevBoardBackendUnavailable`
 - `DevBoardEventServiceUnavailable`
@@ -111,12 +112,31 @@ DevBoard application alerts are installed by `application-alert-rules.yaml`:
 - `DevBoardPodRestarting`
 - `DevBoardHighContainerCpu`
 - `DevBoardHighContainerMemory`
+- `DevBoardKafkaConsumerLagHigh`
+- `DevBoardKafkaNoMessagesConsumed`
+- `DevBoardKafkaExporterDown`
+- `DevBoardKafkaListenerErrors`
+- `DevBoardBackendHighErrorRate`
+- `DevBoardBackendHighLatency`
+- `DevBoardActuatorScrapeFailure`
+- `DevBoardServiceUnavailable`
 
 Check whether Prometheus loaded the rules:
 
 ```bash
 curl -fsS 'http://localhost:9090/api/v1/rules' | grep DevBoard
 ```
+
+Validate pod restart alerting during a demo:
+
+```bash
+kubectl delete pod -n devboard -l app=devboard-event-service
+kubectl rollout status deployment/devboard-event-service -n devboard
+curl -fsS 'http://localhost:9090/api/v1/alerts' | grep DevBoardPodRestarting
+```
+
+The restart alert uses a `for: 5m` window, so it may take a few minutes to move
+from pending to firing in Alertmanager.
 
 Create a temporary demo silence:
 

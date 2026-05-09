@@ -141,20 +141,20 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 
 ### Kafka Alerts
 
-* [ ] Add Kafka consumer lag alert
-* [ ] Add no messages consumed alert
-* [ ] Add Kafka exporter down alert
-* [ ] Add event-service Kafka listener error alert
+* [x] Add Kafka consumer lag alert
+* [x] Add no messages consumed alert
+* [x] Add Kafka exporter down alert
+* [x] Add event-service Kafka listener error alert
 * [ ] Validate alerts by killing event-service pod
 
 ---
 
 ### HTTP and Latency Alerts
 
-* [ ] Add high backend error rate alert
-* [ ] Add high backend latency alert
-* [ ] Add actuator scrape failure alert
-* [ ] Add service unavailable alert
+* [x] Add high backend error rate alert
+* [x] Add high backend latency alert
+* [x] Add actuator scrape failure alert
+* [x] Add service unavailable alert
 
 ---
 
