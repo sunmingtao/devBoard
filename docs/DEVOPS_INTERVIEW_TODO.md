@@ -130,12 +130,12 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 
 ### Application Alerts
 
-* [ ] Add backend availability alert
-* [ ] Add event-service availability alert
-* [ ] Add frontend availability alert
-* [ ] Add pod restart alert
-* [ ] Add high CPU alert
-* [ ] Add high memory alert
+* [x] Add backend availability alert
+* [x] Add event-service availability alert
+* [x] Add frontend availability alert
+* [x] Add pod restart alert
+* [x] Add high CPU alert
+* [x] Add high memory alert
 
 ---
 

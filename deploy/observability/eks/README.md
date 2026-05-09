@@ -69,6 +69,21 @@ curl -fsS 'http://localhost:9090/api/v1/alerts'
 curl -fsS 'http://localhost:9093/api/v2/alerts'
 ```
 
+DevBoard application alerts are installed by `application-alert-rules.yaml`:
+
+- `DevBoardBackendUnavailable`
+- `DevBoardEventServiceUnavailable`
+- `DevBoardFrontendUnavailable`
+- `DevBoardPodRestarting`
+- `DevBoardHighContainerCpu`
+- `DevBoardHighContainerMemory`
+
+Check whether Prometheus loaded the rules:
+
+```bash
+curl -fsS 'http://localhost:9090/api/v1/rules' | grep DevBoard
+```
+
 Create a temporary silence during demos:
 
 ```bash

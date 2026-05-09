@@ -6,4 +6,5 @@ namespace: monitoring
 resources:
   - kafka-exporter-servicemonitor.yaml
   - spring-actuator-servicemonitors.yaml
+  - application-alert-rules.yaml
   - grafana-dashboard-kafka-lag.yaml
