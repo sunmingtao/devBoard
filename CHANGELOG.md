@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-05-10
+
+### Added
+
+- Enabled Alertmanager in kube-prometheus-stack for local and EKS observability stacks
+- Added DevBoard-specific Prometheus alert rules for application availability, pod restarts, container CPU and memory usage, Kafka consumer lag, Kafka listener health, Kafka exporter availability, backend HTTP errors, backend latency, actuator scrape failures, and service health failures
+- Added Gmail SMTP notification support for Alertmanager using a Kubernetes Secret-mounted Google App Password
+- Added Alertmanager and Prometheus CLI documentation for viewing active alerts, validating loaded rules, creating demo silences, and checking notification delivery
+
+### Changed
+
+- Routed only `DevBoard.*` alerts to email while keeping default kube-prometheus-stack platform noise on the `demo-null` receiver
+- Updated Argo CD monitoring app comparison settings to use server-side diff with server-side apply
+
+### Verified
+
+- Confirmed Alertmanager delivered a `DevBoardKafkaNoMessagesConsumed` email through Gmail SMTP
+
 ## [0.6.9] - 2026-05-09
 
 ### Added

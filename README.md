@@ -39,6 +39,24 @@ The EKS delivery path now follows a GitOps ownership model:
 
 In short: Jenkins produces and verifies artifacts; Argo CD owns deployment reconciliation.
 
+## Observability and alerting
+
+DevBoard includes a Kubernetes observability stack under `deploy/observability`:
+
+- Prometheus and Grafana from `kube-prometheus-stack`
+- Kafka exporter metrics and a Kafka lag dashboard
+- ServiceMonitors for backend and event-service Spring Boot Actuator metrics
+- Alertmanager with a local/demo `demo-null` receiver
+- DevBoard-specific PrometheusRule alerts for app availability, pod restarts, resource pressure, Kafka health, backend HTTP errors, latency, actuator scraping, and service health failures
+- Optional Gmail SMTP notifications for `DevBoard.*` alerts using a Kubernetes Secret-mounted Google App Password
+
+The alert routing is intentionally split: default kube-prometheus-stack platform alerts stay on `demo-null`, while DevBoard application alerts can be routed to email. This keeps interview demos focused on application signals instead of noisy control-plane scrape alerts.
+
+Useful docs:
+
+- Local observability: `deploy/observability/local/README.md`
+- EKS observability: `deploy/observability/eks/README.md`
+
 ## Quick start (local development)
 
 ### 1) Start the backend (H2 profile)
@@ -105,6 +123,7 @@ Notes:
 - Backend details: `apps/backend/README.md`
 - Frontend details: `apps/frontend/README.md`
 - Deployment docs: `docs/CONTAINER_DEPLOYMENT.md`, `docs/DEPLOYMENT_ENVIRONMENTS.md`, `docs/EKS_GITOPS_TODO.md`
+- DevOps interview checklist: `docs/DEVOPS_INTERVIEW_TODO.md`
 
 ## Current status
 

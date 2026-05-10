@@ -145,7 +145,7 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 * [x] Add no messages consumed alert
 * [x] Add Kafka exporter down alert
 * [x] Add event-service Kafka listener error alert
-* [ ] Validate alerts by killing event-service pod
+* [x] Validate alert delivery with `DevBoardKafkaNoMessagesConsumed` Gmail notification
 
 ---
 
@@ -172,11 +172,11 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 
 ### Demo Scenario
 
-* [ ] Break event-service intentionally
-* [ ] Show Alertmanager firing Kafka consumer alert
+* [x] Break event-service intentionally
+* [x] Show Alertmanager firing Kafka consumer alert
 * [ ] Show Grafana panel confirming the issue
 * [ ] Follow runbook steps to diagnose
-* [ ] Restore service
+* [x] Restore service
 * [ ] Show alert resolves
 
 ---
