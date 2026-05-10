@@ -56,6 +56,7 @@ Useful docs:
 
 - Local observability: `deploy/observability/local/README.md`
 - EKS observability: `deploy/observability/eks/README.md`
+- Incident runbooks: `docs/runbooks/README.md`
 
 ## Quick start (local development)
 
@@ -124,6 +125,7 @@ Notes:
 - Frontend details: `apps/frontend/README.md`
 - Deployment docs: `docs/CONTAINER_DEPLOYMENT.md`, `docs/DEPLOYMENT_ENVIRONMENTS.md`, `docs/EKS_GITOPS_TODO.md`
 - DevOps interview checklist: `docs/DEVOPS_INTERVIEW_TODO.md`
+- Incident runbooks: `docs/runbooks/README.md`
 
 ## Current status
 

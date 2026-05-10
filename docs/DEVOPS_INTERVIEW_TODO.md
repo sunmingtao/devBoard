@@ -160,13 +160,13 @@ Add high-value DevOps features that make DevBoard look closer to a production pl
 
 ### Runbooks
 
-* [ ] Create `docs/runbooks/` directory
-* [ ] Add runbook for Kafka consumer lag
-* [ ] Add runbook for pod crash loops
-* [ ] Add runbook for failed Kubernetes rollout
-* [ ] Add runbook for backend high error rate
-* [ ] Add runbook for database connectivity issues
-* [ ] Add runbook for rollback procedure
+* [x] Create `docs/runbooks/` directory
+* [x] Add runbook for Kafka consumer lag
+* [x] Add runbook for pod crash loops
+* [x] Add runbook for failed Kubernetes rollout
+* [x] Add runbook for backend high error rate
+* [x] Add runbook for database connectivity issues
+* [x] Add runbook for rollback procedure
 
 ---
 
