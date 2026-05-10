@@ -173,3 +173,70 @@ a `slack_configs` receiver that reads:
 Optional email notifications follow the same pattern: create an SMTP password
 secret outside git, mount it through `alertmanager.alertmanagerSpec.secrets`,
 and use `auth_password_file` in an `email_configs` receiver.
+
+## Gmail SMTP Alerts
+
+Gmail can be used as a lightweight SMTP relay for demos. Use a Google App
+Password, not your normal Gmail password.
+
+1. Enable 2-Step Verification on the Gmail account.
+2. Create a Google App Password for Alertmanager.
+3. Store the app password in Kubernetes, outside git:
+
+```bash
+kubectl create secret generic alertmanager-gmail-smtp \
+  -n monitoring \
+  --from-literal=app-password='replace-with-16-character-app-password'
+```
+
+Update `kube-prometheus-stack-values.yaml` by adding Gmail SMTP settings under
+`alertmanager.config.global`, routing only DevBoard alerts to email, and
+mounting the secret:
+
+```yaml
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+      smtp_smarthost: smtp.gmail.com:587
+      smtp_from: your-gmail-address@gmail.com
+      smtp_auth_username: your-gmail-address@gmail.com
+      smtp_auth_password_file: /etc/alertmanager/secrets/alertmanager-gmail-smtp/app-password
+      smtp_require_tls: true
+    route:
+      receiver: demo-null
+      group_by:
+        - namespace
+        - alertname
+        - job
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - receiver: devboard-email
+          matchers:
+            - alertname =~ "DevBoard.*"
+        - receiver: demo-null
+          matchers:
+            - alertname = "Watchdog"
+          repeat_interval: 12h
+    receivers:
+      - name: demo-null
+      - name: devboard-email
+        email_configs:
+          - to: your-gmail-address@gmail.com
+            send_resolved: true
+            headers:
+              subject: '[DevBoard] {{ .Status }} {{ .CommonLabels.alertname }}'
+  alertmanagerSpec:
+    retention: 120h
+    secrets:
+      - alertmanager-gmail-smtp
+```
+
+Apply the values through Argo CD or Helm after the secret exists. Check
+Alertmanager logs if email delivery fails:
+
+```bash
+kubectl logs -n monitoring alertmanager-devboard-monitoring-kube-p-alertmanager-0 -c alertmanager
+```

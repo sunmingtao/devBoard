@@ -37,6 +37,11 @@ alertmanager:
   config:
     global:
       resolve_timeout: 5m
+      smtp_smarthost: smtp.gmail.com:587
+      smtp_from: sunmingtao@gmail.com
+      smtp_auth_username: sunmingtao@gmail.com
+      smtp_auth_password_file: /etc/alertmanager/secrets/alertmanager-gmail-smtp/app-password
+      smtp_require_tls: true
     route:
       receiver: demo-null
       group_by:
@@ -47,24 +52,22 @@ alertmanager:
       group_interval: 5m
       repeat_interval: 4h
       routes:
+        - receiver: devboard-email
+          matchers:
+            - alertname =~ "DevBoard.*"
         - receiver: demo-null
           matchers:
             - alertname = "Watchdog"
           repeat_interval: 12h
     receivers:
       - name: demo-null
-
-    # Optional Slack receiver:
-    # 1. Create a secret outside git, for example:
-    #    kubectl create secret generic alertmanager-slack-webhook \
-    #      -n monitoring \
-    #      --from-literal=webhook-url='https://hooks.slack.com/services/...'
-    # 2. Mount that secret with alertmanager.alertmanagerSpec.secrets.
-    # 3. Add a slack_configs entry that reads /etc/alertmanager/secrets/alertmanager-slack-webhook/webhook-url.
-    #
-    # Optional email receiver:
-    # 1. Create an SMTP password secret outside git.
-    # 2. Mount that secret with alertmanager.alertmanagerSpec.secrets.
-    # 3. Add an email_configs entry that reads the mounted password file.
+      - name: devboard-email
+        email_configs:
+          - to: sunmingtao@gmail.com
+            send_resolved: true
+            headers:
+              subject: '[DevBoard] {{ .Status }} {{ .CommonLabels.alertname }}'
   alertmanagerSpec:
     retention: 120h
+    secrets:
+      - alertmanager-gmail-smtp
