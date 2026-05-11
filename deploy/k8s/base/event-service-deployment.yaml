@@ -50,17 +50,24 @@ spec:
                 secretKeyRef:
                   name: devboard-backend-secret
                   key: DATABASE_PASSWORD
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            periodSeconds: 10
+            failureThreshold: 18
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8081
             initialDelaySeconds: 20
             periodSeconds: 10
+            timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8081
-            initialDelaySeconds: 60
+            initialDelaySeconds: 0
             periodSeconds: 15
             failureThreshold: 3
           resources:
