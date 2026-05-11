@@ -8,10 +8,10 @@ This directory contains the Argo CD installation and configuration for DevBoard 
 
 ```bash
 # Apply all manifests using Kustomize (recommended)
-kubectl apply -k deploy/gitops/argocd/
+kubectl apply --server-side --force-conflicts -k deploy/gitops/argocd/
 ```
 
-> **Note:** The `kustomization.yaml` file references the official Argo CD install manifest and local namespace configuration.
+> **Note:** The `kustomization.yaml` file references the official Argo CD install manifest and local namespace configuration. Server-side apply avoids oversized client-side apply annotations on Argo CD CRDs.
 
 ### 2. Create the DevBoard Argo CD application
 

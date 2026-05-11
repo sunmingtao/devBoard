@@ -77,7 +77,7 @@ pipeline {
                         set -eux
                         export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
-                        kubectl apply -k ${env.ARGOCD_MANIFEST_DIR}
+                        kubectl apply --server-side --force-conflicts -k ${env.ARGOCD_MANIFEST_DIR}
                         kubectl wait \
                           --for condition=Established \
                           crd/applications.argoproj.io \
