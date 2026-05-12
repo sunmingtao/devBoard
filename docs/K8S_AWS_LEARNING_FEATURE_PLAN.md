@@ -1,176 +1,186 @@
-# DevBoard 深入学习 Kubernetes / AWS Cloud Feature Plan
+# DevBoard Kubernetes / AWS Learning TODO List
 
-## 目标
+## Goal
 
-通过在现有 DevBoard 项目中新增一组「可落地、可演示、可运维」的云原生功能，系统化提升你在 Kubernetes 与 AWS Cloud 的实战能力。
+Build practical, demo-ready, and operations-friendly cloud-native features in the existing DevBoard project to deepen hands-on Kubernetes and AWS skills.
 
----
+## Current Foundation
 
-## 现状（基于仓库结构）
+DevBoard already has a strong base:
 
-你当前项目已经具备很好的基础：
-- 多服务架构（backend + event-service + frontend）
-- K8s base/overlay（local + eks）
-- 观测性栈（Prometheus/Grafana/告警规则）
-- EKS + GitOps 相关文档和流水线雏形
+- [ ] Multi-service architecture: backend, event-service, and frontend
+- [ ] Kubernetes base and overlays for local and EKS environments
+- [ ] Observability stack with Prometheus, Grafana, and alerting rules
+- [ ] EKS and GitOps documentation plus early pipeline structure
 
-这意味着你非常适合进入下一阶段：**平台工程能力 + 生产级可靠性能力**。
+The next stage should focus on platform engineering skills and production-grade reliability.
 
----
+## Priority Features
 
-## 建议优先实现的 6 个 Feature（按学习收益排序）
+### 1. External Secrets + AWS Secrets Manager
 
-## Feature 1: External Secrets + AWS Secrets Manager
+Learning goals:
 
-### 你会学到
-- IAM Roles for Service Accounts (IRSA)
-- Secrets Manager 与 K8s Secret 同步机制
-- GitOps 下密钥治理最佳实践
+- [ ] Learn IAM Roles for Service Accounts (IRSA)
+- [ ] Learn how AWS Secrets Manager syncs into Kubernetes Secrets
+- [ ] Learn secret management best practices in a GitOps workflow
 
-### 实现范围
-- 在 EKS 安装 External Secrets Operator
-- 把 `devboard-backend-secret` 从手工创建改为 ExternalSecret
-- 数据库密码、JWT Secret、Kafka 凭据统一托管在 Secrets Manager
+Implementation tasks:
 
-### 验收标准
-- `kubectl get externalsecret -n devboard` 状态 `Ready=True`
-- Pod 重建后能自动拉取最新密钥
-- Git 仓库中不再需要明文/手工注入密钥步骤
+- [x] Install External Secrets Operator in local minikube
+- [x] Add a local Argo CD Helm Application for External Secrets Operator
+- [x] Replace the local `devboard-backend-secret` Secret manifest with an `ExternalSecret`
+- [ ] Install External Secrets Operator in EKS
+- [ ] Replace the manually created EKS `devboard-backend-secret` with an `ExternalSecret`
+- [ ] Store the database password, JWT secret, and Kafka credentials in AWS Secrets Manager
 
----
+Acceptance criteria:
 
-## Feature 2: Progressive Delivery（Argo Rollouts + ALB/Nginx）
+- [x] Local Argo CD app `external-secrets-local` is `Synced` and `Healthy`
+- [x] Local External Secrets pods are running in the `external-secrets` namespace
+- [x] Local `devboard-backend-secret` is owned by `ExternalSecret/devboard-backend-secret`
+- [ ] EKS `kubectl get externalsecret -n devboard` shows `Ready=True`
+- [ ] Recreated pods can automatically load the latest secrets
+- [ ] The Git repository no longer needs plaintext secrets or manual secret injection steps
 
-### 你会学到
-- Canary / Blue-Green 发布策略
-- 指标驱动自动回滚
-- 发布风险控制与 SLO 思维
+### 2. Progressive Delivery with Argo Rollouts + ALB/Nginx
 
-### 实现范围
-- backend 切换为 Rollout 资源
-- 10% -> 30% -> 100% 金丝雀流量策略
-- 配置 Prometheus 指标门禁（5xx、p95 latency）
+Learning goals:
 
-### 验收标准
-- 触发新版本发布时可看到分阶段流量切换
-- 指标超阈值自动中止 rollout
-- 有可复用的发布 runbook
+- [ ] Learn canary and blue-green deployment strategies
+- [ ] Learn metric-driven automatic rollback
+- [ ] Learn release risk control and SLO-based thinking
 
----
+Implementation tasks:
 
-## Feature 3: Event-driven Autoscaling（KEDA + Kafka Lag）
+- [ ] Convert the backend deployment to an Argo Rollouts `Rollout` resource
+- [ ] Configure a canary traffic strategy: 10% -> 30% -> 100%
+- [ ] Add Prometheus metric gates for 5xx errors and p95 latency
 
-### 你会学到
-- 基于业务负载的弹性策略（不是仅 CPU）
-- Kafka lag 指标语义与消费能力建模
-- HPA/KEDA 与稳定性权衡
+Acceptance criteria:
 
-### 实现范围
-- 给 `event-service` 增加 KEDA ScaledObject
-- 使用 Kafka lag 作为扩缩容信号
-- 设置冷却时间、最小副本、防抖参数
+- [ ] A new backend release shows staged traffic shifting
+- [ ] The rollout automatically aborts when metrics exceed thresholds
+- [ ] A reusable release runbook exists
 
-### 验收标准
-- 制造消息堆积时副本数自动增长
-- backlog 消退后副本数回落
-- 不出现频繁抖动（thrashing）
+### 3. Event-Driven Autoscaling with KEDA + Kafka Lag
 
----
+Learning goals:
 
-## Feature 4: Multi-environment GitOps Promotion（dev -> stage -> prod）
+- [ ] Learn autoscaling based on business workload, not only CPU
+- [ ] Learn Kafka lag semantics and consumer capacity modeling
+- [ ] Learn the stability tradeoffs between HPA, KEDA, and workload behavior
 
-### 你会学到
-- 环境分层与配置漂移控制
-- 镜像晋升（promotion）而非“每环境重新构建”
-- 审批门禁与可追溯性
+Implementation tasks:
 
-### 实现范围
-- 新增 `deploy/k8s/overlays/stage`、`overlays/prod`
-- 约定镜像标签晋升流程（例如 commit SHA）
-- Jenkins / GitHub Actions 增加 promotion job
+- [ ] Add a KEDA `ScaledObject` for `event-service`
+- [ ] Use Kafka lag as the scaling signal
+- [ ] Configure cooldown period, minimum replicas, and anti-thrashing settings
 
-### 验收标准
-- 同一镜像 digest 可从 dev 晋升到 prod
-- 每次发布都可追踪 commit/tag/变更人
-- 回滚只需回退 overlay 引用版本
+Acceptance criteria:
 
----
+- [ ] `event-service` replicas increase when Kafka backlog is created
+- [ ] Replicas decrease after the backlog drains
+- [ ] Scaling does not thrash under normal load changes
 
-## Feature 5: SLO + Error Budget + Alert Tuning
+### 4. Multi-Environment GitOps Promotion: Dev -> Stage -> Prod
 
-### 你会学到
-- 从“有监控”升级为“有可靠性目标”
-- 告警降噪（减少误报）
-- 以用户体验定义系统健康
+Learning goals:
 
-### 实现范围
-- 给 backend 设定可量化 SLO（例如 99.5% 可用性）
-- 按 burn-rate 设计多窗口告警
-- Grafana 增加 SLO 看板
+- [ ] Learn environment layering and configuration drift control
+- [ ] Learn image promotion instead of rebuilding separately for each environment
+- [ ] Learn approval gates and release traceability
 
-### 验收标准
-- 能展示 7 天 / 30 天 SLO 达成率
-- 告警与 runbook 一一映射
-- 演练期间能根据 error budget 做发布决策
+Implementation tasks:
 
----
+- [ ] Add `deploy/k8s/overlays/stage`
+- [ ] Add `deploy/k8s/overlays/prod`
+- [ ] Define an image tag or digest promotion process, such as commit SHA-based promotion
+- [ ] Add a promotion job in Jenkins or GitHub Actions
 
-## Feature 6: Cost-aware Platform（成本可观测 + 资源治理）
+Acceptance criteria:
 
-### 你会学到
-- requests/limits 与成本、稳定性的关系
-- 集群成本归因（namespace/workload）
-- FinOps 基础实践
+- [ ] The same image digest can be promoted from dev to prod
+- [ ] Each release can be traced to a commit, tag, and change owner
+- [ ] Rollback only requires reverting the referenced version in an overlay
 
-### 实现范围
-- 全服务补齐 requests/limits
-- 安装 Kubecost（或 OpenCost）
-- 给 devboard namespace 建成本看板
+### 5. SLO + Error Budget + Alert Tuning
 
-### 验收标准
-- 能定位高成本 workload
-- 能给出至少 2 条降本建议（含性能影响评估）
-- 成本数据可进入周报/复盘
+Learning goals:
 
----
+- [ ] Move from basic monitoring to explicit reliability targets
+- [ ] Reduce alert noise and false positives
+- [ ] Define system health from the user's experience
 
-## 12 周学习与落地节奏（建议）
+Implementation tasks:
 
-### Phase 1（Week 1-4）基础治理
-1. External Secrets
-2. 多环境 overlay 分层
-3. SLO 初版与告警清理
+- [ ] Define a measurable backend SLO, such as 99.5% availability
+- [ ] Create multi-window burn-rate alerts
+- [ ] Add a Grafana SLO dashboard
 
-### Phase 2（Week 5-8）发布与弹性
-4. Argo Rollouts 金丝雀
-5. KEDA Kafka Lag 扩缩容
-6. 故障演练（回滚、限流、降级）
+Acceptance criteria:
 
-### Phase 3（Week 9-12）平台化与复盘
-7. 成本治理看板
-8. 平台 runbook 补全
-9. 形成面试/汇报材料（架构图+指标提升）
+- [ ] The dashboard shows 7-day and 30-day SLO performance
+- [ ] Each alert maps to a runbook
+- [ ] During a drill, release decisions can be made using the error budget
 
----
+### 6. Cost-Aware Platform: Cost Observability + Resource Governance
 
-## 建议从哪一个开始？
+Learning goals:
 
-如果你希望**最快提升 AWS + K8s 的面试竞争力**：
-1) 先做 **Feature 1 (External Secrets)**
-2) 再做 **Feature 2 (Progressive Delivery)**
-3) 第三个做 **Feature 3 (KEDA)**
+- [ ] Learn how requests and limits affect cost and stability
+- [ ] Learn cluster cost attribution by namespace and workload
+- [ ] Learn basic FinOps practices
 
-这个组合最能体现“安全、稳定、弹性”三条主线，也最接近真实生产场景。
+Implementation tasks:
 
----
+- [ ] Add requests and limits for all services
+- [ ] Install Kubecost or OpenCost
+- [ ] Create a cost dashboard for the `devboard` namespace
 
-## 交付物清单（每个 Feature 都建议有）
+Acceptance criteria:
 
-- 架构图（变更前后）
-- K8s Manifests / Helm values
-- CI/CD 流水线变更
-- 监控看板与告警规则
-- 一页 runbook（故障定位 + 回滚步骤）
-- Demo 脚本（5~10 分钟）
+- [ ] High-cost workloads can be identified
+- [ ] At least two cost-saving recommendations are documented with performance impact analysis
+- [ ] Cost data can be included in weekly reports or retrospectives
 
-这样你不仅“做了功能”，还会沉淀成完整的平台工程案例。
+## 12-Week Delivery Plan
+
+### Phase 1: Weeks 1-4, Foundation and Governance
+
+- [ ] Implement External Secrets
+- [ ] Add multi-environment overlay layering
+- [ ] Create the first SLO version and clean up alerts
+
+### Phase 2: Weeks 5-8, Release Safety and Elasticity
+
+- [ ] Implement Argo Rollouts canary delivery
+- [ ] Implement KEDA autoscaling based on Kafka lag
+- [ ] Run failure drills for rollback, rate limiting, and graceful degradation
+
+### Phase 3: Weeks 9-12, Platform Maturity and Review
+
+- [ ] Build the cost governance dashboard
+- [ ] Complete platform runbooks
+- [ ] Prepare interview or presentation material, including architecture diagrams and metric improvements
+
+## Recommended Starting Order
+
+To improve AWS and Kubernetes interview readiness quickly:
+
+- [ ] Start with Feature 1: External Secrets
+- [ ] Then implement Feature 2: Progressive Delivery
+- [ ] Then implement Feature 3: KEDA
+
+This sequence demonstrates security, stability, and elasticity, which are close to real production platform work.
+
+## Deliverables for Each Feature
+
+- [ ] Before-and-after architecture diagram
+- [ ] Kubernetes manifests or Helm values
+- [ ] CI/CD pipeline changes
+- [ ] Monitoring dashboards and alerting rules
+- [ ] One-page runbook covering diagnosis and rollback
+- [ ] Five-to-ten-minute demo script
+
+Completing each feature with these deliverables turns the work into a strong platform engineering case study, not just a code change.
