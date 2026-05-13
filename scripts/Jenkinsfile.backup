@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        NAS_SUN_IP  = '192.168.0.61'
+        NAS_SUN_USER = 'smt'
+        MY_EMAIL = 'sunmingtao@gmail.com'
+    }
+
+    stages {
+
+        stage('Backup .bashrc') {
+            steps {
+                sshagent(credentials: ['nas-sun']) {
+                    sh '''
+                        set -eu
+                        #scp -O /jacky-home/.bashrc "${NAS_SUN_USER}@${NAS_SUN_IP}:~/backup/.bashrc"
+                        rsync -av -e "ssh" /jacky-home/.bashrc "${NAS_SUN_USER}@${NAS_SUN_IP}:~/backup/.bashrc"
+                        echo "backup .bashrc successful"
+                    '''
+                }
+            }
+        }
+	}
+	
+	post {
+        success {
+            emailext(
+                to: "${MY_EMAIL}",
+                subject: 'NAS backup success',
+                body: 'Backup completed successfully.'
+            )
+        }
+    
+        failure {
+            emailext(
+                to: "${MY_EMAIL}",
+                subject: 'NAS backup failed',
+                body: "Check Jenkins:\n${env.BUILD_URL}"
+            )
+        }
+    }
+}
