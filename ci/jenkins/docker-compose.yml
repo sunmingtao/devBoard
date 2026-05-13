@@ -6,6 +6,9 @@ services:
     container_name: jenkins
     restart: unless-stopped
 
+    environment:
+      - TZ=Australia/Sydney
+      - JAVA_OPTS=-Duser.timezone=Australia/Sydney
     ports:
       - "8085:8080"
       - "50000:50000"

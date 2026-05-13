@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     lsb-release \
     ca-certificates \
+    rsync \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Docker Compose plugin manually
