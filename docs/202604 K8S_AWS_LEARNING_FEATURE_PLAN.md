@@ -35,7 +35,8 @@ Implementation tasks:
   - [x] Sync and verify the EKS `external-secrets-eks` Application
 - [x] Replace the manually created EKS `devboard-backend-secret` with an `ExternalSecret`
 - [x] Store the database password in AWS Secrets Manager
-- [ ] Store the JWT secret and Kafka credentials in AWS Secrets Manager
+- [x] Store the JWT secret in AWS Secrets Manager
+- [ ] Store Kafka credentials in AWS Secrets Manager if Kafka authentication is enabled later
 
 Acceptance criteria:
 

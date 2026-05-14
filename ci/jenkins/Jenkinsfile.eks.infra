@@ -117,6 +117,10 @@ pipeline {
                     string(
                         credentialsId: 'devboard-dev-eks-db-password',
                         variable: 'TF_VAR_db_password'
+                    ),
+                    string(
+                        credentialsId: 'devboard-dev-eks-jwt-secret',
+                        variable: 'TF_VAR_jwt_secret'
                     )
                 ]) {
                     dir("${env.TF_DIR}") {
@@ -141,6 +145,10 @@ pipeline {
                     string(
                         credentialsId: 'devboard-dev-eks-db-password',
                         variable: 'TF_VAR_db_password'
+                    ),
+                    string(
+                        credentialsId: 'devboard-dev-eks-jwt-secret',
+                        variable: 'TF_VAR_jwt_secret'
                     )
                 ]) {
                     dir("${env.TF_DIR}") {

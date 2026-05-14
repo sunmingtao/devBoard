@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Updated EKS backend database password handling to read from AWS Secrets Manager via External Secrets instead of relying on manual Kubernetes secret injection
+- Updated EKS backend JWT secret handling to read from AWS Secrets Manager and removed the committed MySQL-profile JWT fallback
 
 ## [0.7.0] - 2026-05-10
 

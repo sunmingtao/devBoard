@@ -70,8 +70,8 @@ logging:
 # Application configuration for MySQL environment
 devboard:
   app:
-    # JWT Configuration (environment-aware)
-    jwtSecret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D6351665468576D5A7134}
+    # JWT secret must be provided by the runtime environment.
+    jwtSecret: ${JWT_SECRET}
     jwtExpirationMs: ${JWT_EXPIRATION_MS:3600000}  # 1 hour default
     
     # CORS configuration for MySQL environment

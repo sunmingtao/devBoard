@@ -16,6 +16,7 @@ resource "aws_secretsmanager_secret_version" "devboard_backend" {
 
   secret_string = jsonencode({
     DATABASE_PASSWORD = var.db_password
+    JWT_SECRET        = var.jwt_secret
   })
 }
 

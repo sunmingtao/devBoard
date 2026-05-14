@@ -79,7 +79,7 @@ variables immediately:
 ```bash
 aws secretsmanager put-secret-value \
   --secret-id devboard/dev/backend \
-  --secret-string '{"DATABASE_PASSWORD":"<password>"}'
+  --secret-string '{"DATABASE_PASSWORD":"<password>","JWT_SECRET":"<existing-or-rotated-base64-jwt-secret>"}'
 
 kubectl rollout restart deployment/devboard-backend -n "$APP_NS"
 kubectl rollout restart deployment/devboard-event-service -n "$APP_NS"

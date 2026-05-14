@@ -32,6 +32,12 @@ variable "db_password" {
   sensitive = true
 }
 
+variable "jwt_secret" {
+  description = "Base64-encoded JWT signing secret for the backend"
+  type        = string
+  sensitive   = true
+}
+
 variable "backend_secret_name" {
   type    = string
   default = "devboard/dev/backend"
