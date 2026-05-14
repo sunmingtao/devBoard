@@ -5,7 +5,6 @@ environment = "dev"
 db_instance_identifier = "devboard-dev-eks-db"
 db_name                = "devboard"
 db_username            = "devboard_user"
-db_password            = "devboard_password"
 
 db_instance_class = "db.t3.micro"
 

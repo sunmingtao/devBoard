@@ -35,11 +35,7 @@ Move the working local Argo CD setup toward EKS without mixing local-only choice
   - [x] `${IMAGE_TAG}`
   - [x] `${DB_HOST}`
   - [x] `${DB_PASSWORD}`
-Run ```
-kubectl create secret generic devboard-backend-secret \
-  -n devboard \
-  --from-literal=DATABASE_PASSWORD="${RDS_EKS_DB_PASSWORD}"
-``` after EKS cluster is created (TODO)
+  - [x] Manual `kubectl create secret` step replaced by External Secrets Operator
   - [x] `PLACEHOLDER_LOADBALANCER_DNS`
 - [x] Verify EKS render is clean:
   - [x] `kubectl kustomize deploy/k8s/overlays/eks`
@@ -51,10 +47,11 @@ kubectl create secret generic devboard-backend-secret \
 
 - [x] Do not commit real database passwords to Git
 - [x] Replace `backend-secret.yaml` strategy
-  - [x] Option A: manually create `devboard-backend-secret` in EKS before Argo sync
-  - [ ] Option B: use External Secrets Operator with AWS Secrets Manager
+  - [x] Option A: manually create `devboard-backend-secret` in EKS before Argo sync (superseded)
+  - [x] Option B: use External Secrets Operator with AWS Secrets Manager
   - [ ] Option C: use Sealed Secrets
-- [ ] Document which secret strategy is used for the interview demo
+- [x] Document which secret strategy is used for the interview demo
+  - [x] EKS uses External Secrets Operator with AWS Secrets Manager and IRSA; Jenkins no longer creates `devboard-backend-secret`.
 - [x] Ensure Argo CD does not overwrite manually managed secrets unless intended
 
 ---

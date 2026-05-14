@@ -13,6 +13,14 @@ locals {
   skip_final_snapshot     = true
   backup_retention_period = 1
   max_allocated_storage   = 100
+  common_tags = merge(
+    {
+      Project     = "DevBoard"
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+    },
+    var.additional_tags
+  )
 }
 
 data "terraform_remote_state" "dev_vm" {

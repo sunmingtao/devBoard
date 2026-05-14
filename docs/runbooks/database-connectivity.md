@@ -71,14 +71,15 @@ aws rds describe-db-instances --query 'DBInstances[].{id:DBInstanceIdentifier,st
 
 ## Recovery
 
-If credentials changed, update the Kubernetes secret outside git and restart the
-affected deployments:
+If EKS credentials changed, update the AWS Secrets Manager secret that backs
+`devboard-backend-secret`. External Secrets Operator will refresh the Kubernetes
+secret; restart the affected deployments if they need to reload environment
+variables immediately:
 
 ```bash
-kubectl create secret generic devboard-backend-secret \
-  -n "$APP_NS" \
-  --from-literal=DATABASE_PASSWORD='<password>' \
-  --dry-run=client -o yaml | kubectl apply -f -
+aws secretsmanager put-secret-value \
+  --secret-id devboard/dev/backend \
+  --secret-string '{"DATABASE_PASSWORD":"<password>"}'
 
 kubectl rollout restart deployment/devboard-backend -n "$APP_NS"
 kubectl rollout restart deployment/devboard-event-service -n "$APP_NS"

@@ -32,6 +32,11 @@ variable "db_password" {
   sensitive = true
 }
 
+variable "backend_secret_name" {
+  type    = string
+  default = "devboard/dev/backend"
+}
+
 variable "db_instance_class" {
   type    = string
   default = "db.t3.micro"
