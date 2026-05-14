@@ -1,222 +1,311 @@
-# DevBoard DevOps Improvement Plan (April 2026)
+# DevBoard DevOps Improvement TODO Checklist
 
-## 1) Current Status Snapshot
+## Goal
 
-Based on repository inspection, DevBoard already has the foundations of a modern DevOps setup:
+Improve DevBoard's CI/CD, deployment governance, security posture, observability, and reliability over a 6-month roadmap.
 
-- Monorepo structure with separated application and infrastructure concerns (`apps`, `deploy`, `infra`, `ci`).
-- Multiple CI and deployment workflows under `.github/workflows/`.
-- Terraform directories for AWS and legacy environments.
-- Docker Compose and Kubernetes deployment assets.
+## Current Foundation
 
-### Key Gaps Observed
+DevBoard already has the foundations of a modern DevOps setup:
 
-1. **Workflow path drift after repo restructuring**  
-   Several workflows still reference legacy directories (`devboard-backend`, `devboard-frontend`) while the actual repo uses `apps/backend` and `apps/frontend`.
+- [x] Monorepo structure with separated application and infrastructure concerns: `apps`, `deploy`, `infra`, and `ci`
+- [x] Multiple CI and deployment workflows under `.github/workflows/`
+- [x] Terraform directories for AWS and legacy environments
+- [x] Docker Compose and Kubernetes deployment assets
 
-2. **Mixed and overlapping CI/CD patterns**  
-   There are multiple backend/frontend CI and deploy workflows with overlapping responsibilities and inconsistent action versions.
+## Key Gaps To Close
 
-3. **Risky deployment hardcoding**  
-   Some deployment workflows contain environment-specific values (bucket names, CloudFront distribution IDs, regions) directly in workflow files.
+- [ ] Fix workflow path drift from legacy folders to current paths
+  - [ ] Replace `devboard-backend` references with `apps/backend`
+  - [ ] Replace `devboard-frontend` references with `apps/frontend`
+- [ ] Reduce mixed and overlapping CI/CD patterns
+  - [ ] Identify duplicate backend workflows
+  - [ ] Identify duplicate frontend workflows
+  - [ ] Decide which workflows are canonical
+  - [ ] Disable or remove legacy workflow triggers
+- [ ] Remove risky deployment hardcoding
+  - [ ] Move bucket names out of workflow YAML
+  - [ ] Move CloudFront distribution IDs out of workflow YAML
+  - [ ] Move region-specific deployment values out of workflow YAML
+  - [ ] Store environment-specific values in GitHub environments, secrets, vars, or cloud parameter stores
+- [ ] Strengthen quality gates
+  - [ ] Make frontend lint blocking
+  - [ ] Make backend tests blocking
+  - [ ] Make frontend tests and build blocking
+- [ ] Define one platform-wide operational baseline
+  - [ ] Publish service SLOs
+  - [ ] Define error budget targets
+  - [ ] Define alerting expectations
+  - [ ] Link dashboards to incident runbooks
 
-4. **Quality gates are partially enforced**  
-   Example: frontend lint is intentionally non-blocking (`npm run lint || true`), which can allow debt to pass through CI.
+## Target State
 
-5. **No explicit platform-wide SLO/SLA + observability standard in repo docs**  
-   Monitoring and alerting concepts exist in docs, but there is no single operational baseline with concrete error budget targets.
+By the end of this plan, DevBoard should have:
 
----
+- [ ] Single-source CI/CD pipelines for backend and frontend mapped to real repository paths
+- [ ] Environment promotion model: `dev -> staging -> prod`
+- [ ] Controlled approvals for production deployments
+- [ ] Immutable artifact strategy with traceable build IDs
+- [ ] SBOM generation for release artifacts
+- [ ] Container image signing or equivalent artifact trust control
+- [ ] Security-first secret and identity model using OIDC and short-lived cloud credentials
+- [ ] SLO dashboards with actionable alerts
+- [ ] Deployment correlation in logs, metrics, and dashboards
+- [ ] Documented RTO and RPO targets
+- [ ] Backup validation drills for stateful components
 
-## 2) DevOps Target State (6-Month Vision)
+## Priority Backlog
 
-By the end of this plan, DevBoard should operate with:
+- [ ] Fix workflow paths to `apps/*` and retire legacy duplicates
+- [ ] Remove hardcoded deployment identifiers from workflow YAML
+- [ ] Migrate deployment configuration to environment secrets and vars
+- [ ] Make lint, test, and build gates mandatory
+- [ ] Add deployment smoke tests
+- [ ] Add rollback automation
+- [ ] Implement OIDC-based cloud auth for GitHub Actions
+- [ ] Define SLOs
+- [ ] Create a single operations dashboard
 
-- **Single-source CI/CD pipelines** for backend and frontend, mapped to real paths.
-- **Environment promotion model** (`dev` → `staging` → `prod`) with controlled approvals.
-- **Immutable artifact strategy** (traceable build IDs + SBOM + image signing).
-- **Security-first secret and identity model** (OIDC + short-lived cloud credentials).
-- **Actionable observability** (SLO dashboards + alert runbooks + deployment correlation).
-- **Reliable recovery posture** (documented RTO/RPO, backup validation drills).
+## Phase 0: Week 1, Baseline And Stabilization
 
----
+Goals:
 
-## 3) Improvement Roadmap
+- [ ] Establish a trustworthy baseline before introducing new automation
 
-## Phase 0 (Week 1): Baseline & Stabilization
+Implementation tasks:
 
-### Goals
-- Establish trustworthy baseline before introducing new automation.
+- [ ] Inventory all workflows
+- [ ] Mark each workflow as active, legacy, or experimental
+- [x] Fix path references from legacy folders to `apps/backend` and `apps/frontend`
+- [x] Define branch strategy
+- [x] Define deployment ownership
+- [x] Document who can ship to each environment
+- [ ] Add CI badge to `README.md`
+- [ ] Add workflow status matrix to `README.md`
 
-### Actions
-- Inventory all workflows, mark each as **active**, **legacy**, or **experimental**.
-- Fix path references from legacy folders to `apps/backend` and `apps/frontend`.
-- Define branch strategy and deployment ownership (who can ship where).
-- Add CI badge + status matrix in `README.md`.
+Acceptance criteria:
 
-### Success Criteria
-- Main branch shows deterministic CI behavior (no duplicate/conflicting workflows).
-- Every workflow trigger maps to real repository paths.
+- [ ] Main branch has deterministic CI behavior
+- [ ] No duplicate or conflicting workflows run for the same responsibility
+- [ ] Every workflow trigger maps to real repository paths
 
----
+## Phase 1: Weeks 2-4, CI Standardization And Faster Feedback
 
-## Phase 1 (Weeks 2-4): CI Standardization & Faster Feedback
+Goals:
 
-### Goals
-- Improve consistency, speed, and quality signal of CI.
+- [ ] Improve CI consistency
+- [ ] Improve CI speed
+- [ ] Improve CI quality signal
 
-### Actions
-- Consolidate backend CI into one canonical workflow:
-  - build, test, static analysis, dependency audit, artifact upload.
-- Consolidate frontend CI into one canonical workflow:
-  - install, lint (blocking), tests, build, bundle budget check.
-- Introduce reusable workflow templates (`workflow_call`) for shared logic.
-- Enforce concurrency controls and cancel superseded runs.
-- Add test reporting artifacts and failure summaries.
+Backend CI tasks:
 
-### Success Criteria
-- CI median runtime reduced by at least 25%.
-- Lint/test/build quality gates block merges on failure.
-- No duplicated CI responsibilities across files.
+- [ ] Consolidate backend CI into one canonical workflow
+- [ ] Run backend build
+- [ ] Run backend tests
+- [ ] Run backend static analysis
+- [ ] Run backend dependency audit
+- [ ] Upload backend artifacts
 
----
+Frontend CI tasks:
 
-## Phase 2 (Weeks 5-8): Progressive Delivery & Environment Governance
+- [ ] Consolidate frontend CI into one canonical workflow
+- [ ] Install frontend dependencies
+- [ ] Make frontend lint blocking
+- [ ] Run frontend tests
+- [ ] Run frontend build
+- [ ] Add frontend bundle budget check
 
-### Goals
-- Deploy predictably with lower release risk.
+Shared CI tasks:
 
-### Actions
-- Implement staged deployments:
-  - PR merge to `main` deploys to `dev` automatically.
-  - promotion job deploys to `staging`.
-  - protected manual approval for `prod`.
-- Externalize all environment-specific values to GitHub environments and cloud parameter stores.
-- Add post-deploy smoke tests and health verification gates.
-- Add rollback automation (redeploy last known good image).
+- [ ] Introduce reusable workflow templates using `workflow_call`
+- [ ] Enforce concurrency controls
+- [ ] Cancel superseded workflow runs
+- [ ] Add test reporting artifacts
+- [ ] Add failure summaries
 
-### Success Criteria
-- Each deployment has traceable artifact SHA and environment metadata.
-- Rollback to previous stable release in < 10 minutes.
+Acceptance criteria:
 
----
+- [ ] CI median runtime is reduced by at least 25 percent
+- [ ] Lint failures block merges
+- [ ] Test failures block merges
+- [ ] Build failures block merges
+- [ ] No duplicated CI responsibilities remain across workflow files
 
-## Phase 3 (Weeks 9-12): DevSecOps Hardening
+## Phase 2: Weeks 5-8, Progressive Delivery And Environment Governance
 
-### Goals
-- Shift security left and reduce supply-chain risk.
+Goals:
 
-### Actions
-- Add SAST + dependency vulnerability scanning in PR and main workflows.
-- Add container image scanning (critical/high severity policy).
-- Generate SBOM for backend and frontend artifacts.
-- Move from long-lived secrets to OIDC-based cloud auth for GitHub Actions.
-- Enforce branch protection rules: required checks, signed commits/tags (if team-ready).
+- [ ] Deploy predictably
+- [ ] Lower release risk
+- [ ] Make environment promotion traceable
 
-### Success Criteria
-- Critical vulnerabilities block deployment by policy.
-- 100% deployment workflows authenticate via short-lived credentials.
+Implementation tasks:
 
----
+- [ ] Implement staged deployments
+- [ ] Deploy PR merges to `main` automatically to `dev`
+- [ ] Add promotion job for `staging`
+- [ ] Add protected manual approval for `prod`
+- [ ] Externalize environment-specific values to GitHub environments
+- [ ] Externalize sensitive values to cloud parameter stores or secrets managers
+- [ ] Add post-deploy smoke tests
+- [ ] Add health verification gates
+- [ ] Add rollback automation
+- [ ] Redeploy last known good image during rollback
 
-## Phase 4 (Weeks 13-16): Observability, Reliability, and Operations
+Acceptance criteria:
 
-### Goals
-- Ensure production operability and measurable reliability.
+- [ ] Each deployment has traceable artifact SHA
+- [ ] Each deployment records environment metadata
+- [ ] Rollback to previous stable release completes in less than 10 minutes
 
-### Actions
-- Define and publish service SLOs:
-  - API availability, p95 latency, error rate.
-- Implement dashboard set:
-  - deployment frequency, lead time, MTTR, change failure rate.
-- Add structured logging and trace correlation IDs across frontend/backend.
-- Add on-call runbooks for top incident classes.
-- Automate backup verification for stateful components.
+## Phase 3: Weeks 9-12, DevSecOps Hardening
 
-### Success Criteria
-- Weekly reliability review uses real SLO data.
-- MTTR trending downward with documented incident playbooks.
+Goals:
 
----
+- [ ] Shift security left
+- [ ] Reduce supply-chain risk
+- [ ] Replace long-lived cloud credentials
 
-## 4) Priority Backlog (Highest ROI First)
+Implementation tasks:
 
-1. Fix workflow paths to `apps/*` and retire legacy duplicates.
-2. Remove hardcoded deployment identifiers from workflow YAML and migrate to environment secrets/vars.
-3. Make lint/test gates mandatory.
-4. Add deployment smoke tests and rollback job.
-5. Implement OIDC-based cloud auth for Actions.
-6. Define SLOs and create a single operations dashboard.
+- [ ] Add SAST scanning to PR workflows
+- [ ] Add SAST scanning to main workflows
+- [ ] Add dependency vulnerability scanning to PR workflows
+- [ ] Add dependency vulnerability scanning to main workflows
+- [ ] Add container image scanning
+- [ ] Define policy for critical and high severity image findings
+- [ ] Generate SBOM for backend artifacts
+- [ ] Generate SBOM for frontend artifacts
+- [ ] Move GitHub Actions cloud auth to OIDC
+- [ ] Remove long-lived cloud credentials from deployment workflows
+- [ ] Enforce branch protection required checks
+- [ ] Evaluate signed commits or signed tags when the team is ready
 
----
+Acceptance criteria:
 
-## 5) Metrics and Reporting Cadence
+- [ ] Critical vulnerabilities block deployment by policy
+- [ ] 100 percent of deployment workflows authenticate using short-lived credentials
 
-### Weekly
-- CI pass rate
-- Median CI duration
-- Number of flaky test failures
+## Phase 4: Weeks 13-16, Observability, Reliability, And Operations
 
-### Bi-weekly
-- Deployment frequency by environment
-- Change failure rate
-- Mean time to restore
+Goals:
 
-### Monthly
-- Open critical/high vulnerabilities
-- Secret rotation and credential posture score
-- Reliability against SLO targets
+- [ ] Make production operability measurable
+- [ ] Define reliability expectations
+- [ ] Improve incident response and recovery
 
----
+SLO tasks:
 
-## 6) Roles and Ownership Model
+- [ ] Define API availability SLO
+- [ ] Define p95 latency SLO
+- [ ] Define error-rate SLO
+- [ ] Publish SLO targets in repo docs
 
-- **DevOps Owner**: pipeline architecture, IaC governance, reliability KPIs.
-- **Backend Owner**: service build/test quality, runtime health, migration safety.
-- **Frontend Owner**: web build quality, performance budgets, client error telemetry.
-- **Security Champion**: vulnerability triage SLA, policy-as-code guardrails.
+Dashboard tasks:
 
-Use CODEOWNERS + required review rules so each critical path has accountable reviewers.
+- [ ] Create deployment frequency dashboard
+- [ ] Create lead time dashboard
+- [ ] Create MTTR dashboard
+- [ ] Create change failure rate dashboard
+- [ ] Add deployment correlation to dashboards
 
----
+Operations tasks:
 
-## 7) Risks and Mitigations
+- [ ] Add structured logging across backend services
+- [ ] Add trace correlation IDs across frontend and backend
+- [ ] Add runbook for deployment failures
+- [ ] Add runbook for elevated API errors
+- [ ] Add runbook for latency incidents
+- [ ] Add runbook for infrastructure degradation
+- [ ] Automate backup verification for stateful components
 
-- **Risk:** Consolidation causes temporary pipeline instability.  
-  **Mitigation:** Keep legacy workflow toggled but disabled via narrow triggers until replacement proves stable.
+Acceptance criteria:
 
-- **Risk:** Security scanning increases CI time.  
-  **Mitigation:** Split fast PR checks from deep nightly scans.
+- [ ] Weekly reliability review uses real SLO data
+- [ ] MTTR trends downward over time
+- [ ] Top incident classes have documented playbooks
 
-- **Risk:** Team adoption friction for stricter gates.  
-  **Mitigation:** 2-week soft-enforcement period with visible metrics before hard blocking.
-
----
-
-## 8) 30/60/90-Day Execution Summary
+## 30/60/90-Day Execution Plan
 
 ### 0-30 Days
-- CI/CD inventory and cleanup.
-- Path fixes and duplicate retirement.
-- Mandatory quality gates.
+
+- [ ] Complete CI/CD inventory
+- [ ] Clean up duplicate workflows
+- [ ] Fix workflow path references
+- [ ] Retire legacy workflow triggers
+- [ ] Enforce mandatory quality gates
 
 ### 31-60 Days
-- Staged promotion pipeline.
-- Post-deploy verification.
-- Rollback automation.
+
+- [ ] Implement staged promotion pipeline
+- [ ] Add post-deploy verification
+- [ ] Add rollback automation
+- [ ] Externalize deployment configuration
 
 ### 61-90 Days
-- OIDC + security scans + SBOM.
-- SLO dashboards and runbooks.
-- Reliability review cadence operational.
 
----
+- [ ] Implement OIDC for deployment workflows
+- [ ] Add security scans
+- [ ] Generate SBOMs
+- [ ] Create SLO dashboards
+- [ ] Create operational runbooks
+- [ ] Start reliability review cadence
 
-## 9) Definition of Done for the Plan
+## Metrics And Reporting Cadence
 
-This improvement plan is considered complete when:
+Weekly:
 
-- Every deployment uses a traceable, immutable artifact.
-- Every production change has automated verification and rollback path.
-- Security checks are policy-enforced in CI/CD.
-- Reliability is measured with agreed SLOs and reviewed on schedule.
+- [ ] Report CI pass rate
+- [ ] Report median CI duration
+- [ ] Report number of flaky test failures
+
+Bi-weekly:
+
+- [ ] Report deployment frequency by environment
+- [ ] Report change failure rate
+- [ ] Report mean time to restore
+
+Monthly:
+
+- [ ] Report open critical and high vulnerabilities
+- [ ] Report secret rotation status
+- [ ] Report credential posture score
+- [ ] Report reliability against SLO targets
+
+## Roles And Ownership
+
+- [ ] Assign DevOps Owner for pipeline architecture, IaC governance, and reliability KPIs
+- [ ] Assign Backend Owner for service build and test quality, runtime health, and migration safety
+- [ ] Assign Frontend Owner for web build quality, performance budgets, and client error telemetry
+- [ ] Assign Security Champion for vulnerability triage SLA and policy-as-code guardrails
+- [ ] Add or update `CODEOWNERS`
+- [ ] Configure required review rules for critical paths
+
+## Risks And Mitigations
+
+Pipeline consolidation risk:
+
+- [ ] Keep legacy workflows available with narrow or disabled triggers until replacements prove stable
+- [ ] Compare old and new workflow output during transition
+
+Security scanning runtime risk:
+
+- [ ] Split fast PR checks from deep nightly scans
+- [ ] Track CI duration before and after security controls are added
+
+Stricter gates adoption risk:
+
+- [ ] Run a 2-week soft-enforcement period
+- [ ] Publish quality gate metrics during soft enforcement
+- [ ] Switch to hard blocking after the team has visibility into failure patterns
+
+## Definition Of Done
+
+This improvement plan is complete when:
+
+- [ ] Every deployment uses a traceable immutable artifact
+- [ ] Every production change has automated verification
+- [ ] Every production change has a rollback path
+- [ ] Security checks are policy-enforced in CI/CD
+- [ ] Reliability is measured with agreed SLOs
+- [ ] Reliability is reviewed on a regular schedule

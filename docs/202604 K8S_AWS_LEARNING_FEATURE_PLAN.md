@@ -30,9 +30,9 @@ Implementation tasks:
 - [x] Install External Secrets Operator in local minikube
 - [x] Add a local Argo CD Helm Application for External Secrets Operator
 - [x] Replace the local `devboard-backend-secret` Secret manifest with an `ExternalSecret`
-- [ ] Install External Secrets Operator in EKS
+- [x] Install External Secrets Operator in EKS
   - [x] Add an EKS Argo CD Helm Application for External Secrets Operator
-  - [ ] Sync and verify the EKS `external-secrets-eks` Application
+  - [x] Sync and verify the EKS `external-secrets-eks` Application
 - [x] Replace the manually created EKS `devboard-backend-secret` with an `ExternalSecret`
 - [x] Store the database password in AWS Secrets Manager
 - [ ] Store the JWT secret and Kafka credentials in AWS Secrets Manager

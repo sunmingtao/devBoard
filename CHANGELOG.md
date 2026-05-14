@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.1] - 2026-05-15
+
+### Changed
+
+- Updated EKS backend database password handling to read from AWS Secrets Manager via External Secrets instead of relying on manual Kubernetes secret injection
+
 ## [0.7.0] - 2026-05-10
 
 ### Added
