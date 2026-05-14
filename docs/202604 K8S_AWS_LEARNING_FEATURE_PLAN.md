@@ -21,9 +21,9 @@ The next stage should focus on platform engineering skills and production-grade 
 
 Learning goals:
 
-- [ ] Learn IAM Roles for Service Accounts (IRSA)
-- [ ] Learn how AWS Secrets Manager syncs into Kubernetes Secrets
-- [ ] Learn secret management best practices in a GitOps workflow
+- [x] Learn IAM Roles for Service Accounts (IRSA)
+- [x] Learn how AWS Secrets Manager syncs into Kubernetes Secrets
+- [x] Learn secret management best practices in a GitOps workflow
 
 Implementation tasks:
 
@@ -36,16 +36,16 @@ Implementation tasks:
 - [x] Replace the manually created EKS `devboard-backend-secret` with an `ExternalSecret`
 - [x] Store the database password in AWS Secrets Manager
 - [x] Store the JWT secret in AWS Secrets Manager
-- [ ] Store Kafka credentials in AWS Secrets Manager if Kafka authentication is enabled later
+- [x] Store Kafka credentials in AWS Secrets Manager if Kafka authentication is enabled later
 
 Acceptance criteria:
 
 - [x] Local Argo CD app `external-secrets-local` is `Synced` and `Healthy`
 - [x] Local External Secrets pods are running in the `external-secrets` namespace
 - [x] Local `devboard-backend-secret` is owned by `ExternalSecret/devboard-backend-secret`
-- [ ] EKS `kubectl get externalsecret -n devboard` shows `Ready=True`
-- [ ] Recreated pods can automatically load the latest secrets
-- [ ] The Git repository no longer needs plaintext secrets or manual secret injection steps
+- [x] EKS `kubectl get externalsecret -n devboard` shows `Ready=True`
+- [x] Recreated pods can automatically load the latest secrets
+- [x] The Git repository no longer needs plaintext secrets or manual secret injection steps
 
 ### 2. Progressive Delivery with Argo Rollouts + ALB/Nginx
 
