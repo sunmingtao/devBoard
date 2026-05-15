@@ -14,7 +14,7 @@ resources:
 patches:
   - path: frontend-service-patch.yaml
   - target:
-      kind: Deployment
+      kind: Rollout
       name: devboard-backend
     patch: |-
       - op: replace

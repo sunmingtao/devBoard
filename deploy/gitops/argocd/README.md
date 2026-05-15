@@ -13,13 +13,20 @@ kubectl apply --server-side --force-conflicts -k deploy/gitops/argocd/
 
 > **Note:** The `kustomization.yaml` file references the official Argo CD install manifest and local namespace configuration. Server-side apply avoids oversized client-side apply annotations on Argo CD CRDs.
 
-### 2. Create the DevBoard Argo CD application
+### 2. Create the controller and DevBoard Argo CD applications
 
 ```bash
-kubectl apply -f deploy/gitops/apps/devboard.yaml
+kubectl apply -f deploy/gitops/apps/argo-rollouts-eks.yaml
+kubectl apply -f deploy/gitops/apps/external-secrets-eks.yaml
+kubectl wait --for condition=Established crd/rollouts.argoproj.io --timeout=180s
+kubectl wait --for condition=Established crd/externalsecrets.external-secrets.io --timeout=180s
+kubectl apply -f deploy/gitops/apps/devboard-eks.yaml
 ```
 
-This creates an Argo CD `Application` named `devboard`. It watches this repository on the `main` branch, reads Kubernetes manifests from `deploy/k8s/overlays/eks`, and deploys them into the `devboard` namespace.
+This creates the Argo Rollouts and External Secrets controller applications,
+then creates the DevBoard Argo CD `Application` named `devboard`. DevBoard
+watches this repository on the `main` branch, reads Kubernetes manifests from
+`deploy/k8s/overlays/eks`, and deploys them into the `devboard` namespace.
 
 Automated sync is enabled with pruning and self-healing:
 
@@ -63,7 +70,12 @@ deploy/gitops/argocd/
 └── README.md              # This file
 
 deploy/gitops/apps/
-└── devboard.yaml          # DevBoard Argo CD Application
+├── argo-rollouts-eks.yaml # EKS Argo Rollouts controller Application
+├── argo-rollouts-local.yaml # Local Argo Rollouts controller Application
+├── external-secrets-eks.yaml # EKS External Secrets Application
+├── external-secrets-local.yaml # Local External Secrets Application
+├── devboard-eks.yaml      # EKS DevBoard Application
+└── devboard-local.yaml    # Local DevBoard Application
 ```
 
 ## Common Commands

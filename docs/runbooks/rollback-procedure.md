@@ -38,7 +38,7 @@ argocd app get devboard
 Check Kubernetes rollout history:
 
 ```bash
-kubectl rollout history deployment/devboard-backend -n devboard
+kubectl get rollout devboard-backend -n devboard
 kubectl rollout history deployment/devboard-frontend -n devboard
 kubectl rollout history deployment/devboard-event-service -n devboard
 kubectl rollout history deployment/devboard-event-frontend -n devboard
@@ -103,10 +103,12 @@ argocd app wait devboard --health --sync --timeout 600
 Use this only to restore service quickly while preparing the Git rollback.
 Because Argo CD self-heal is enabled, live-only changes can be overwritten by
 the desired state in Git.
+The backend uses Argo Rollouts, so backend undo commands require the
+`kubectl argo rollouts` plugin.
 
 ```bash
-kubectl rollout undo deployment/devboard-backend -n devboard
-kubectl rollout status deployment/devboard-backend -n devboard
+kubectl argo rollouts undo rollout/devboard-backend -n devboard
+kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n devboard --timeout=300s
 ```
 
 If needed, temporarily pause Argo CD automated sync for a controlled demo:
@@ -133,7 +135,7 @@ argocd app wait devboard --health --sync --timeout 600
 Confirm rollout health:
 
 ```bash
-kubectl rollout status deployment/devboard-backend -n devboard
+kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n devboard --timeout=300s
 kubectl rollout status deployment/devboard-frontend -n devboard
 kubectl rollout status deployment/devboard-event-service -n devboard
 kubectl rollout status deployment/devboard-event-frontend -n devboard

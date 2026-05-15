@@ -17,7 +17,7 @@ resources:
 
 patches:
   - target:
-      kind: Deployment
+      kind: Rollout
       name: devboard-backend
     patch: |-
       - op: replace

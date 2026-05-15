@@ -2,13 +2,14 @@
 
 ## Purpose
 
-Use this when Argo CD applies a change but a deployment does not become healthy,
-or when `kubectl rollout status` does not complete.
+Use this when Argo CD applies a change but a workload does not become healthy,
+or when a rollout check does not complete.
 
 ## Signals
 
 - Argo CD app `devboard` is `Degraded`, `Progressing`, or stuck `OutOfSync`.
-- `kubectl rollout status deployment/<name> -n devboard` times out.
+- `kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n devboard` times out.
+- `kubectl rollout status deployment/<name> -n devboard` times out for non-backend workloads.
 - `DevBoardBackendUnavailable`, `DevBoardEventServiceUnavailable`, or
   `DevBoardFrontendUnavailable` fires.
 - Pods show `ImagePullBackOff`, `CrashLoopBackOff`, readiness failures, or
@@ -23,14 +24,17 @@ export ARGO_NS=argocd
 kubectl get application devboard -n "$ARGO_NS"
 argocd app get devboard
 argocd app diff devboard
-kubectl get deployments -n "$APP_NS"
+kubectl get rollouts,deployments -n "$APP_NS"
 kubectl get pods -n "$APP_NS" -o wide
 kubectl get events -n "$APP_NS" --sort-by=.lastTimestamp | tail -50
 ```
 
-Check the deployment that failed:
+Check the backend Rollout or the deployment that failed:
 
 ```bash
+kubectl get rollout devboard-backend -n "$APP_NS"
+kubectl describe rollout devboard-backend -n "$APP_NS"
+kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n "$APP_NS" --timeout=300s
 kubectl rollout status deployment/<deployment-name> -n "$APP_NS"
 kubectl describe deployment <deployment-name> -n "$APP_NS"
 kubectl describe pod -n "$APP_NS" -l app=<deployment-name>
@@ -85,6 +89,7 @@ compare live state to Git before forcing any changes:
 
 ```bash
 argocd app diff devboard
+kubectl get rollout devboard-backend -n "$APP_NS" -o yaml
 kubectl get deployment <deployment-name> -n "$APP_NS" -o yaml
 ```
 
@@ -94,7 +99,7 @@ kubectl get deployment <deployment-name> -n "$APP_NS" -o yaml
 argocd app get devboard
 argocd app wait devboard --health --sync --timeout 600
 kubectl get pods -n "$APP_NS"
-kubectl rollout status deployment/devboard-backend -n "$APP_NS"
+kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n "$APP_NS" --timeout=300s
 kubectl rollout status deployment/devboard-frontend -n "$APP_NS"
 kubectl rollout status deployment/devboard-event-service -n "$APP_NS"
 kubectl rollout status deployment/devboard-event-frontend -n "$APP_NS"

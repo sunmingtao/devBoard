@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: devboard
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
   labels:
     app.kubernetes.io/name: devboard
     app.kubernetes.io/part-of: devboard

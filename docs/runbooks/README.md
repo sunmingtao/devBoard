@@ -36,7 +36,7 @@ Check the main platform surfaces:
 ```bash
 kubectl get pods -n "$APP_NS"
 kubectl get application devboard -n "$ARGO_NS"
-kubectl rollout status deployment/devboard-backend -n "$APP_NS"
+kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n "$APP_NS" --timeout=300s
 kubectl rollout status deployment/devboard-event-service -n "$APP_NS"
 ```
 

@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - backend-deployment.yaml
+  - backend-rollout.yaml
   - backend-service.yaml
   - backend-hpa.yaml
   - event-service-deployment.yaml

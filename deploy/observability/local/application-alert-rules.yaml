@@ -11,16 +11,21 @@ spec:
       rules:
         - alert: DevBoardBackendUnavailable
           expr: |
-            (kube_deployment_spec_replicas{namespace="devboard", deployment="devboard-backend"} > 0)
-            and on (namespace, deployment)
-            (kube_deployment_status_replicas_available{namespace="devboard", deployment="devboard-backend"} < kube_deployment_spec_replicas{namespace="devboard", deployment="devboard-backend"})
+            (
+              sum(
+                kube_pod_status_ready{namespace="devboard", condition="true"}
+                * on(namespace, pod) group_left(label_app)
+                kube_pod_labels{namespace="devboard", label_app="devboard-backend"}
+              ) < 1
+            )
+            or absent(kube_pod_labels{namespace="devboard", label_app="devboard-backend"})
           for: 2m
           labels:
             severity: critical
             service: backend
           annotations:
             summary: DevBoard backend has no available replica
-            description: The devboard-backend Deployment has fewer available replicas than desired for more than 2 minutes.
+            description: The devboard-backend Rollout has no ready backend pod for more than 2 minutes.
 
         - alert: DevBoardEventServiceUnavailable
           expr: |

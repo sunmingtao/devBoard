@@ -1,5 +1,5 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: devboard-backend
   namespace: devboard
@@ -8,6 +8,18 @@ spec:
   selector:
     matchLabels:
       app: devboard-backend
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+      steps:
+        - setWeight: 10
+        - pause:
+            duration: 2m
+        - setWeight: 30
+        - pause:
+            duration: 2m
+        - setWeight: 100
   template:
     metadata:
       labels:
@@ -72,7 +84,7 @@ spec:
               port: 8080
             initialDelaySeconds: 60
             periodSeconds: 15
-            failureThreshold: 3     
+            failureThreshold: 3
 
           resources:
             requests:
@@ -80,4 +92,4 @@ spec:
               memory: "256Mi"
             limits:
               cpu: "500m"
-              memory: "512Mi"     
+              memory: "512Mi"

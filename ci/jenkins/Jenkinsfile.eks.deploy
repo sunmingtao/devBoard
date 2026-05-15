@@ -15,7 +15,7 @@ pipeline {
     environment {
         TF_DIR = 'infra/terraform/aws/envs/dev-eks'
         NAMESPACE = 'devboard'
-        BACKEND_DEPLOYMENT = 'devboard-backend'
+        BACKEND_ROLLOUT = 'devboard-backend'
         EVENT_SERVICE_DEPLOYMENT = 'devboard-event-service'
         EVENT_FRONTEND_DEPLOYMENT = 'devboard-event-frontend'
         KAFKA_RELEASE = 'devboard-kafka'
@@ -29,7 +29,7 @@ pipeline {
         K8S_OVERLAY_DIR = 'deploy/k8s/overlays/eks'
         BACKEND_CONFIG_TEMPLATE = 'deploy/k8s/overlays/eks/backend-configmap.yaml'
         BACKEND_SECRET_TEMPLATE = 'deploy/k8s/overlays/eks/backend-secret.yaml'
-        BACKEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/backend-deployment.yaml'
+        BACKEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/backend-rollout.yaml'
         EVENT_SERVICE_DEPLOY_TEMPLATE = 'deploy/k8s/base/event-service-deployment.yaml'
         EVENT_FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/event-frontend-deployment.yaml'
         FRONTEND_DEPLOY_TEMPLATE = 'deploy/k8s/base/frontend-deployment.yaml'
@@ -91,7 +91,8 @@ pipeline {
                         set -eux
                         export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
-                        kubectl rollout status deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
+                        kubectl get rollout.argoproj.io/${env.BACKEND_ROLLOUT} -n ${env.NAMESPACE}
+                        kubectl wait --for=condition=Available rollout.argoproj.io/${env.BACKEND_ROLLOUT} -n ${env.NAMESPACE} --timeout=300s
                         kubectl rollout status deployment/${env.EVENT_SERVICE_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
                         kubectl rollout status deployment/${env.EVENT_FRONTEND_DEPLOYMENT} -n ${env.NAMESPACE} --timeout=300s
                         kubectl rollout status deployment/devboard-frontend -n ${env.NAMESPACE} --timeout=300s
@@ -114,7 +115,7 @@ pipeline {
                         export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
                         kubectl get pods -n ${env.NAMESPACE}
-                        kubectl logs deployment/${env.BACKEND_DEPLOYMENT} -n ${env.NAMESPACE} --tail=100
+                        kubectl logs -l app=devboard-backend -n ${env.NAMESPACE} --tail=100
                         kubectl logs deployment/${env.EVENT_SERVICE_DEPLOYMENT} -n ${env.NAMESPACE} --tail=100
                     """
                 }

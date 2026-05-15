@@ -22,7 +22,7 @@ export APP_NS=devboard
 
 kubectl get pods -n "$APP_NS" -l app=devboard-backend
 kubectl get pods -n "$APP_NS" -l app=devboard-event-service
-kubectl logs -n "$APP_NS" deployment/devboard-backend --tail=160 | grep -Ei 'sql|jdbc|hikari|database|mysql|rds|connection|access denied' || true
+kubectl logs -n "$APP_NS" -l app=devboard-backend --tail=160 | grep -Ei 'sql|jdbc|hikari|database|mysql|rds|connection|access denied' || true
 kubectl logs -n "$APP_NS" deployment/devboard-event-service --tail=160 | grep -Ei 'sql|jdbc|hikari|database|mysql|rds|connection|access denied' || true
 ```
 
@@ -49,9 +49,10 @@ Classify the failure:
 Check DNS and TCP reachability from a running app pod:
 
 ```bash
-kubectl exec -n "$APP_NS" deployment/devboard-backend -- sh -c 'echo "$DATABASE_URL"'
-kubectl exec -n "$APP_NS" deployment/devboard-backend -- sh -c 'getent hosts devboard-dev-eks-db.ctigw2agmnko.ap-southeast-2.rds.amazonaws.com'
-kubectl exec -n "$APP_NS" deployment/devboard-backend -- sh -c 'nc -vz devboard-dev-eks-db.ctigw2agmnko.ap-southeast-2.rds.amazonaws.com 3306'
+BACKEND_POD="$(kubectl get pod -n "$APP_NS" -l app=devboard-backend -o jsonpath='{.items[0].metadata.name}')"
+kubectl exec -n "$APP_NS" "$BACKEND_POD" -- sh -c 'echo "$DATABASE_URL"'
+kubectl exec -n "$APP_NS" "$BACKEND_POD" -- sh -c 'getent hosts devboard-dev-eks-db.ctigw2agmnko.ap-southeast-2.rds.amazonaws.com'
+kubectl exec -n "$APP_NS" "$BACKEND_POD" -- sh -c 'nc -vz devboard-dev-eks-db.ctigw2agmnko.ap-southeast-2.rds.amazonaws.com 3306'
 ```
 
 If the image does not include `getent` or `nc`, use the logs plus a temporary
@@ -81,9 +82,9 @@ aws secretsmanager put-secret-value \
   --secret-id devboard/dev/backend \
   --secret-string '{"DATABASE_PASSWORD":"<password>","JWT_SECRET":"<existing-or-rotated-base64-jwt-secret>"}'
 
-kubectl rollout restart deployment/devboard-backend -n "$APP_NS"
+kubectl rollout restart rollout.argoproj.io/devboard-backend -n "$APP_NS"
 kubectl rollout restart deployment/devboard-event-service -n "$APP_NS"
-kubectl rollout status deployment/devboard-backend -n "$APP_NS"
+kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n "$APP_NS" --timeout=300s
 kubectl rollout status deployment/devboard-event-service -n "$APP_NS"
 ```
 
@@ -115,7 +116,7 @@ curl -fsS http://localhost:8081/api/health
 Check that errors stopped:
 
 ```bash
-kubectl logs -n "$APP_NS" deployment/devboard-backend --since=5m
+kubectl logs -n "$APP_NS" -l app=devboard-backend --since=5m
 kubectl logs -n "$APP_NS" deployment/devboard-event-service --since=5m
 ```
 

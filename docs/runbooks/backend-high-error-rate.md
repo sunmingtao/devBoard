@@ -14,8 +14,7 @@ or request latency is high.
 - `DevBoardServiceUnavailable`: `/api/health` or `/actuator/health` returned 5xx.
 - `DevBoardActuatorScrapeFailure`: Prometheus cannot scrape backend actuator
   metrics.
-- `DevBoardBackendUnavailable`: backend deployment has fewer available replicas
-  than desired.
+- `DevBoardBackendUnavailable`: backend Rollout has no ready backend pod.
 
 ## Impact
 
@@ -29,8 +28,8 @@ export APP_NS=devboard
 export MONITORING_NS=monitoring
 
 kubectl get pods -n "$APP_NS" -l app=devboard-backend
-kubectl logs -n "$APP_NS" deployment/devboard-backend --tail=160
-kubectl describe deployment devboard-backend -n "$APP_NS"
+kubectl logs -n "$APP_NS" -l app=devboard-backend --tail=160
+kubectl describe rollout devboard-backend -n "$APP_NS"
 kubectl get events -n "$APP_NS" --sort-by=.lastTimestamp | tail -40
 ```
 
@@ -67,7 +66,8 @@ Check runtime config:
 
 ```bash
 kubectl get configmap devboard-backend-config -n "$APP_NS" -o yaml
-kubectl exec -n "$APP_NS" deployment/devboard-backend -- printenv | grep -E 'SPRING|DATABASE|KAFKA|CORS'
+BACKEND_POD="$(kubectl get pod -n "$APP_NS" -l app=devboard-backend -o jsonpath='{.items[0].metadata.name}')"
+kubectl exec -n "$APP_NS" "$BACKEND_POD" -- printenv | grep -E 'SPRING|DATABASE|KAFKA|CORS'
 ```
 
 Check resource pressure:
@@ -80,7 +80,7 @@ kubectl top nodes
 Check recent deployment history:
 
 ```bash
-kubectl rollout history deployment/devboard-backend -n "$APP_NS"
+kubectl get rollout devboard-backend -n "$APP_NS"
 argocd app history devboard
 ```
 
@@ -89,8 +89,8 @@ argocd app history devboard
 If the backend is wedged but config and dependencies are healthy:
 
 ```bash
-kubectl rollout restart deployment/devboard-backend -n "$APP_NS"
-kubectl rollout status deployment/devboard-backend -n "$APP_NS"
+kubectl rollout restart rollout.argoproj.io/devboard-backend -n "$APP_NS"
+kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n "$APP_NS" --timeout=300s
 ```
 
 If the latest deployment introduced the error, roll back with
@@ -103,7 +103,7 @@ If latency is caused by resource pressure, scale the backend temporarily during
 the incident and make the replica change permanent in Git if it is still needed:
 
 ```bash
-kubectl scale deployment/devboard-backend -n "$APP_NS" --replicas=2
+kubectl scale rollout.argoproj.io/devboard-backend -n "$APP_NS" --replicas=2
 ```
 
 Because Argo CD self-heal is enabled, manual scaling may be reverted unless the
@@ -114,7 +114,7 @@ desired state is also changed in Git or sync is temporarily paused for the demo.
 ```bash
 curl -fsS http://localhost:8080/api/health
 curl -fsS http://localhost:8080/api/hello
-kubectl rollout status deployment/devboard-backend -n "$APP_NS"
+kubectl wait --for=condition=Available rollout.argoproj.io/devboard-backend -n "$APP_NS" --timeout=300s
 ```
 
 Confirm alerts clear:

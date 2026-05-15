@@ -19,6 +19,7 @@ pipeline {
         DEVBOARD_NAMESPACE = 'devboard'
         DEVBOARD_INGRESS_NAME = 'devboard-ingress'
         ARGOCD_MANIFEST_DIR = 'deploy/gitops/argocd'
+        ARGO_ROLLOUTS_APP_MANIFEST = 'deploy/gitops/apps/argo-rollouts-eks.yaml'
         EXTERNAL_SECRETS_APP_MANIFEST = 'deploy/gitops/apps/external-secrets-eks.yaml'
         KAFKA_APP_MANIFEST = 'deploy/gitops/apps/kafka.yaml'
         DEVBOARD_APP_MANIFEST = 'deploy/gitops/apps/devboard-eks.yaml'
@@ -95,6 +96,61 @@ pipeline {
                         kubectl rollout status statefulset/argocd-application-controller \
                           -n ${env.ARGOCD_NAMESPACE} \
                           --timeout=300s
+                    """
+                }
+            }
+        }
+
+        stage('Apply Argo Rollouts App') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eux
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        kubectl apply -f ${env.ARGO_ROLLOUTS_APP_MANIFEST}
+                        kubectl get applications -n ${env.ARGOCD_NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Wait for Argo Rollouts') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-devboard-terraform',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh """
+                        set -eu
+                        export AWS_DEFAULT_REGION=${params.AWS_REGION}
+
+                        for i in \$(seq 1 60); do
+                          sync_status="\$(kubectl get application argo-rollouts-eks -n ${env.ARGOCD_NAMESPACE} -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
+                          health_status="\$(kubectl get application argo-rollouts-eks -n ${env.ARGOCD_NAMESPACE} -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
+
+                          echo "argo-rollouts-eks sync=\${sync_status:-unknown} health=\${health_status:-unknown}"
+
+                          if [ "\$sync_status" = "Synced" ] && [ "\$health_status" = "Healthy" ]; then
+                            kubectl wait --for condition=Established crd/rollouts.argoproj.io --timeout=180s
+                            exit 0
+                          fi
+
+                          sleep 10
+                        done
+
+                        echo "ERROR: Argo CD application argo-rollouts-eks did not become Synced and Healthy"
+                        kubectl describe application argo-rollouts-eks -n ${env.ARGOCD_NAMESPACE} || true
+                        exit 1
                     """
                 }
             }
