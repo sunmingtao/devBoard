@@ -4,10 +4,10 @@ metadata:
   name: devboard-event-frontend
   namespace: devboard
   labels:
-    app: devboard-event-frontend
+    app: devboard-event-frontend-v1
 spec:
   selector:
-    app: devboard-event-frontend
+    app: devboard-event-frontend-v1
   ports:
     - name: http
       port: 80
