@@ -26,6 +26,7 @@ spec:
     metadata:
       labels:
         app: devboard-backend
+        app.kubernetes.io/version: "${IMAGE_TAG}"
     spec:
       containers:
         - name: backend
@@ -73,6 +74,10 @@ spec:
                 configMapKeyRef:
                   name: devboard-backend-config
                   key: TASK_EVENTS_TOPIC
+            - name: DEVBOARD_APP_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/version']
           readinessProbe:
             httpGet:
               path: /api/health

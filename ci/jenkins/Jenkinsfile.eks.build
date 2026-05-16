@@ -197,6 +197,7 @@ pipeline {
                         set -eux
 
                         sed -i -E "s#value: ${DOCKERHUB_REPO_BACKEND}:.*#value: ${DOCKERHUB_REPO_BACKEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
+                        sed -i -E "/path: \\/spec\\/template\\/metadata\\/labels\\/app\\.kubernetes\\.io~1version/{n;s#value: .*#value: ${IMAGE_TAG}#;}" ${K8S_EKS_KUSTOMIZATION}
                         sed -i -E "s#value: ${DOCKERHUB_REPO_FRONTEND}:.*#value: ${DOCKERHUB_REPO_FRONTEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
                         sed -i -E "s#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:.*#value: ${DOCKERHUB_REPO_EVENT_SERVICE}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
                         sed -i -E "s#value: ${DOCKERHUB_REPO_EVENT_FRONTEND}:.*#value: ${DOCKERHUB_REPO_EVENT_FRONTEND}:${IMAGE_TAG}#" ${K8S_EKS_KUSTOMIZATION}
