@@ -143,6 +143,7 @@ public class TaskService {
     }
     
     public TaskResponse createTask(TaskCreateRequest request, Long creatorId) {
+        log.info("User {} creating a new task - Title: '{}'", creatorId, request.getTitle() != null ? request.getTitle() : "null" );
         User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Creator not found"));
         
