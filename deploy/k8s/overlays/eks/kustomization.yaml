@@ -19,10 +19,10 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-backend:de8653d
+        value: sunmingtao/devboard-backend:d3e5e45
       - op: replace
         path: /spec/template/metadata/labels/app.kubernetes.io~1version
-        value: de8653d
+        value: d3e5e45
       - op: add
         path: /spec/strategy/canary/trafficRouting
         value:
@@ -35,18 +35,18 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-frontend:de8653d
+        value: sunmingtao/devboard-frontend:d3e5e45
   - target:
       kind: Deployment
       name: devboard-event-service
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-event-service:de8653d
+        value: sunmingtao/devboard-event-service:d3e5e45
   - target:
       kind: Deployment
       name: devboard-event-frontend
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-event-frontend:de8653d
+        value: sunmingtao/devboard-event-frontend:d3e5e45
