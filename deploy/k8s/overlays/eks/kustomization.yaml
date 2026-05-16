@@ -19,7 +19,7 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-backend:096e853
+        value: sunmingtao/devboard-backend:8ae1b61
       - op: add
         path: /spec/strategy/canary/trafficRouting
         value:
@@ -32,18 +32,18 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-frontend:096e853
+        value: sunmingtao/devboard-frontend:8ae1b61
   - target:
       kind: Deployment
       name: devboard-event-service
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-event-service:096e853
+        value: sunmingtao/devboard-event-service:8ae1b61
   - target:
       kind: Deployment
       name: devboard-event-frontend
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-event-frontend:096e853
+        value: sunmingtao/devboard-event-frontend:8ae1b61
