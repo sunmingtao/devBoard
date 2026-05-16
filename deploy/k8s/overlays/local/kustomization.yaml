@@ -22,7 +22,7 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: sunmingtao/devboard-backend:latest
+        value: sunmingtao/devboard-backend:7eb31a5
       - op: add
         path: /spec/strategy/canary/trafficRouting
         value:
