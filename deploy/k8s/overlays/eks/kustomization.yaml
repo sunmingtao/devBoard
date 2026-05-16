@@ -20,6 +20,12 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/image
         value: sunmingtao/devboard-backend:096e853
+      - op: add
+        path: /spec/strategy/canary/trafficRouting
+        value:
+          alb:
+            ingress: devboard-ingress
+            servicePort: 8080
   - target:
       kind: Deployment
       name: devboard-frontend

@@ -58,7 +58,7 @@ Learning goals:
 Implementation tasks:
 
 - [x] Convert the backend deployment to an Argo Rollouts `Rollout` resource
-- [ ] Configure a canary traffic strategy: 10% -> 30% -> 100%
+- [x] Configure a canary traffic strategy: 10% -> 30% -> 100%
 - [ ] Add Prometheus metric gates for 5xx errors and p95 latency
 
 Acceptance criteria:

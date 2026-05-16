@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: devboard-backend
+  name: devboard-backend-canary
   namespace: devboard
   labels:
     app: devboard-backend
-    rollouts.argoproj.io/service-role: stable
+    rollouts.argoproj.io/service-role: canary
 spec:
   selector:
     app: devboard-backend

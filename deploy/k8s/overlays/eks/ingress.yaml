@@ -37,7 +37,7 @@ spec:
               service:
                 name: devboard-backend
                 port:
-                  number: 8080
+                  name: use-annotation
           - path: /
             pathType: Prefix
             backend:
