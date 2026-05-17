@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.2] - 2026-05-16
+
+### Added
+
+- Implemented backend Argo Rollouts canary traffic shifting with 10% -> 30% -> 100% rollout steps
+- Added stable and canary backend Services for Rollouts-managed traffic routing
+- Added NGINX ingress traffic routing for local canary testing and ALB traffic routing for EKS
+- Added public `/api/version` endpoint to expose the deployed backend image tag during canary validation
+
+### Changed
+
+- Updated Springdoc OpenAPI to a Spring Boot 3.5-compatible version
+- Updated Jenkins EKS image tag handoff to keep the backend version label aligned with the deployed image tag
+
+### Verified
+
+- Confirmed local canary rollout progression through weighted traffic steps and pause phases
+- Verified rendered local and EKS Kustomize overlays with client-side dry-run apply
+
 ## [0.7.1] - 2026-05-15
 
 ### Changed

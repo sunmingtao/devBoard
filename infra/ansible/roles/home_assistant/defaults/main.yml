@@ -1,0 +1,2 @@
+---
+home_assistant_dir: "{{ stacks_root }}/home-assistant"

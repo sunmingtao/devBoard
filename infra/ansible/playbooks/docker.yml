@@ -1,0 +1,6 @@
+---
+- name: Configure Docker on homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - docker

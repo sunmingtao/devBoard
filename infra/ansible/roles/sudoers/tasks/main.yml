@@ -1,0 +1,11 @@
+---
+- name: Configure passwordless sudo for automation user
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/90-{{ sudoers_passwordless_user }}-ansible"
+    content: "{{ sudoers_passwordless_user }} ALL=(ALL) NOPASSWD:{{ sudoers_passwordless_commands }}\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+  tags:
+    - sudoers

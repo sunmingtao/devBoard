@@ -1,0 +1,5 @@
+# Managed by Ansible.
+PubkeyAuthentication {{ 'yes' if ssh_pubkey_authentication else 'no' }}
+PermitRootLogin {{ ssh_permit_root_login }}
+PasswordAuthentication {{ 'yes' if ssh_password_authentication else 'no' }}
+KbdInteractiveAuthentication {{ 'yes' if ssh_kbd_interactive_authentication else 'no' }}

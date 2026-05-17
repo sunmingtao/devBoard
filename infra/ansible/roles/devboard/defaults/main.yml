@@ -1,0 +1,2 @@
+---
+devboard_dir: "{{ stacks_root }}/devboard"

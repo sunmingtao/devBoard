@@ -1,0 +1,58 @@
+---
+- name: Update apt package cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: "{{ common_apt_cache_valid_time }}"
+  tags:
+    - common
+    - apt
+
+- name: Upgrade installed apt packages
+  ansible.builtin.apt:
+    upgrade: safe
+  when: common_apt_upgrade | bool
+  tags:
+    - common
+    - apt
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+  tags:
+    - common
+    - apt
+    - packages
+
+- name: Install unattended security upgrades package
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+  when: common_enable_unattended_security_upgrades | bool
+  tags:
+    - common
+    - apt
+    - unattended_upgrades
+
+- name: Check whether a reboot is required
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: common_reboot_required
+  tags:
+    - common
+    - reboot
+
+- name: Reboot when required by package updates
+  ansible.builtin.reboot:
+    msg: Reboot initiated by Ansible because /var/run/reboot-required exists.
+    connect_timeout: 5
+    reboot_timeout: 600
+    pre_reboot_delay: 0
+    post_reboot_delay: 20
+    test_command: /usr/bin/python3 --version
+  when:
+    - common_reboot_if_required | bool
+    - common_reboot_required.stat.exists
+  tags:
+    - common
+    - reboot

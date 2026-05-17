@@ -1,0 +1,6 @@
+---
+common_packages: []
+common_apt_cache_valid_time: 3600
+common_apt_upgrade: true
+common_reboot_if_required: true
+common_enable_unattended_security_upgrades: true

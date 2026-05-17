@@ -1,0 +1,7 @@
+---
+- name: Configure Docker stack directories and base services
+  hosts: homelab
+  become: true
+  roles:
+    - stacks
+    - portainer

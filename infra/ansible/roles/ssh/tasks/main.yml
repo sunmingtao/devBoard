@@ -1,0 +1,57 @@
+---
+- name: Back up current SSH daemon config before hardening
+  ansible.builtin.copy:
+    src: /etc/ssh/sshd_config
+    dest: "{{ ssh_backup_path }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+    force: false
+  tags:
+    - ssh
+
+- name: Install authorized SSH key for admin user
+  ansible.posix.authorized_key:
+    user: "{{ homelab_admin_user }}"
+    key: "{{ lookup('file', ssh_authorized_key_file) }}"
+    state: present
+    manage_dir: true
+  tags:
+    - ssh
+
+- name: Ensure SSH daemon drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - ssh
+
+- name: Remove legacy SSH hardening drop-ins
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ ssh_legacy_hardening_dropins }}"
+  notify: restart ssh
+  tags:
+    - ssh
+
+- name: Configure SSH hardening drop-in
+  ansible.builtin.template:
+    src: homelab-hardening.conf.j2
+    dest: "{{ ssh_hardening_dropin }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart ssh
+  tags:
+    - ssh
+
+- name: Validate SSH daemon config before handler restart
+  ansible.builtin.command: /usr/sbin/sshd -t
+  changed_when: false
+  tags:
+    - ssh

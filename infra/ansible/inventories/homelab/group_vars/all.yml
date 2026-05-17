@@ -1,0 +1,42 @@
+---
+homelab_admin_user: mike
+homelab_timezone: Australia/Sydney
+homelab_manage_locale: true
+homelab_locale: en_AU.UTF-8
+
+ssh_authorized_key_file: ~/.ssh/homelab.pub
+ssh_backup_path: /etc/ssh/sshd_config.ansible-pre-hardening.bak
+ssh_hardening_dropin: /etc/ssh/sshd_config.d/10-homelab-hardening.conf
+ssh_legacy_hardening_dropins:
+  - /etc/ssh/sshd_config.d/99-homelab-hardening.conf
+ssh_pubkey_authentication: true
+ssh_permit_root_login: "no"
+ssh_password_authentication: false
+ssh_kbd_interactive_authentication: false
+
+common_packages:
+  - vim
+  - curl
+  - git
+  - htop
+  - net-tools
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - ufw
+  - unzip
+  - tree
+
+docker_packages:
+  - docker.io
+
+common_apt_cache_valid_time: 3600
+common_apt_upgrade: true
+common_reboot_if_required: true
+common_enable_unattended_security_upgrades: true
+
+stacks_root: /opt/stacks
+
+portainer_dir: "{{ stacks_root }}/portainer"
+portainer_http_port: 9000
+portainer_https_port: 9443

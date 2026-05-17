@@ -1,0 +1,11 @@
+---
+- name: Validate SSH daemon configuration
+  ansible.builtin.command: /usr/sbin/sshd -t
+  changed_when: false
+  listen: restart ssh
+
+- name: Restart SSH service
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+  listen: restart ssh

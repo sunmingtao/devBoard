@@ -1,0 +1,3 @@
+---
+sudoers_passwordless_user: "{{ homelab_admin_user }}"
+sudoers_passwordless_commands: ALL

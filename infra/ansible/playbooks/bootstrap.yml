@@ -1,0 +1,16 @@
+---
+- name: Bootstrap homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - common
+    - hostname
+    - timezone
+    - locale
+
+  post_tasks:
+    - name: Validate host is reachable after bootstrap
+      ansible.builtin.ping:
+      tags:
+        - common
+        - validation

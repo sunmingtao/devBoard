@@ -1,0 +1,6 @@
+---
+- name: Configure passwordless sudo for homelab automation
+  hosts: homelab
+  become: true
+  roles:
+    - sudoers

@@ -51,7 +51,7 @@ Acceptance criteria:
 
 Learning goals:
 
-- [ ] Learn canary and blue-green deployment strategies
+- [x] Learn canary and blue-green deployment strategies
 - [ ] Learn metric-driven automatic rollback
 - [ ] Learn release risk control and SLO-based thinking
 

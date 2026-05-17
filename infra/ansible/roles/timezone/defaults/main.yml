@@ -1,0 +1,4 @@
+---
+homelab_timezone: Australia/Sydney
+homelab_manage_locale: false
+homelab_locale: en_AU.UTF-8

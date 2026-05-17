@@ -1,0 +1,6 @@
+---
+- name: Deploy DevBoard on homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - devboard

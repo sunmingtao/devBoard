@@ -1,0 +1,6 @@
+---
+- name: Harden SSH on homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - ssh

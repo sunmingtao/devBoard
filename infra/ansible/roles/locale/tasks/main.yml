@@ -1,0 +1,32 @@
+---
+- name: Install locale support package
+  ansible.builtin.apt:
+    name: locales
+    state: present
+  when: homelab_manage_locale | bool
+  tags:
+    - locale
+
+- name: Generate configured locale
+  community.general.locale_gen:
+    name: "{{ homelab_locale }}"
+    state: present
+  when: homelab_manage_locale | bool
+  tags:
+    - locale
+
+- name: Read current system locale
+  ansible.builtin.command: localectl status
+  register: locale_status
+  changed_when: false
+  when: homelab_manage_locale | bool
+  tags:
+    - locale
+
+- name: Configure system locale
+  ansible.builtin.command: "localectl set-locale LANG={{ homelab_locale }}"
+  when:
+    - homelab_manage_locale | bool
+    - "'System Locale: LANG=' ~ homelab_locale not in locale_status.stdout"
+  tags:
+    - locale
