@@ -5,3 +5,4 @@
   roles:
     - stacks
     - portainer
+    - home_assistant

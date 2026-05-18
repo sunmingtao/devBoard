@@ -1,2 +1,28 @@
 ---
-[]
+- name: Render homelab sysctl config
+  ansible.builtin.template:
+    src: 99-homelab.conf.j2
+    dest: "{{ homelab_sysctl_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apply sysctl config
+  tags:
+    - sysctl
+    - sysctl_config
+
+- name: Apply pending sysctl changes
+  ansible.builtin.meta: flush_handlers
+  tags:
+    - sysctl
+    - sysctl_apply
+
+- name: Validate homelab sysctl values
+  ansible.builtin.command: "sysctl -n {{ item.key }}"
+  changed_when: false
+  failed_when: (homelab_sysctl_value.stdout | trim) != (item.value | string)
+  register: homelab_sysctl_value
+  loop: "{{ homelab_sysctl_settings | dict2items }}"
+  tags:
+    - sysctl
+    - sysctl_validate

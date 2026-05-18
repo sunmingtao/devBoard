@@ -1,0 +1,6 @@
+---
+- name: Validate homelab network configuration
+  hosts: homelab
+  become: true
+  roles:
+    - netplan

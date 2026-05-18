@@ -1,2 +1,16 @@
 # Managed by Ansible.
-# Home Assistant Compose deployment will be implemented in a later phase.
+services:
+  homeassistant:
+    image: {{ home_assistant_image }}
+    container_name: {{ home_assistant_container_name }}
+    restart: unless-stopped
+    network_mode: {{ home_assistant_network_mode }}
+    privileged: {{ home_assistant_privileged | bool | lower }}
+    cap_add:
+{% for capability in home_assistant_capabilities %}
+      - {{ capability }}
+{% endfor %}
+    environment:
+      TZ: {{ homelab_timezone }}
+    volumes:
+      - ./data:/config

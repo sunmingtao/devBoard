@@ -1,2 +1,8 @@
 # Managed by Ansible.
-# System tuning will be implemented in a later phase.
+{% if homelab_sysctl_settings | length == 0 %}
+# No homelab sysctl settings are configured.
+{% else %}
+{% for name, value in homelab_sysctl_settings | dictsort %}
+{{ name }} = {{ value }}
+{% endfor %}
+{% endif %}

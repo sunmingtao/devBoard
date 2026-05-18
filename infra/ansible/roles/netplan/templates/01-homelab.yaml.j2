@@ -1,2 +1,16 @@
 # Managed by Ansible.
-# Netplan configuration will be implemented in a later phase.
+network:
+  version: 2
+  ethernets:
+    {{ homelab_network_primary_interface }}:
+      dhcp4: false
+      addresses:
+        - {{ homelab_netplan_static_address }}
+      routes:
+        - to: default
+          via: {{ homelab_netplan_static_gateway }}
+      nameservers:
+        addresses:
+{% for dns_server in homelab_netplan_static_dns_servers %}
+          - {{ dns_server }}
+{% endfor %}

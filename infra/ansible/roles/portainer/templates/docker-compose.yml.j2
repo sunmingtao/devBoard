@@ -1,2 +1,12 @@
 # Managed by Ansible.
-# Portainer Compose deployment will be implemented in the stacks phase.
+services:
+  portainer:
+    image: {{ portainer_image }}
+    container_name: {{ portainer_container_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ portainer_http_port }}:9000"
+      - "{{ portainer_https_port }}:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data

@@ -1,2 +1,24 @@
 ---
 stacks_root: /opt/stacks
+stacks_owner: "{{ homelab_admin_user }}"
+stacks_group: docker
+stacks_root_mode: "0755"
+stacks_service_mode: "0755"
+stacks_data_mode: "0750"
+
+stacks_persistent_data_dir_name: data
+stacks_backup_root: /var/backups/homelab-stacks
+stacks_backup_mode: "0750"
+stacks_backup_offsite_provider: s3
+stacks_backup_offsite_target: ""
+
+stacks_services:
+  - name: portainer
+    path: "{{ stacks_root }}/portainer"
+    data_path: "{{ stacks_root }}/portainer/{{ stacks_persistent_data_dir_name }}"
+  - name: home-assistant
+    path: "{{ stacks_root }}/home-assistant"
+    data_path: "{{ stacks_root }}/home-assistant/{{ stacks_persistent_data_dir_name }}"
+  - name: devboard
+    path: "{{ stacks_root }}/devboard"
+    data_path: "{{ stacks_root }}/devboard/{{ stacks_persistent_data_dir_name }}"

@@ -2,5 +2,7 @@
 - import_playbook: bootstrap.yml
 - import_playbook: ssh.yml
 - import_playbook: docker.yml
+- import_playbook: sysctl.yml
+- import_playbook: netplan.yml
 - import_playbook: stacks.yml
 - import_playbook: devboard.yml

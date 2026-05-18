@@ -1,2 +1,99 @@
 ---
-[]
+- name: Ensure Home Assistant stack directory exists
+  ansible.builtin.file:
+    path: "{{ home_assistant_dir }}"
+    state: directory
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "{{ stacks_service_mode | default('0755') }}"
+  tags:
+    - home_assistant
+    - home_assistant_dirs
+
+- name: Ensure Home Assistant config directory exists
+  ansible.builtin.file:
+    path: "{{ home_assistant_config_dir }}"
+    state: directory
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "{{ stacks_data_mode | default('0750') }}"
+  tags:
+    - home_assistant
+    - home_assistant_dirs
+
+- name: Template Home Assistant Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ home_assistant_compose_file }}"
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "0644"
+  tags:
+    - home_assistant
+    - home_assistant_compose
+
+- name: Deploy Home Assistant with Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ home_assistant_dir }}"
+    project_name: "{{ home_assistant_project_name }}"
+    state: present
+    pull: missing
+    remove_orphans: true
+  register: home_assistant_compose_result
+  tags:
+    - home_assistant
+    - home_assistant_deploy
+
+- name: Wait for Home Assistant web port
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ home_assistant_port }}"
+    timeout: "{{ home_assistant_wait_timeout }}"
+  tags:
+    - home_assistant
+    - home_assistant_verify
+
+- name: Inspect Home Assistant container
+  community.docker.docker_container_info:
+    name: "{{ home_assistant_container_name }}"
+  register: home_assistant_container
+  tags:
+    - home_assistant
+    - home_assistant_verify
+
+- name: Verify Home Assistant container is running
+  ansible.builtin.assert:
+    that:
+      - home_assistant_container.exists
+      - home_assistant_container.container.State.Running
+      - home_assistant_container.container.HostConfig.NetworkMode == home_assistant_network_mode
+    fail_msg: Home Assistant container is not running with the expected network mode.
+  tags:
+    - home_assistant
+    - home_assistant_verify
+
+- name: Verify Home Assistant web UI is reachable
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ home_assistant_port }}/"
+    status_code:
+      - 200
+      - 302
+      - 303
+      - 307
+      - 308
+  register: home_assistant_web_check
+  retries: 30
+  delay: 5
+  until: home_assistant_web_check.status in [200, 302, 303, 307, 308]
+  tags:
+    - home_assistant
+    - home_assistant_verify
+
+- name: Show Home Assistant setup note
+  ansible.builtin.debug:
+    msg:
+      - "Open http://{{ ansible_host | default(inventory_hostname) }}:{{ home_assistant_port }} to complete Home Assistant onboarding."
+      - "Host networking is enabled for LAN discovery integrations."
+  tags:
+    - home_assistant
+    - home_assistant_docs

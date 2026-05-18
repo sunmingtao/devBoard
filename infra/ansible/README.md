@@ -74,8 +74,37 @@ cd infra/ansible
 ansible-playbook playbooks/bootstrap.yml
 ansible-playbook playbooks/ssh.yml
 ansible-playbook playbooks/docker.yml
+ansible-playbook playbooks/sysctl.yml
+ansible-playbook playbooks/netplan.yml
 ansible-playbook playbooks/stacks.yml
 ```
+
+The Docker playbook configures Docker's official Ubuntu apt repository, installs
+Docker Engine and the Compose v2 plugin, adds `mike` to the `docker` group, and
+starts/enables the Docker service. A new SSH login session is required before
+the updated Docker group membership applies to shell commands.
+
+The sysctl playbook renders `/etc/sysctl.d/99-homelab.conf`, applies pending
+kernel tuning, and validates the expected values.
+
+The netplan playbook records the current network allocation and validates SSH
+connectivity. The homelab server currently keeps Ubuntu netplan on DHCP, with a
+router DHCP reservation for `192.168.0.46`, so Ansible does not overwrite or
+apply netplan while `homelab_manage_netplan` is `false`.
+
+The stacks playbook creates `/opt/stacks`, per-service Compose directories, and
+`/opt/stacks/<service>/data` persistent data directories. Local backup staging
+is `/var/backups/homelab-stacks`; S3 is the intended offsite target once backup
+automation, encryption, bucket lifecycle, and least-privilege credentials are
+configured.
+
+The same stacks playbook deploys Portainer at `https://192.168.0.46:9443` using
+`/opt/stacks/portainer/docker-compose.yml` and `/opt/stacks/portainer/data`.
+Create the initial admin user in the Portainer web UI after the first deploy.
+
+It also deploys Home Assistant at `http://192.168.0.46:8123` using host
+networking for LAN discovery. Persistent Home Assistant config and state live in
+`/opt/stacks/home-assistant/data`.
 
 Run the full flow:
 

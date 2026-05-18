@@ -1,2 +1,72 @@
 ---
-[]
+- name: Create stack root directory
+  ansible.builtin.file:
+    path: "{{ stacks_root }}"
+    state: directory
+    owner: "{{ stacks_owner }}"
+    group: "{{ stacks_group }}"
+    mode: "{{ stacks_root_mode }}"
+  tags:
+    - stacks
+    - stacks_dirs
+
+- name: Create service stack directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ stacks_owner }}"
+    group: "{{ stacks_group }}"
+    mode: "{{ stacks_service_mode }}"
+  loop: "{{ stacks_services }}"
+  loop_control:
+    label: "{{ item.path }}"
+  tags:
+    - stacks
+    - stacks_dirs
+
+- name: Create service persistent data directories
+  ansible.builtin.file:
+    path: "{{ item.data_path }}"
+    state: directory
+    owner: "{{ stacks_owner }}"
+    group: "{{ stacks_group }}"
+    mode: "{{ stacks_data_mode }}"
+  loop: "{{ stacks_services }}"
+  loop_control:
+    label: "{{ item.data_path }}"
+  tags:
+    - stacks
+    - stacks_data
+
+- name: Create local backup staging directory
+  ansible.builtin.file:
+    path: "{{ stacks_backup_root }}"
+    state: directory
+    owner: root
+    group: "{{ stacks_group }}"
+    mode: "{{ stacks_backup_mode }}"
+  tags:
+    - stacks
+    - stacks_backup
+
+- name: Show stack storage decision
+  ansible.builtin.debug:
+    msg:
+      - "Stack root: {{ stacks_root }}"
+      - "Persistent data: {{ stacks_root }}/<service>/{{ stacks_persistent_data_dir_name }}"
+      - "Local backup staging: {{ stacks_backup_root }}"
+      - "Offsite backup provider: {{ stacks_backup_offsite_provider }}"
+      - "Offsite backup target: {{ stacks_backup_offsite_target | default('not configured', true) }}"
+  tags:
+    - stacks
+    - stacks_backup
+
+- name: Validate stack directories exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: stacks_directory_checks
+  failed_when: not stacks_directory_checks.stat.isdir
+  loop: "{{ [stacks_root, stacks_backup_root] + (stacks_services | map(attribute='path') | list) + (stacks_services | map(attribute='data_path') | list) }}"
+  tags:
+    - stacks
+    - stacks_validate

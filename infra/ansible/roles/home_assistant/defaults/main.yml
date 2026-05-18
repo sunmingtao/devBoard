@@ -1,2 +1,14 @@
 ---
 home_assistant_dir: "{{ stacks_root }}/home-assistant"
+home_assistant_config_dir: "{{ home_assistant_dir }}/data"
+home_assistant_compose_file: "{{ home_assistant_dir }}/docker-compose.yml"
+home_assistant_project_name: home-assistant
+home_assistant_container_name: homeassistant
+home_assistant_image: ghcr.io/home-assistant/home-assistant:stable
+home_assistant_network_mode: host
+home_assistant_privileged: true
+home_assistant_capabilities:
+  - NET_ADMIN
+  - NET_RAW
+home_assistant_port: 8123
+home_assistant_wait_timeout: 300

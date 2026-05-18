@@ -1,2 +1,97 @@
 ---
-[]
+- name: Ensure Portainer stack directory exists
+  ansible.builtin.file:
+    path: "{{ portainer_dir }}"
+    state: directory
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "{{ stacks_service_mode | default('0755') }}"
+  tags:
+    - portainer
+    - portainer_dirs
+
+- name: Ensure Portainer data directory exists
+  ansible.builtin.file:
+    path: "{{ portainer_data_dir }}"
+    state: directory
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "{{ stacks_data_mode | default('0750') }}"
+  tags:
+    - portainer
+    - portainer_dirs
+
+- name: Template Portainer Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ portainer_compose_file }}"
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "0644"
+  tags:
+    - portainer
+    - portainer_compose
+
+- name: Deploy Portainer with Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ portainer_dir }}"
+    project_name: "{{ portainer_project_name }}"
+    state: present
+    pull: missing
+    remove_orphans: true
+  register: portainer_compose_result
+  tags:
+    - portainer
+    - portainer_deploy
+
+- name: Wait for Portainer HTTPS port
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ portainer_https_port }}"
+    timeout: "{{ portainer_wait_timeout }}"
+  tags:
+    - portainer
+    - portainer_verify
+
+- name: Inspect Portainer container
+  community.docker.docker_container_info:
+    name: "{{ portainer_container_name }}"
+  register: portainer_container
+  tags:
+    - portainer
+    - portainer_verify
+
+- name: Verify Portainer container is running
+  ansible.builtin.assert:
+    that:
+      - portainer_container.exists
+      - portainer_container.container.State.Running
+      - portainer_container.container.State.Health is not defined
+        or portainer_container.container.State.Health.Status == 'healthy'
+    fail_msg: Portainer container is not running or is unhealthy.
+  tags:
+    - portainer
+    - portainer_verify
+
+- name: Verify Portainer web UI is reachable
+  ansible.builtin.uri:
+    url: "https://127.0.0.1:{{ portainer_https_port }}/"
+    validate_certs: false
+    status_code:
+      - 200
+      - 301
+      - 302
+      - 303
+      - 307
+      - 308
+  register: portainer_web_check
+  tags:
+    - portainer
+    - portainer_verify
+
+- name: Show Portainer initial setup note
+  ansible.builtin.debug:
+    msg: "Open https://{{ ansible_host | default(inventory_hostname) }}:{{ portainer_https_port }} and create the initial admin user in the Portainer UI."
+  tags:
+    - portainer
+    - portainer_docs

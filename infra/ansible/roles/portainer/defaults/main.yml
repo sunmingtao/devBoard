@@ -1,4 +1,10 @@
 ---
 portainer_dir: "{{ stacks_root }}/portainer"
+portainer_data_dir: "{{ portainer_dir }}/data"
+portainer_compose_file: "{{ portainer_dir }}/docker-compose.yml"
+portainer_project_name: portainer
+portainer_container_name: portainer
+portainer_image: portainer/portainer-ce:lts
 portainer_http_port: 9000
 portainer_https_port: 9443
+portainer_wait_timeout: 180

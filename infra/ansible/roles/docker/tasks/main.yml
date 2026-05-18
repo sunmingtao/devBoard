@@ -1,2 +1,165 @@
 ---
-[]
+- name: Remove packages that conflict with Docker CE
+  ansible.builtin.apt:
+    name: "{{ docker_conflicting_packages }}"
+    state: absent
+    purge: false
+  when: docker_install_official_repo | bool
+  tags:
+    - docker
+    - docker_repo
+    - apt
+
+- name: Install Docker apt repository dependencies
+  ansible.builtin.apt:
+    name: "{{ docker_apt_dependencies }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: docker_install_official_repo | bool
+  tags:
+    - docker
+    - docker_repo
+    - apt
+
+- name: Create apt keyrings directory
+  ansible.builtin.file:
+    path: "{{ docker_apt_keyring_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: docker_install_official_repo | bool
+  tags:
+    - docker
+    - docker_repo
+
+- name: Install Docker apt repository GPG key
+  ansible.builtin.get_url:
+    url: "{{ docker_apt_gpg_key_url }}"
+    dest: "{{ docker_apt_gpg_key_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: docker_install_official_repo | bool
+  tags:
+    - docker
+    - docker_repo
+
+- name: Detect dpkg architecture
+  ansible.builtin.command: dpkg --print-architecture
+  changed_when: false
+  register: docker_dpkg_architecture
+  when: docker_install_official_repo | bool
+  tags:
+    - docker
+    - docker_repo
+
+- name: Add Docker official apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ docker_dpkg_architecture.stdout }}
+      signed-by={{ docker_apt_gpg_key_path }}]
+      {{ docker_apt_repository_url }} {{ ansible_distribution_release }}
+      {{ docker_apt_repository_channel }}
+    filename: docker
+    state: present
+    update_cache: true
+  when: docker_install_official_repo | bool
+  tags:
+    - docker
+    - docker_repo
+    - apt
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+    update_cache: true
+  tags:
+    - docker
+    - apt
+
+- name: Create Docker daemon config directory
+  ansible.builtin.file:
+    path: "{{ docker_daemon_config_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: docker_daemon_config | length > 0
+  tags:
+    - docker
+    - docker_config
+
+- name: Configure Docker daemon defaults
+  ansible.builtin.copy:
+    dest: "{{ docker_daemon_config_path }}"
+    content: "{{ docker_daemon_config | to_nice_json }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+  when: docker_daemon_config | length > 0
+  notify: Restart Docker
+  tags:
+    - docker
+    - docker_config
+
+- name: Add users to Docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"
+  tags:
+    - docker
+    - docker_users
+
+- name: Enable and start Docker socket
+  ansible.builtin.service:
+    name: "{{ docker_socket_name }}"
+    enabled: true
+    state: started
+  tags:
+    - docker
+    - docker_service
+
+- name: Reset failed Docker service state
+  ansible.builtin.command: "systemctl reset-failed {{ docker_service_name }} {{ docker_socket_name }}"
+  changed_when: false
+  tags:
+    - docker
+    - docker_service
+
+- name: Enable and start Docker service
+  ansible.builtin.service:
+    name: "{{ docker_service_name }}"
+    enabled: true
+    state: started
+  tags:
+    - docker
+    - docker_service
+
+- name: Verify Docker version
+  ansible.builtin.command: docker version
+  changed_when: false
+  register: docker_version_check
+  tags:
+    - docker
+    - docker_verify
+
+- name: Verify Docker Compose version
+  ansible.builtin.command: docker compose version
+  changed_when: false
+  register: docker_compose_version_check
+  tags:
+    - docker
+    - docker_verify
+
+- name: Show Docker group membership note
+  ansible.builtin.debug:
+    msg: "Users added to the docker group need a new login session before running docker without sudo."
+  when: docker_users | length > 0
+  tags:
+    - docker
+    - docker_users

@@ -1,0 +1,6 @@
+---
+- name: Configure homelab system tuning
+  hosts: homelab
+  become: true
+  roles:
+    - sysctl

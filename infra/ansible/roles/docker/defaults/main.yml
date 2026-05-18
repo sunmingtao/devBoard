@@ -1,3 +1,35 @@
 ---
-docker_packages:
+docker_install_official_repo: true
+docker_apt_dependencies:
+  - ca-certificates
+  - curl
+
+docker_conflicting_packages:
   - docker.io
+  - docker-doc
+  - docker-compose
+  - docker-compose-v2
+  - podman-docker
+  - containerd
+  - runc
+
+docker_apt_keyring_dir: /etc/apt/keyrings
+docker_apt_gpg_key_url: https://download.docker.com/linux/ubuntu/gpg
+docker_apt_gpg_key_path: "{{ docker_apt_keyring_dir }}/docker.asc"
+docker_apt_repository_url: https://download.docker.com/linux/ubuntu
+docker_apt_repository_channel: stable
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+docker_users:
+  - "{{ homelab_admin_user }}"
+
+docker_service_name: docker
+docker_socket_name: docker.socket
+docker_daemon_config_path: /etc/docker/daemon.json
+docker_daemon_config: {}

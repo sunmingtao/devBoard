@@ -1,2 +1,96 @@
 ---
-[]
+- name: Collect current netplan config files
+  ansible.builtin.find:
+    paths: /etc/netplan
+    patterns: "{{ homelab_netplan_existing_config_globs }}"
+    file_type: file
+  register: homelab_netplan_files
+  tags:
+    - netplan
+    - netplan_collect
+
+- name: Collect default route
+  ansible.builtin.command: ip route show default
+  changed_when: false
+  register: homelab_netplan_default_route
+  tags:
+    - netplan
+    - netplan_collect
+
+- name: Collect DNS servers
+  ansible.builtin.command: resolvectl dns
+  changed_when: false
+  register: homelab_netplan_dns
+  tags:
+    - netplan
+    - netplan_collect
+
+- name: Show homelab network allocation decision
+  ansible.builtin.debug:
+    msg:
+      - "Network allocation method: {{ homelab_network_allocation_method }}"
+      - "Netplan management enabled: {{ homelab_manage_netplan | bool }}"
+      - "Primary interface: {{ homelab_network_primary_interface }}"
+      - "Reserved IPv4: {{ homelab_network_reserved_ipv4 }}/{{ homelab_network_prefix }}"
+      - "Gateway: {{ homelab_network_gateway }}"
+      - "MAC address: {{ homelab_network_mac_address }}"
+      - "Existing netplan files: {{ homelab_netplan_files.files | map(attribute='path') | list }}"
+      - "Default route: {{ homelab_netplan_default_route.stdout }}"
+      - "DNS: {{ homelab_netplan_dns.stdout_lines }}"
+  tags:
+    - netplan
+    - netplan_collect
+
+- name: Refuse to manage netplan without explicit static network settings
+  ansible.builtin.assert:
+    that:
+      - not homelab_manage_netplan | bool
+        or homelab_netplan_static_address | length > 0
+      - not homelab_manage_netplan | bool
+        or homelab_netplan_static_gateway | length > 0
+      - not homelab_manage_netplan | bool
+        or homelab_netplan_static_dns_servers | length > 0
+      - not homelab_manage_netplan | bool
+        or not homelab_network_primary_interface.startswith('wl')
+    fail_msg: >-
+      homelab_manage_netplan is true, but static address, gateway, and DNS
+      settings are not fully configured, or the primary interface is Wi-Fi.
+      Keep Wi-Fi hosts on router DHCP reservation unless a vaulted Wi-Fi
+      netplan template is added intentionally.
+  tags:
+    - netplan
+    - netplan_safety
+
+- name: Render managed netplan config
+  ansible.builtin.template:
+    src: 01-homelab.yaml.j2
+    dest: "{{ homelab_netplan_config_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  when: homelab_manage_netplan | bool
+  tags:
+    - netplan
+    - netplan_config
+
+- name: Validate generated netplan config
+  ansible.builtin.command: netplan generate
+  changed_when: false
+  when: homelab_manage_netplan | bool
+  tags:
+    - netplan
+    - netplan_validate
+
+- name: Skip netplan apply while router DHCP reservation is the source of truth
+  ansible.builtin.debug:
+    msg: "Leaving existing netplan untouched; reserve {{ homelab_network_reserved_ipv4 }} for {{ homelab_network_mac_address }} on the router."
+  when: not homelab_manage_netplan | bool
+  tags:
+    - netplan
+    - netplan_apply
+
+- name: Validate SSH connectivity after network checks
+  ansible.builtin.ping:
+  tags:
+    - netplan
+    - netplan_validate

@@ -1,2 +1,18 @@
 ---
 homelab_manage_netplan: false
+homelab_netplan_config_path: /etc/netplan/01-homelab.yaml
+homelab_netplan_existing_config_globs:
+  - "*.yaml"
+  - "*.yml"
+
+homelab_network_allocation_method: router_dhcp_reservation
+homelab_network_primary_interface: "{{ ansible_default_ipv4.interface | default('') }}"
+homelab_network_reserved_ipv4: "{{ ansible_default_ipv4.address | default('') }}"
+homelab_network_gateway: "{{ ansible_default_ipv4.gateway | default('') }}"
+homelab_network_prefix: "{{ ansible_default_ipv4.prefix | default('') }}"
+homelab_network_mac_address: "{{ ansible_default_ipv4.macaddress | default('') }}"
+homelab_network_dns_servers: []
+
+homelab_netplan_static_address: ""
+homelab_netplan_static_gateway: ""
+homelab_netplan_static_dns_servers: []

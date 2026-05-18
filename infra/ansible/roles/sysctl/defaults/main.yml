@@ -1,2 +1,3 @@
 ---
+homelab_sysctl_config_path: /etc/sysctl.d/99-homelab.conf
 homelab_sysctl_settings: {}
