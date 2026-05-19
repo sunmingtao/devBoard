@@ -114,7 +114,7 @@
       - "{{ argocd_kubectl }}"
       - apply
       - -f
-      - "{{ argocd_remote_apps_dir }}/{{ item }}"
+      - "{{ argocd_remote_apps_dir }}/{{ item.path }}"
   environment:
     KUBECONFIG: "{{ argocd_kubeconfig }}"
   changed_when: >-
@@ -175,7 +175,7 @@
       - "{{ argocd_kubectl }}"
       - apply
       - -f
-      - "{{ argocd_remote_apps_dir }}/{{ item }}"
+      - "{{ argocd_remote_apps_dir }}/{{ item.path }}"
   environment:
     KUBECONFIG: "{{ argocd_kubeconfig }}"
   changed_when: >-
@@ -194,7 +194,7 @@
       - "{{ argocd_kubectl }}"
       - apply
       - -f
-      - "{{ argocd_remote_apps_dir }}/{{ item }}"
+      - "{{ argocd_remote_apps_dir }}/{{ item.path }}"
   environment:
     KUBECONFIG: "{{ argocd_kubeconfig }}"
   changed_when: >-
@@ -218,7 +218,7 @@
       - "{{ argocd_namespace }}"
       - get
       - application
-      - "{{ item | regex_replace('\\.yaml$', '') }}"
+      - "{{ item.name }}"
   environment:
     KUBECONFIG: "{{ argocd_kubeconfig }}"
   changed_when: false

@@ -316,8 +316,8 @@ services:
   - [x] Share common manifests from `deploy/k8s/base`.
 - [x] Define Argo CD app layout:
   - [x] Keep local Minikube apps separate from Ansible-managed k3s apps.
-  - [x] Add `deploy/gitops/apps/devboard-dev-k3s.yaml`.
-  - [x] Add `deploy/gitops/apps/devboard-prod-k3s.yaml`.
+  - [x] Add `deploy/gitops/apps/k3s/devboard-dev.yaml`.
+  - [x] Add `deploy/gitops/apps/k3s/devboard-prod.yaml`.
   - [x] Add k3s-specific app manifests for Argo Rollouts, External Secrets, ingress-nginx, Kafka, and optional monitoring.
   - [x] Keep EKS app manifests for cloud deployment.
 - [x] Define k3s namespace and isolation model:

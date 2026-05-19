@@ -34,25 +34,36 @@ ansible-playbook playbooks/argocd.yml -e argocd_bootstrap_k3s_apps=true
 The k3s app set is:
 
 ```bash
-kubectl apply -f deploy/gitops/apps/argo-rollouts-k3s.yaml
-kubectl apply -f deploy/gitops/apps/external-secrets-k3s.yaml
-kubectl apply -f deploy/gitops/apps/ingress-nginx-k3s.yaml
+kubectl apply -f deploy/gitops/apps/k3s/argo-rollouts.yaml
+kubectl apply -f deploy/gitops/apps/k3s/external-secrets.yaml
+kubectl apply -f deploy/gitops/apps/k3s/ingress-nginx.yaml
 kubectl wait --for condition=Established crd/rollouts.argoproj.io --timeout=180s
 kubectl wait --for condition=Established crd/externalsecrets.external-secrets.io --timeout=180s
-kubectl apply -f deploy/gitops/apps/devboard-kafka-dev-k3s.yaml
-kubectl apply -f deploy/gitops/apps/devboard-kafka-prod-k3s.yaml
-kubectl apply -f deploy/gitops/apps/devboard-dev-k3s.yaml
-kubectl apply -f deploy/gitops/apps/devboard-prod-k3s.yaml
+kubectl apply -f deploy/gitops/apps/k3s/devboard-kafka-dev.yaml
+kubectl apply -f deploy/gitops/apps/k3s/devboard-kafka-prod.yaml
+kubectl apply -f deploy/gitops/apps/k3s/devboard-dev.yaml
+kubectl apply -f deploy/gitops/apps/k3s/devboard-prod.yaml
+```
+
+The optional k3s monitoring app set is:
+
+```bash
+kubectl apply -f deploy/gitops/apps/k3s/devboard-monitoring.yaml
+kubectl apply -f deploy/gitops/apps/k3s/devboard-kafka-exporter-dev.yaml
+kubectl apply -f deploy/gitops/apps/k3s/devboard-kafka-exporter-prod.yaml
+kubectl apply -f deploy/gitops/apps/k3s/observability.yaml
 ```
 
 For EKS:
 
 ```bash
-kubectl apply -f deploy/gitops/apps/argo-rollouts-eks.yaml
-kubectl apply -f deploy/gitops/apps/external-secrets-eks.yaml
+kubectl apply -f deploy/gitops/apps/eks/argo-rollouts.yaml
+kubectl apply -f deploy/gitops/apps/eks/external-secrets.yaml
 kubectl wait --for condition=Established crd/rollouts.argoproj.io --timeout=180s
 kubectl wait --for condition=Established crd/externalsecrets.external-secrets.io --timeout=180s
-kubectl apply -f deploy/gitops/apps/devboard-eks.yaml
+kubectl apply -f deploy/gitops/apps/eks/devboard-kafka.yaml
+kubectl apply -f deploy/gitops/apps/eks/devboard-kafka-exporter.yaml
+kubectl apply -f deploy/gitops/apps/eks/devboard.yaml
 ```
 
 This creates the Argo Rollouts and External Secrets controller applications,
@@ -113,17 +124,35 @@ deploy/gitops/argocd/
 └── README.md              # This file
 
 deploy/gitops/apps/
-├── argo-rollouts-eks.yaml # EKS Argo Rollouts controller Application
-├── argo-rollouts-k3s.yaml # Homelab k3s Argo Rollouts controller Application
-├── argo-rollouts-local.yaml # Local Argo Rollouts controller Application
-├── devboard-dev-k3s.yaml # Homelab k3s DevBoard dev Application
-├── external-secrets-eks.yaml # EKS External Secrets Application
-├── external-secrets-k3s.yaml # Homelab k3s External Secrets Application
-├── external-secrets-local.yaml # Local External Secrets Application
-├── ingress-nginx-k3s.yaml # Homelab k3s ingress-nginx Application
-├── devboard-prod-k3s.yaml # Homelab k3s DevBoard prod Application
-├── devboard-eks.yaml      # EKS DevBoard Application
-└── devboard-local.yaml    # Local DevBoard Application
+├── README.md
+├── eks/
+│   ├── argo-rollouts.yaml
+│   ├── devboard-kafka-exporter.yaml
+│   ├── devboard-kafka.yaml
+│   ├── devboard-monitoring.yaml
+│   ├── devboard.yaml
+│   ├── external-secrets.yaml
+│   └── observability.yaml
+├── k3s/
+│   ├── argo-rollouts.yaml
+│   ├── devboard-dev.yaml
+│   ├── devboard-kafka-dev.yaml
+│   ├── devboard-kafka-exporter-dev.yaml
+│   ├── devboard-kafka-exporter-prod.yaml
+│   ├── devboard-kafka-prod.yaml
+│   ├── devboard-monitoring.yaml
+│   ├── devboard-prod.yaml
+│   ├── external-secrets.yaml
+│   ├── ingress-nginx.yaml
+│   └── observability.yaml
+└── local/
+    ├── argo-rollouts.yaml
+    ├── devboard-kafka-exporter.yaml
+    ├── devboard-monitoring.yaml
+    ├── devboard.yaml
+    ├── external-secrets.yaml
+    ├── ingress-nginx.yaml
+    └── observability.yaml
 ```
 
 ## Common Commands

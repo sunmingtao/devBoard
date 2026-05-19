@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devboard-kafka-exporter-dev-k3s
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "25"
+  labels:
+    app.kubernetes.io/name: devboard-kafka-exporter
+    app.kubernetes.io/part-of: devboard
+    devboard.io/environment: dev-k3s
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus-kafka-exporter
+    targetRevision: 3.0.1
+    helm:
+      releaseName: devboard-kafka-exporter-dev
+      values: |
+        kafkaServer:
+          - devboard-kafka.devboard-dev.svc.cluster.local:9092
+
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
+          interval: 10s
+          labels:
+            release: devboard-monitoring
+
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -13,20 +13,34 @@ argocd_crd_timeout: 180s
 argocd_app_crd_timeout: 180s
 
 argocd_core_app_manifests:
-  - argo-rollouts-k3s.yaml
-  - external-secrets-k3s.yaml
-  - ingress-nginx-k3s.yaml
+  - path: k3s/argo-rollouts.yaml
+    name: argo-rollouts-k3s
+  - path: k3s/external-secrets.yaml
+    name: external-secrets-k3s
+  - path: k3s/ingress-nginx.yaml
+    name: ingress-nginx-k3s
 
 argocd_bootstrap_k3s_apps: false
 argocd_devboard_app_manifests:
-  - devboard-kafka-dev-k3s.yaml
-  - devboard-kafka-prod-k3s.yaml
-  - devboard-dev-k3s.yaml
-  - devboard-prod-k3s.yaml
+  - path: k3s/devboard-kafka-dev.yaml
+    name: devboard-kafka-dev-k3s
+  - path: k3s/devboard-kafka-prod.yaml
+    name: devboard-kafka-prod-k3s
+  - path: k3s/devboard-dev.yaml
+    name: devboard-dev-k3s
+  - path: k3s/devboard-prod.yaml
+    name: devboard-prod-k3s
 
 argocd_bootstrap_monitoring: false
 argocd_monitoring_app_manifests:
-  - devboard-monitoring-k3s.yaml
+  - path: k3s/devboard-monitoring.yaml
+    name: devboard-monitoring-k3s
+  - path: k3s/devboard-kafka-exporter-dev.yaml
+    name: devboard-kafka-exporter-dev-k3s
+  - path: k3s/devboard-kafka-exporter-prod.yaml
+    name: devboard-kafka-exporter-prod-k3s
+  - path: k3s/observability.yaml
+    name: observability-k3s
 
 argocd_k3s_app_manifests: >-
   {{

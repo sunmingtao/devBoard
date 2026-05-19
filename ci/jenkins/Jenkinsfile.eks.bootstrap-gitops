@@ -19,10 +19,11 @@ pipeline {
         DEVBOARD_NAMESPACE = 'devboard'
         DEVBOARD_INGRESS_NAME = 'devboard-ingress'
         ARGOCD_MANIFEST_DIR = 'deploy/gitops/argocd'
-        ARGO_ROLLOUTS_APP_MANIFEST = 'deploy/gitops/apps/argo-rollouts-eks.yaml'
-        EXTERNAL_SECRETS_APP_MANIFEST = 'deploy/gitops/apps/external-secrets-eks.yaml'
-        KAFKA_APP_MANIFEST = 'deploy/gitops/apps/kafka.yaml'
-        DEVBOARD_APP_MANIFEST = 'deploy/gitops/apps/devboard-eks.yaml'
+        ARGO_ROLLOUTS_APP_MANIFEST = 'deploy/gitops/apps/eks/argo-rollouts.yaml'
+        EXTERNAL_SECRETS_APP_MANIFEST = 'deploy/gitops/apps/eks/external-secrets.yaml'
+        KAFKA_APP_MANIFEST = 'deploy/gitops/apps/eks/devboard-kafka.yaml'
+        KAFKA_EXPORTER_APP_MANIFEST = 'deploy/gitops/apps/eks/devboard-kafka-exporter.yaml'
+        DEVBOARD_APP_MANIFEST = 'deploy/gitops/apps/eks/devboard.yaml'
     }
 
     stages {
@@ -226,6 +227,7 @@ pipeline {
                         export AWS_DEFAULT_REGION=${params.AWS_REGION}
 
                         kubectl apply -f ${env.KAFKA_APP_MANIFEST}
+                        kubectl apply -f ${env.KAFKA_EXPORTER_APP_MANIFEST}
                         kubectl apply -f ${env.DEVBOARD_APP_MANIFEST}
 
                         kubectl get applications -n ${env.ARGOCD_NAMESPACE}
@@ -269,6 +271,7 @@ pipeline {
                         }
 
                         wait_for_app devboard-kafka
+                        wait_for_app devboard-kafka-exporter
                         wait_for_app devboard
                     """
                 }

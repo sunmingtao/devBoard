@@ -11,7 +11,7 @@ Move the working local Argo CD setup toward EKS without mixing local-only choice
 - [x] Keep the current local `devboard` app pointed at:
   - [x] `deploy/k8s/overlays/local`
 - [x] Add a separate EKS DevBoard Argo CD app, for example:
-  - [x] `deploy/gitops/apps/devboard-eks.yaml`
+  - [x] `deploy/gitops/apps/eks/devboard.yaml`
 - [x] Point the EKS app at:
   - [x] `deploy/k8s/overlays/eks`
 - [x] Keep local-only apps separate from EKS:
@@ -91,7 +91,7 @@ Move the working local Argo CD setup toward EKS without mixing local-only choice
 ## 6. Convert Kafka Ownership From Jenkins to Argo CD
 
 - [x] Stop installing Kafka in `Jenkinsfile.eks.deploy`
-- [x] Use the existing Argo CD Kafka app for EKS as well, or create `devboard-kafka-eks.yaml`
+- [x] Use `deploy/gitops/apps/eks/devboard-kafka.yaml` for the EKS Argo CD Kafka app
 - [x] Confirm Kafka service DNS matches app config:
   - [x] `devboard-kafka.devboard.svc.cluster.local:9092`
 - [x] Decide persistence for EKS Kafka:
@@ -122,7 +122,7 @@ Move the working local Argo CD setup toward EKS without mixing local-only choice
 ## 8. Observability GitOps Plan
 
 - [x] Add Argo CD app for EKS observability, for example:
-  - [x] `deploy/gitops/apps/observability-eks.yaml`
+  - [x] `deploy/gitops/apps/eks/observability.yaml`
 - [x] Point it to:
   - [x] `deploy/observability/eks`
 - [x] Decide how Helm-installed monitoring moves from Jenkins to GitOps:

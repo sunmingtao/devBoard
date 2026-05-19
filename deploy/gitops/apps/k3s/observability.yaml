@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-k3s
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+  labels:
+    app.kubernetes.io/name: observability-k3s
+    app.kubernetes.io/part-of: devboard
+    devboard.io/environment: k3s
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sunmingtao/devBoard.git
+    targetRevision: main
+    path: deploy/observability/k3s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
