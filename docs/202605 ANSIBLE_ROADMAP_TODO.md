@@ -333,12 +333,12 @@ services:
   - [x] Keep k3s local-path storage as the first storage class.
   - [x] Copy kubeconfig for the `mike` user.
   - [x] Validate `kubectl get nodes`.
-- [ ] Add Ansible support for Argo CD bootstrap:
+- [x] Add Ansible support for Argo CD bootstrap:
   - [x] Create `playbooks/argocd.yml`.
   - [x] Create `roles/argocd`.
   - [x] Install Argo CD from `deploy/gitops/argocd`.
   - [x] Wait for Argo CD pods and CRDs.
-  - [ ] Bootstrap the k3s dev/prod Argo CD applications after these manifests are available on GitHub `main`.
+  - [x] Bootstrap the k3s dev/prod Argo CD applications after these manifests are available on GitHub `main`.
   - [x] Document initial admin password retrieval and password rotation.
   - [x] Decide whether Argo CD UI is accessed by port-forward, NodePort, or ingress.
     - [x] Use port-forward for the first k3s homelab pass; consider ingress later after TLS and access controls are decided.

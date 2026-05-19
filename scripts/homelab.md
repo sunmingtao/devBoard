@@ -84,3 +84,19 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 
 lsof -i :8080
 ```
+
+### 2026-05-20
+
+```
+vi /etc/hosts
+  192.168.0.46    dev.devboard.local prod.devboard.local
+
+curl http://dev.devboard.local:30080/
+curl http://prod.devboard.local:30080/
+```
+
+Edit C:\Windows\System32\drivers\etc\hosts
+Add `192.168.0.46    dev.devboard.local prod.devboard.local`
+
+
+
