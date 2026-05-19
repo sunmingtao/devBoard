@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devboard-dev-k3s
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  labels:
+    app.kubernetes.io/name: devboard
+    app.kubernetes.io/part-of: devboard
+    devboard.io/environment: dev-k3s
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sunmingtao/devBoard.git
+    targetRevision: main
+    path: deploy/k8s/overlays/dev-k3s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: devboard-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

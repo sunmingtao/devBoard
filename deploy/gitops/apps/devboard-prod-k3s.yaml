@@ -1,23 +1,27 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ingress-nginx-namespace
+  name: devboard-prod-k3s
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
   labels:
-    app.kubernetes.io/name: ingress-nginx-namespace
+    app.kubernetes.io/name: devboard
     app.kubernetes.io/part-of: devboard
+    devboard.io/environment: prod-k3s
 spec:
   project: default
   source:
     repoURL: https://github.com/sunmingtao/devBoard.git
     targetRevision: main
-    path: deploy/gitops/namespaces
-    directory:
-      include: ingress-nginx-namespace.yaml
+    path: deploy/k8s/overlays/prod-k3s
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: devboard-prod
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

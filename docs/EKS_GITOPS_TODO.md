@@ -16,7 +16,6 @@ Move the working local Argo CD setup toward EKS without mixing local-only choice
   - [x] `deploy/k8s/overlays/eks`
 - [x] Keep local-only apps separate from EKS:
   - [x] `ingress-nginx`
-  - [x] `ingress-nginx-namespace`
 - [x] Decide naming convention:
   - [x] `devboard-local`
   - [x] `devboard-eks`

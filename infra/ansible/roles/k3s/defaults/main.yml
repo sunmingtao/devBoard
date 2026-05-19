@@ -1,0 +1,26 @@
+---
+k3s_admin_user: "{{ homelab_admin_user }}"
+k3s_admin_group: "{{ k3s_admin_user }}"
+
+k3s_channel: stable
+k3s_install_script_url: https://get.k3s.io
+k3s_install_script_path: /usr/local/bin/install-k3s.sh
+k3s_binary_path: /usr/local/bin/k3s
+k3s_service_name: k3s
+
+k3s_config_dir: /etc/rancher/k3s
+k3s_config_path: "{{ k3s_config_dir }}/config.yaml"
+k3s_kubeconfig_source: "{{ k3s_config_dir }}/k3s.yaml"
+k3s_write_kubeconfig_mode: "0640"
+k3s_write_kubeconfig_group: "{{ k3s_admin_group }}"
+k3s_node_name: "{{ inventory_hostname }}"
+
+k3s_disable_components:
+  - traefik
+
+k3s_install_environment:
+  INSTALL_K3S_CHANNEL: "{{ k3s_channel }}"
+  INSTALL_K3S_EXEC: "server --config {{ k3s_config_path }}"
+
+k3s_expected_storage_class: local-path
+k3s_expected_storage_provisioner: rancher.io/local-path

@@ -77,6 +77,8 @@ ansible-playbook playbooks/docker.yml
 ansible-playbook playbooks/sysctl.yml
 ansible-playbook playbooks/netplan.yml
 ansible-playbook playbooks/stacks.yml
+ansible-playbook playbooks/k3s.yml
+ansible-playbook playbooks/argocd.yml
 ```
 
 The Docker playbook configures Docker's official Ubuntu apt repository, installs
@@ -105,6 +107,44 @@ Create the initial admin user in the Portainer web UI after the first deploy.
 It also deploys Home Assistant at `http://192.168.0.46:8123` using host
 networking for LAN discovery. Persistent Home Assistant config and state live in
 `/opt/stacks/home-assistant/data`.
+
+The k3s playbook installs a single-node k3s cluster, disables bundled Traefik so
+repo-managed ingress-nginx can own ingress later, keeps the default `local-path`
+storage class, copies kubeconfig to `mike` at `~/.kube/config`, and validates
+`kubectl get nodes`. It also sets `/etc/rancher/k3s/k3s.yaml` to `root:mike`
+with mode `0640` so `mike` can run the k3s-provided `kubectl` without exporting
+`KUBECONFIG`.
+
+The Argo CD playbook installs Argo CD from `deploy/gitops/argocd`, waits for the
+Argo CD CRDs and pods, and keeps UI access on port-forward for the first k3s
+pass:
+
+```bash
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+```
+
+That command binds to localhost on the machine where it runs. From a laptop,
+prefer an SSH tunnel instead of exposing Argo CD on the LAN:
+
+```bash
+ssh -t -L 8080:127.0.0.1:8080 mike@192.168.0.46 \
+  'kubectl -n argocd port-forward svc/argocd-server 8080:443'
+```
+
+Open `https://localhost:8080` on the laptop. Retrieve the initial admin password with:
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+```
+
+Rotate the admin password after first login. The playbook copies the k3s Argo CD
+application manifests to the host, but does not apply them by default because
+those applications read from GitHub `main`; enable app bootstrap only after the
+k3s overlay and app manifests are available on that branch:
+
+```bash
+ansible-playbook playbooks/argocd.yml -e argocd_bootstrap_k3s_apps=true
+```
 
 Run the full flow:
 

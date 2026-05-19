@@ -14,7 +14,6 @@ ARGOCD_APPS=(
   devboard
   devboard-kafka
   ingress-nginx
-  ingress-nginx-namespace
 )
 
 echo "Updating kubeconfig..."

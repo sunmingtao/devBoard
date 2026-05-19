@@ -1,0 +1,41 @@
+---
+argocd_namespace: argocd
+argocd_kubectl: /usr/local/bin/kubectl
+argocd_kubeconfig: /etc/rancher/k3s/k3s.yaml
+
+argocd_local_gitops_root: "{{ playbook_dir }}/../../../deploy/gitops"
+argocd_remote_manifest_root: /tmp/devboard-gitops
+argocd_remote_argocd_dir: "{{ argocd_remote_manifest_root }}/argocd"
+argocd_remote_apps_dir: "{{ argocd_remote_manifest_root }}/apps"
+
+argocd_install_timeout: 300s
+argocd_crd_timeout: 180s
+argocd_app_crd_timeout: 180s
+
+argocd_core_app_manifests:
+  - argo-rollouts-k3s.yaml
+  - external-secrets-k3s.yaml
+  - ingress-nginx-k3s.yaml
+
+argocd_bootstrap_k3s_apps: false
+argocd_devboard_app_manifests:
+  - devboard-kafka-dev-k3s.yaml
+  - devboard-kafka-prod-k3s.yaml
+  - devboard-dev-k3s.yaml
+  - devboard-prod-k3s.yaml
+
+argocd_bootstrap_monitoring: false
+argocd_monitoring_app_manifests:
+  - devboard-monitoring-k3s.yaml
+
+argocd_k3s_app_manifests: >-
+  {{
+    argocd_core_app_manifests
+    + argocd_devboard_app_manifests
+    + (argocd_monitoring_app_manifests if argocd_bootstrap_monitoring | bool else [])
+  }}
+
+argocd_ui_access_method: port-forward
+argocd_ui_local_port: 8080
+argocd_ui_service_port: 443
+argocd_initial_admin_secret: argocd-initial-admin-secret

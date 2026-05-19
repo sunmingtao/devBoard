@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devboard-event-service-config
+  namespace: devboard-prod
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "devboard-kafka:9092"
+  KAFKA_CONSUMER_GROUP: "event-service-prod"
+  TASK_EVENTS_TOPIC: "devboard.prod.tasks"
+  DATABASE_URL: "jdbc:mysql://mysql:3306/devboard?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+  DATABASE_USERNAME: "produser"
+

@@ -37,3 +37,27 @@ sshd -T | egrep '^(pubkeyauthentication|permitrootlogin|passwordauthentication|k
 # Only run selected tags
 ansible-playbook playbooks/bootstrap.yml --tags locale
 ```
+
+### 2026-05-19
+```
+getent passwd
+getent group
+groups mike
+id mike
+
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+
+# From laptop, keep Argo CD bound to homelab localhost and tunnel over SSH.
+ssh -L 9090:127.0.0.1:8080 mike@192.168.0.46 -i ~/.ssh/homelab 'kubectl -n argocd port-forward svc/argocd-server 8080:443'
+
+# Then open on laptop:
+# https://localhost:9090
+
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+lsof -i :8080
+
+sudo apt install wl-clipboard -y
+
+
+```

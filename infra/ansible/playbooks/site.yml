@@ -5,4 +5,6 @@
 - import_playbook: sysctl.yml
 - import_playbook: netplan.yml
 - import_playbook: stacks.yml
+- import_playbook: k3s.yml
+- import_playbook: argocd.yml
 - import_playbook: devboard.yml

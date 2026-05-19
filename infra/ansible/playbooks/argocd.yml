@@ -1,0 +1,7 @@
+---
+- name: Bootstrap Argo CD on homelab k3s
+  hosts: homelab
+  become: true
+  roles:
+    - argocd
+

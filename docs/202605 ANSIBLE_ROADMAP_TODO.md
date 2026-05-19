@@ -299,51 +299,53 @@ services:
   - [x] `prod`: k3s on Ubuntu homelab, managed by Ansible and Argo CD.
   - [x] `cloud`: AWS EKS, managed by Terraform, not always online due to cost.
 - [x] Define deployment policy:
-  - [x] Push to `master` triggers dev deployment automatically through GitHub Actions.
+  - [x] Push to `main` triggers dev deployment automatically through GitHub Actions.
   - [x] Prod deployment requires manual approval.
   - [x] Cloud/EKS deployment is explicit/on-demand because the cluster may be offline.
-- [ ] Decide branch and promotion model:
-  - [ ] Confirm whether the canonical branch is `master` or `main` and align workflows/manifests.
-  - [ ] Decide whether dev tracks every `master` push by committing image tags to a dev overlay.
-  - [ ] Decide whether prod promotion uses a GitHub Actions environment approval, a release tag, or a manual workflow input.
-  - [ ] Decide whether prod Argo CD auto-syncs after approved manifest change or requires manual Argo CD sync.
-- [ ] Define Kubernetes overlay layout:
-  - [ ] Keep `deploy/k8s/overlays/local` for laptop Minikube.
-  - [ ] Add `deploy/k8s/overlays/dev-k3s`.
-  - [ ] Add `deploy/k8s/overlays/prod-k3s`.
-  - [ ] Keep or adapt `deploy/k8s/overlays/eks` for AWS EKS.
-  - [ ] Share common manifests from `deploy/k8s/base`.
-- [ ] Define Argo CD app layout:
-  - [ ] Keep local Minikube apps separate from Ansible-managed k3s apps.
-  - [ ] Add `deploy/gitops/apps/devboard-dev-k3s.yaml`.
-  - [ ] Add `deploy/gitops/apps/devboard-prod-k3s.yaml`.
-  - [ ] Add k3s-specific app manifests for Argo Rollouts, External Secrets, ingress-nginx, Kafka, and optional monitoring.
-  - [ ] Keep EKS app manifests for cloud deployment.
-- [ ] Define k3s namespace and isolation model:
-  - [ ] Use separate namespaces such as `devboard-dev` and `devboard-prod`.
-  - [ ] Use separate MySQL PVCs and credentials per environment.
-  - [ ] Use separate Kafka topics or Kafka releases per environment.
-  - [ ] Use separate ingress hosts for dev and prod.
-- [ ] Add Ansible support for k3s:
-  - [ ] Create `playbooks/k3s.yml`.
-  - [ ] Create `roles/k3s`.
-  - [ ] Install single-node k3s on the Ubuntu server.
-  - [ ] Decide whether to disable bundled k3s Traefik so repo-managed ingress-nginx is the ingress controller.
-  - [ ] Decide whether to keep k3s local-path storage as the first storage class.
-  - [ ] Copy kubeconfig for the `mike` user.
-  - [ ] Validate `kubectl get nodes`.
+- [x] Decide branch and promotion model:
+  - [x] Confirm the canonical branch is `main`.
+  - [x] Dev tracks every `main` push by committing image tags to a dev overlay.
+  - [x] Prod promotion uses a protected GitHub Actions `prod` environment with required manual approval.
+  - [x] Prod Argo CD auto-syncs after the approved prod manifest change lands in Git.
+  - [x] Configure the repository environment named `prod` in GitHub with required reviewers; the promotion job should target `environment: prod`, wait for approval, then write the already-built immutable image tag into the prod overlay.
+- [x] Define Kubernetes overlay layout:
+  - [x] Keep `deploy/k8s/overlays/local` for laptop Minikube.
+  - [x] Add `deploy/k8s/overlays/dev-k3s`.
+  - [x] Add `deploy/k8s/overlays/prod-k3s`.
+  - [x] Keep `deploy/k8s/overlays/eks` for AWS EKS.
+  - [x] Share common manifests from `deploy/k8s/base`.
+- [x] Define Argo CD app layout:
+  - [x] Keep local Minikube apps separate from Ansible-managed k3s apps.
+  - [x] Add `deploy/gitops/apps/devboard-dev-k3s.yaml`.
+  - [x] Add `deploy/gitops/apps/devboard-prod-k3s.yaml`.
+  - [x] Add k3s-specific app manifests for Argo Rollouts, External Secrets, ingress-nginx, Kafka, and optional monitoring.
+  - [x] Keep EKS app manifests for cloud deployment.
+- [x] Define k3s namespace and isolation model:
+  - [x] Use separate namespaces `devboard-dev` and `devboard-prod`.
+  - [x] Use separate MySQL PVCs and credentials per environment.
+  - [x] Use separate Kafka topics and Kafka releases per environment.
+  - [x] Use separate ingress hosts for dev and prod.
+- [x] Add Ansible support for k3s:
+  - [x] Create `playbooks/k3s.yml`.
+  - [x] Create `roles/k3s`.
+  - [x] Install single-node k3s on the Ubuntu server.
+  - [x] Disable bundled k3s Traefik so repo-managed ingress-nginx is the ingress controller.
+  - [x] Keep k3s local-path storage as the first storage class.
+  - [x] Copy kubeconfig for the `mike` user.
+  - [x] Validate `kubectl get nodes`.
 - [ ] Add Ansible support for Argo CD bootstrap:
-  - [ ] Create `playbooks/argocd.yml`.
-  - [ ] Create `roles/argocd`.
-  - [ ] Install Argo CD from `deploy/gitops/argocd`.
-  - [ ] Wait for Argo CD pods and CRDs.
-  - [ ] Bootstrap the k3s dev/prod Argo CD applications.
-  - [ ] Document initial admin password retrieval and password rotation.
-  - [ ] Decide whether Argo CD UI is accessed by port-forward, NodePort, or ingress.
+  - [x] Create `playbooks/argocd.yml`.
+  - [x] Create `roles/argocd`.
+  - [x] Install Argo CD from `deploy/gitops/argocd`.
+  - [x] Wait for Argo CD pods and CRDs.
+  - [ ] Bootstrap the k3s dev/prod Argo CD applications after these manifests are available on GitHub `main`.
+  - [x] Document initial admin password retrieval and password rotation.
+  - [x] Decide whether Argo CD UI is accessed by port-forward, NodePort, or ingress.
+    - [x] Use port-forward for the first k3s homelab pass; consider ingress later after TLS and access controls are decided.
 - [ ] Define GitHub Actions deployment workflow:
   - [ ] Build backend, frontend, event service, and event frontend images.
   - [ ] Push images to the chosen registry.
-  - [ ] Update dev k3s manifests automatically after successful `master` build.
+  - [x] Update dev k3s manifests automatically after successful `main` build.
   - [ ] Add a protected `prod` GitHub Actions environment with required manual approval.
   - [ ] Promote an already-built image tag to prod instead of rebuilding a different artifact.
   - [ ] Keep cloud/EKS deploy as a separate manual workflow.
@@ -412,6 +414,7 @@ services:
   - [x] `stacks`
   - [x] `portainer`
   - [x] `home_assistant`
+  - [x] `k3s`
   - [ ] `devboard`
 - [ ] Add README usage examples.
 
@@ -511,4 +514,5 @@ ansible-playbook playbooks/site.yml --tags sysctl
 ansible-playbook playbooks/site.yml --tags netplan
 ansible-playbook playbooks/site.yml --tags stacks
 ansible-playbook playbooks/site.yml --tags portainer
+ansible-playbook playbooks/site.yml --tags k3s
 ```

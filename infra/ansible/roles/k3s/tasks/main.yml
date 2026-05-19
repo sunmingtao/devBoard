@@ -1,0 +1,221 @@
+---
+- name: Look up k3s admin user
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ k3s_admin_user }}"
+  tags:
+    - k3s
+    - k3s_users
+
+- name: Set k3s admin home
+  ansible.builtin.set_fact:
+    k3s_admin_kube_dir_resolved: "{{ ansible_facts.getent_passwd[k3s_admin_user][4] }}/.kube"
+    k3s_admin_kubeconfig_resolved: "{{ ansible_facts.getent_passwd[k3s_admin_user][4] }}/.kube/config"
+  tags:
+    - k3s
+    - k3s_users
+
+- name: Create k3s config directory
+  ansible.builtin.file:
+    path: "{{ k3s_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - k3s
+    - k3s_config
+
+- name: Render k3s server config
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: "{{ k3s_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart k3s
+  tags:
+    - k3s
+    - k3s_config
+
+- name: Download k3s installer
+  ansible.builtin.get_url:
+    url: "{{ k3s_install_script_url }}"
+    dest: "{{ k3s_install_script_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - k3s
+    - k3s_install
+
+- name: Install single-node k3s
+  ansible.builtin.command:
+    cmd: "sh {{ k3s_install_script_path }}"
+    creates: "{{ k3s_binary_path }}"
+  environment: "{{ k3s_install_environment }}"
+  tags:
+    - k3s
+    - k3s_install
+
+- name: Enable and start k3s service
+  ansible.builtin.service:
+    name: "{{ k3s_service_name }}"
+    enabled: true
+    state: started
+  tags:
+    - k3s
+    - k3s_service
+
+- name: Apply pending k3s service restart
+  ansible.builtin.meta: flush_handlers
+  tags:
+    - k3s
+    - k3s_service
+
+- name: Wait for k3s kubeconfig
+  ansible.builtin.wait_for:
+    path: "{{ k3s_kubeconfig_source }}"
+    state: present
+    timeout: 120
+  tags:
+    - k3s
+    - k3s_kubeconfig
+
+- name: Allow k3s admin group to read default kubeconfig
+  ansible.builtin.file:
+    path: "{{ k3s_kubeconfig_source }}"
+    owner: root
+    group: "{{ k3s_write_kubeconfig_group }}"
+    mode: "{{ k3s_write_kubeconfig_mode }}"
+  tags:
+    - k3s
+    - k3s_kubeconfig
+
+- name: Create kubeconfig directory for k3s admin user
+  ansible.builtin.file:
+    path: "{{ k3s_admin_kube_dir_resolved }}"
+    state: directory
+    owner: "{{ k3s_admin_user }}"
+    group: "{{ k3s_admin_group }}"
+    mode: "0700"
+  tags:
+    - k3s
+    - k3s_kubeconfig
+
+- name: Copy kubeconfig for k3s admin user
+  ansible.builtin.copy:
+    src: "{{ k3s_kubeconfig_source }}"
+    dest: "{{ k3s_admin_kubeconfig_resolved }}"
+    owner: "{{ k3s_admin_user }}"
+    group: "{{ k3s_admin_group }}"
+    mode: "0600"
+    remote_src: true
+  tags:
+    - k3s
+    - k3s_kubeconfig
+
+- name: Validate k3s node is ready
+  ansible.builtin.command:
+    argv:
+      - "{{ k3s_binary_path }}"
+      - kubectl
+      - get
+      - nodes
+  become_user: "{{ k3s_admin_user }}"
+  environment:
+    KUBECONFIG: "{{ k3s_admin_kubeconfig_resolved }}"
+  changed_when: false
+  register: k3s_node_check
+  retries: 20
+  delay: 6
+  until: k3s_node_check.rc == 0 and ' Ready ' in k3s_node_check.stdout
+  tags:
+    - k3s
+    - k3s_validate
+
+- name: Validate kubectl works for k3s admin user without explicit KUBECONFIG
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - get
+      - nodes
+  become_user: "{{ k3s_admin_user }}"
+  changed_when: false
+  register: k3s_plain_kubectl_check
+  retries: 20
+  delay: 6
+  until: k3s_plain_kubectl_check.rc == 0 and ' Ready ' in k3s_plain_kubectl_check.stdout
+  tags:
+    - k3s
+    - k3s_validate
+
+- name: Validate bundled k3s Traefik is disabled
+  ansible.builtin.command:
+    argv:
+      - "{{ k3s_binary_path }}"
+      - kubectl
+      - get
+      - deployment
+      - "-n"
+      - kube-system
+      - traefik
+  become_user: "{{ k3s_admin_user }}"
+  environment:
+    KUBECONFIG: "{{ k3s_admin_kubeconfig_resolved }}"
+  changed_when: false
+  failed_when: >-
+    k3s_traefik_check.rc == 0
+    or (k3s_traefik_check.rc != 0 and 'NotFound' not in k3s_traefik_check.stderr)
+  register: k3s_traefik_check
+  tags:
+    - k3s
+    - k3s_validate
+
+- name: Validate k3s local-path storage class exists
+  ansible.builtin.command:
+    argv:
+      - "{{ k3s_binary_path }}"
+      - kubectl
+      - get
+      - storageclass
+      - "{{ k3s_expected_storage_class }}"
+      - "-o"
+      - "jsonpath={.provisioner}"
+  become_user: "{{ k3s_admin_user }}"
+  environment:
+    KUBECONFIG: "{{ k3s_admin_kubeconfig_resolved }}"
+  changed_when: false
+  register: k3s_storage_class_check
+  retries: 20
+  delay: 6
+  until:
+    - k3s_storage_class_check.rc == 0
+    - k3s_storage_class_check.stdout == k3s_expected_storage_provisioner
+  tags:
+    - k3s
+    - k3s_validate
+
+- name: Validate k3s local-path storage class is default
+  ansible.builtin.command:
+    argv:
+      - "{{ k3s_binary_path }}"
+      - kubectl
+      - get
+      - storageclass
+      - "{{ k3s_expected_storage_class }}"
+      - "-o"
+      - "jsonpath={.metadata.annotations.storageclass\\.kubernetes\\.io/is-default-class}"
+  become_user: "{{ k3s_admin_user }}"
+  environment:
+    KUBECONFIG: "{{ k3s_admin_kubeconfig_resolved }}"
+  changed_when: false
+  register: k3s_storage_class_default_check
+  retries: 20
+  delay: 6
+  until:
+    - k3s_storage_class_default_check.rc == 0
+    - k3s_storage_class_default_check.stdout == "true"
+  tags:
+    - k3s
+    - k3s_validate

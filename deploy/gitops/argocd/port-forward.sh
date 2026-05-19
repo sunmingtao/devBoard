@@ -13,7 +13,7 @@ echo "Press Ctrl+C to stop"
 # Map different ports based on component
 case "$COMPONENT" in
   argocd-server)
-    echo "Argo CD UI will be available at: http://localhost:8080"
+    echo "Argo CD UI will be available at: https://localhost:8080"
     kubectl port-forward -n "$NAMESPACE" svc/argocd-server 8080:443
     ;;
   argocd-repo-server)

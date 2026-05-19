@@ -1,0 +1,8 @@
+---
+node-name: "{{ k3s_node_name }}"
+write-kubeconfig-mode: "{{ k3s_write_kubeconfig_mode }}"
+write-kubeconfig-group: "{{ k3s_write_kubeconfig_group }}"
+disable:
+{% for component in k3s_disable_components %}
+  - "{{ component }}"
+{% endfor %}

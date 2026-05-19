@@ -1,0 +1,252 @@
+---
+- name: Create remote GitOps manifest root
+  ansible.builtin.file:
+    path: "{{ argocd_remote_manifest_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - argocd
+    - argocd_manifests
+
+- name: Copy Argo CD install manifests to homelab host
+  ansible.builtin.copy:
+    src: "{{ argocd_local_gitops_root }}/argocd/"
+    dest: "{{ argocd_remote_argocd_dir }}/"
+    owner: root
+    group: root
+    mode: preserve
+  tags:
+    - argocd
+    - argocd_manifests
+
+- name: Copy Argo CD app manifests to homelab host
+  ansible.builtin.copy:
+    src: "{{ argocd_local_gitops_root }}/apps/"
+    dest: "{{ argocd_remote_apps_dir }}/"
+    owner: root
+    group: root
+    mode: preserve
+  tags:
+    - argocd
+    - argocd_manifests
+
+- name: Install Argo CD
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - apply
+      - --server-side
+      - --force-conflicts
+      - -k
+      - "{{ argocd_remote_argocd_dir }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: >-
+    'created' in argocd_install_result.stdout
+    or 'configured' in argocd_install_result.stdout
+  register: argocd_install_result
+  tags:
+    - argocd
+    - argocd_install
+
+- name: Wait for Argo CD Application CRD
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - wait
+      - --for
+      - condition=Established
+      - crd/applications.argoproj.io
+      - "--timeout={{ argocd_app_crd_timeout }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: false
+  tags:
+    - argocd
+    - argocd_wait
+
+- name: Wait for Argo CD deployments
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - -n
+      - "{{ argocd_namespace }}"
+      - rollout
+      - status
+      - "deployment/{{ item }}"
+      - "--timeout={{ argocd_install_timeout }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: false
+  loop:
+    - argocd-applicationset-controller
+    - argocd-dex-server
+    - argocd-notifications-controller
+    - argocd-redis
+    - argocd-repo-server
+    - argocd-server
+  tags:
+    - argocd
+    - argocd_wait
+
+- name: Wait for Argo CD application controller
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - -n
+      - "{{ argocd_namespace }}"
+      - rollout
+      - status
+      - statefulset/argocd-application-controller
+      - "--timeout={{ argocd_install_timeout }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: false
+  tags:
+    - argocd
+    - argocd_wait
+
+- name: Apply k3s Argo CD core applications
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - apply
+      - -f
+      - "{{ argocd_remote_apps_dir }}/{{ item }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: >-
+    'created' in argocd_core_apps_result.stdout
+    or 'configured' in argocd_core_apps_result.stdout
+  register: argocd_core_apps_result
+  loop: "{{ argocd_core_app_manifests }}"
+  when: argocd_bootstrap_k3s_apps | bool
+  tags:
+    - argocd
+    - argocd_apps
+
+- name: Wait for Argo Rollouts CRD from Argo CD application
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - wait
+      - --for
+      - condition=Established
+      - crd/rollouts.argoproj.io
+      - "--timeout={{ argocd_crd_timeout }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: false
+  register: argocd_rollouts_crd_wait
+  retries: 10
+  delay: 15
+  until: argocd_rollouts_crd_wait.rc == 0
+  when: argocd_bootstrap_k3s_apps | bool
+  tags:
+    - argocd
+    - argocd_wait
+
+- name: Wait for External Secrets CRD from Argo CD application
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - wait
+      - --for
+      - condition=Established
+      - crd/externalsecrets.external-secrets.io
+      - "--timeout={{ argocd_crd_timeout }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: false
+  register: argocd_external_secrets_crd_wait
+  retries: 10
+  delay: 15
+  until: argocd_external_secrets_crd_wait.rc == 0
+  when: argocd_bootstrap_k3s_apps | bool
+  tags:
+    - argocd
+    - argocd_wait
+
+- name: Apply k3s DevBoard Argo CD applications
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - apply
+      - -f
+      - "{{ argocd_remote_apps_dir }}/{{ item }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: >-
+    'created' in argocd_devboard_apps_result.stdout
+    or 'configured' in argocd_devboard_apps_result.stdout
+  register: argocd_devboard_apps_result
+  loop: "{{ argocd_devboard_app_manifests }}"
+  when: argocd_bootstrap_k3s_apps | bool
+  tags:
+    - argocd
+    - argocd_apps
+
+- name: Apply optional k3s monitoring Argo CD applications
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - apply
+      - -f
+      - "{{ argocd_remote_apps_dir }}/{{ item }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: >-
+    'created' in argocd_monitoring_apps_result.stdout
+    or 'configured' in argocd_monitoring_apps_result.stdout
+  register: argocd_monitoring_apps_result
+  loop: "{{ argocd_monitoring_app_manifests }}"
+  when:
+    - argocd_bootstrap_k3s_apps | bool
+    - argocd_bootstrap_monitoring | bool
+  tags:
+    - argocd
+    - argocd_apps
+    - argocd_monitoring
+
+- name: Validate k3s Argo CD applications exist
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - -n
+      - "{{ argocd_namespace }}"
+      - get
+      - application
+      - "{{ item | regex_replace('\\.yaml$', '') }}"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: false
+  loop: "{{ argocd_k3s_app_manifests }}"
+  when: argocd_bootstrap_k3s_apps | bool
+  tags:
+    - argocd
+    - argocd_validate
+
+- name: Show k3s app bootstrap skip note
+  ansible.builtin.debug:
+    msg:
+      - "Skipped k3s Argo CD app bootstrap because argocd_bootstrap_k3s_apps is false."
+      - "Enable it after the k3s overlay and app manifests are available on the configured Git targetRevision."
+      - "Example: ansible-playbook playbooks/argocd.yml -e argocd_bootstrap_k3s_apps=true"
+  when: not argocd_bootstrap_k3s_apps | bool
+  tags:
+    - argocd
+    - argocd_apps
+
+- name: Show Argo CD UI access and admin password guidance
+  ansible.builtin.debug:
+    msg:
+      - "Argo CD UI access method: {{ argocd_ui_access_method }}"
+      - "Port-forward command: kubectl -n {{ argocd_namespace }} port-forward svc/argocd-server {{ argocd_ui_local_port }}:{{ argocd_ui_service_port }}"
+      - "Open: https://localhost:{{ argocd_ui_local_port }}"
+      - "Initial admin password: kubectl -n {{ argocd_namespace }} get secret {{ argocd_initial_admin_secret }} -o jsonpath='{.data.password}' | base64 -d"
+      - "Rotate the admin password after first login."
+  tags:
+    - argocd
+    - argocd_docs
