@@ -98,5 +98,43 @@ curl http://prod.devboard.local:30080/
 Edit C:\Windows\System32\drivers\etc\hosts
 Add `192.168.0.46    dev.devboard.local prod.devboard.local`
 
+### 2026-05-21
+
+Print credentials
 
 
+
+```
+node {
+    def creds
+
+    stage('Sandbox') {
+        withCredentials([usernamePassword(credentialsId: 'my-creds', passwordVariable: 'C_PASS', usernameVariable: 'C_USER')]) {
+            creds = "\nUser: ${C_USER}\nPassword: ${C_PASS}\n"
+        }
+        println creds
+    }
+}
+```
+
+Script console
+
+```
+import jenkins.model.Jenkins
+import com.cloudbees.plugins.credentials.CredentialsProvider
+import com.cloudbees.plugins.credentials.common.UsernamePasswordCredentials
+
+def creds = CredentialsProvider.lookupCredentialsInItemGroup(
+  UsernamePasswordCredentials.class,
+  Jenkins.get(),
+  null,
+  null
+)
+
+creds.findAll { it.id == 'dockerhub-creds' }.each { c ->
+  println "id=${c.id}"
+  println "username=${c.username}"
+  println "username=${c.password}"
+  println "description=${c.description}"
+}
+```
