@@ -19,6 +19,13 @@ Builds and pushes the four DevBoard application images to Docker Hub:
 The workflow runs on `main` when any app or workflow file changes. It can also
 be started manually with `workflow_dispatch`.
 
+Before publishing images, it runs a parallel verification matrix:
+
+- backend: `./mvnw test`
+- frontend: `npm ci && npm run test:run`
+- event-service: `./mvnw test`
+- event-frontend: `npm ci && npm test`
+
 After all four image builds succeed on `main`, the workflow updates
 `deploy/k8s/overlays/dev-k3s/kustomization.yaml` with the same image tag and
 pushes a `[skip ci]` GitOps commit. Argo CD can then reconcile the dev k3s

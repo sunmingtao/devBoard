@@ -36,14 +36,71 @@ env:
   PLATFORM: linux/amd64
 
 jobs:
-  build-and-push:
-    name: Build and push ${{ matrix.service }}
+  verify:
+    name: Verify ${{ matrix.service }}
     if: >-
       github.event_name != 'push' ||
       (
         !contains(github.event.head_commit.message, '[skip ci]') &&
         !contains(github.event.head_commit.message, '[ci skip]')
       )
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            runtime: java
+            context: apps/backend
+            test_command: ./mvnw test
+          - service: frontend
+            runtime: node
+            context: apps/frontend
+            node_version: 18
+            test_command: npm run test:run
+          - service: event-service
+            runtime: java
+            context: apps/event-service
+            test_command: ./mvnw test
+          - service: event-frontend
+            runtime: node
+            context: apps/event-frontend
+            node_version: 22
+            test_command: npm test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        if: matrix.runtime == 'java'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Set up Node.js
+        if: matrix.runtime == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.context }}/package-lock.json
+
+      - name: Install Node dependencies
+        if: matrix.runtime == 'node'
+        working-directory: ${{ matrix.context }}
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ${{ matrix.context }}
+        run: ${{ matrix.test_command }}
+
+  build-and-push:
+    name: Build and push ${{ matrix.service }}
+    needs: verify
+    if: needs.verify.result == 'success'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
