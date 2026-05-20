@@ -348,7 +348,7 @@ services:
   - [x] Update dev k3s manifests automatically after successful `main` build.
   - [ ] Add a protected `prod` GitHub Actions environment with required manual approval.
   - [ ] Promote an already-built image tag to prod instead of rebuilding a different artifact.
-  - [ ] Keep cloud/EKS deploy as a separate manual workflow.
+  - [x] Keep cloud/EKS deploy as a separate manual workflow.
 - [ ] Define image registry and tag strategy:
   - [x] Decide between Docker Hub and GHCR for homelab images.
   - [ ] Use immutable image tags for dev/prod promotion.

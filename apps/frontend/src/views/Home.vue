@@ -5,13 +5,15 @@
       <h1 v-if="isAuthenticated">Welcome back, {{ username }} 👋</h1>
       <h1 v-else>DevBoard: From Code to Cloud</h1>
       <p class="hero-subtitle">
-        A full-stack platform showcasing CI, container security, GitOps
-        delivery, Kubernetes, Terraform, and AWS operations.
+        A full-stack platform showcasing GitHub Actions, container security,
+        GitOps delivery, private-cloud k3s, Kubernetes, Terraform, and AWS
+        operations.
       </p>
       <div class="hero-pills">
         <span>Vue 3 + Vite</span>
-        <span>Spring Boot 3.3</span>
-        <span>Jenkins CI</span>
+        <span>Spring Boot 3.5</span>
+        <span>GitHub Actions CI/CD</span>
+        <span>Private Cloud k3s</span>
         <span>Trivy Security Gate</span>
         <span>Argo CD GitOps</span>
         <span>Terraform IaC</span>
@@ -34,15 +36,17 @@
       <article class="highlight-card">
         <h3>🚀 End-to-End Delivery</h3>
         <p>
-          Jenkins detects source changes, builds immutable Docker images, scans
-          them with Trivy, and updates Git desired state for Argo CD.
+          GitHub Actions builds immutable Docker images in parallel, pushes them
+          to Docker Hub, and updates Git desired state for Argo CD
+          reconciliation.
         </p>
       </article>
       <article class="highlight-card">
-        <h3>☁️ Cloud-Native Infrastructure</h3>
+        <h3>☁️ Hybrid Cloud-Native Infrastructure</h3>
         <p>
-          Provisioned with Terraform and deployed on AWS using EKS, ALB ingress,
-          Route 53 DNS, ACM certificates, and RDS in private subnets.
+          Runs dev and prod on an Ansible-managed private-cloud k3s cluster,
+          with AWS EKS, ALB, Route 53, ACM, and RDS retained as the cloud
+          deployment track.
         </p>
       </article>
       <article class="highlight-card">
@@ -57,6 +61,21 @@
     <section class="roadmap">
       <h2>Recent DevOps Milestones</h2>
       <div class="timeline">
+        <div class="timeline-item">
+          <p class="timeline-version">v0.7.3 · 2026-05-21</p>
+          <p>
+            Deployed dev/prod to a private-cloud k3s cluster and moved the
+            primary image build plus dev GitOps tag handoff from Jenkins to
+            GitHub Actions.
+          </p>
+        </div>
+        <div class="timeline-item">
+          <p class="timeline-version">v0.7.2 · 2026-05-16</p>
+          <p>
+            Added Argo Rollouts canary delivery for the backend with version
+            labels and traffic shifting support.
+          </p>
+        </div>
         <div class="timeline-item">
           <p class="timeline-version">v0.6.9 · 2026-05-09</p>
           <p>

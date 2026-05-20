@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.3] - 2026-05-21
+
+### Added
+
+- Added Ansible-managed private-cloud deployment support for dev and prod environments on a single-node k3s homelab cluster
+- Added k3s GitOps application manifests for dev/prod DevBoard, Kafka, ingress-nginx, External Secrets, Argo Rollouts, and optional monitoring
+- Added a GitHub Actions image workflow that builds and pushes backend, frontend, event-service, and event-frontend images in parallel
+- Added GitHub Actions GitOps tag write-back for the dev k3s overlay so Argo CD can reconcile new image versions from Git
+
+### Changed
+
+- Migrated the primary DevBoard deployment automation path from Jenkins to GitHub Actions for the private-cloud k3s environment
+- Reframed Jenkins as a legacy/EKS learning pipeline while GitHub Actions owns the current homelab dev delivery loop
+
 ## [0.7.2] - 2026-05-16
 
 ### Added
@@ -163,7 +177,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.6.0] - 2026-04-20
 
-### Added 
+### Added
 
 - Local Kubernetes deployment using Minikube for development and testing
 - Kubernetes manifests (Deployment, Service, ConfigMap, Secret) for full-stack application
@@ -306,7 +320,7 @@ All notable changes to this project will be documented in this file.
     - Docker Compose → runtime
     - Nginx → traffic routing
     - Jenkins → orchestration
-    
+
 ## [0.2.0] - 2026-04-02
 
 ### Added

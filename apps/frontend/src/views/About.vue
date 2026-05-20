@@ -9,7 +9,9 @@
           developers. It combines the simplicity of a Kanban board with powerful
           features to help you manage your development workflow effectively. We
           also build with a DevOps mindset, so teams can ship faster with
-          confidence, traceability, and a clear GitOps ownership model.
+          confidence, traceability, and a clear GitOps ownership model. Recent
+          platform work added private-cloud dev/prod delivery on k3s and moved
+          the main deployment automation path from Jenkins to GitHub Actions.
         </p>
       </section>
 
@@ -28,7 +30,7 @@
           <div class="tech-item">
             <h3>Backend</h3>
             <ul>
-              <li>Spring Boot 3.3.0</li>
+              <li>Spring Boot 3.5</li>
               <li>Java 25</li>
               <li>Spring Data JPA</li>
               <li>RESTful API</li>
@@ -46,8 +48,9 @@
             <h3>Platform</h3>
             <ul>
               <li>Kubernetes with Kustomize overlays</li>
+              <li>Ansible-managed private-cloud k3s dev/prod</li>
               <li>AWS EKS, ALB, Route 53, and ACM</li>
-              <li>Jenkins CI with Trivy image scanning</li>
+              <li>GitHub Actions image build and GitOps tag handoff</li>
               <li>Argo CD GitOps reconciliation</li>
             </ul>
           </div>
@@ -60,18 +63,21 @@
           <div class="devops-item">
             <h3>CI/CD Automation</h3>
             <ul>
-              <li>Jenkins SCM polling for localhost CI triggers</li>
+              <li>GitHub Actions builds four application images in parallel</li>
               <li>Immutable Docker images tagged with Git short SHA</li>
-              <li>Trivy security gate before image push</li>
+              <li>Docker Hub push with GitHub repository secrets</li>
               <li>Automated GitOps commits for image promotion</li>
             </ul>
           </div>
           <div class="devops-item">
             <h3>Cloud-Native Delivery</h3>
             <ul>
+              <li>Argo CD reconciles private-cloud k3s dev/prod from Git</li>
               <li>Argo CD reconciles EKS from Git desired state</li>
-              <li>Kustomize overlays separate local and EKS concerns</li>
-              <li>Jenkins verifies artifacts without mutating the cluster</li>
+              <li>Kustomize overlays separate local, k3s, and EKS concerns</li>
+              <li>
+                Jenkins remains available as a legacy/EKS learning pipeline
+              </li>
             </ul>
           </div>
           <div class="devops-item">
