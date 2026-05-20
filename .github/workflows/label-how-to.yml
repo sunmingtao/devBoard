@@ -1,0 +1,19 @@
+name: Label How-To Issues
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  label-how-to:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add how-to label
+        if: startsWith(toLower(github.event.issue.title), 'how to')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: how-to
