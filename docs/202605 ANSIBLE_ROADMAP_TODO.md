@@ -343,14 +343,14 @@ services:
   - [x] Decide whether Argo CD UI is accessed by port-forward, NodePort, or ingress.
     - [x] Use port-forward for the first k3s homelab pass; consider ingress later after TLS and access controls are decided.
 - [ ] Define GitHub Actions deployment workflow:
-  - [ ] Build backend, frontend, event service, and event frontend images.
-  - [ ] Push images to the chosen registry.
+  - [x] Build backend, frontend, event service, and event frontend images.
+  - [x] Push images to the chosen registry.
   - [x] Update dev k3s manifests automatically after successful `main` build.
   - [ ] Add a protected `prod` GitHub Actions environment with required manual approval.
   - [ ] Promote an already-built image tag to prod instead of rebuilding a different artifact.
   - [ ] Keep cloud/EKS deploy as a separate manual workflow.
 - [ ] Define image registry and tag strategy:
-  - [ ] Decide between Docker Hub and GHCR for homelab images.
+  - [x] Decide between Docker Hub and GHCR for homelab images.
   - [ ] Use immutable image tags for dev/prod promotion.
   - [ ] Avoid deploying `latest` to prod.
   - [ ] Decide how image tags are written back into GitOps overlays.

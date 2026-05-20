@@ -6,10 +6,6 @@ pipeline {
         disableConcurrentBuilds()
     }
 
-    triggers {
-        pollSCM('H/5 * * * *')
-    }
-
     environment {
         DOCKERHUB_REPO_BACKEND  = 'sunmingtao/devboard-backend'
         DOCKERHUB_REPO_FRONTEND = 'sunmingtao/devboard-frontend'
@@ -41,7 +37,6 @@ pipeline {
                 }
             }
         }
-
 
         stage('Detect GitOps Commit') {
             steps {
