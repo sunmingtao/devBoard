@@ -353,7 +353,7 @@ services:
   - [x] Decide between Docker Hub and GHCR for homelab images.
   - [ ] Use immutable image tags for dev/prod promotion.
   - [ ] Avoid deploying `latest` to prod.
-  - [ ] Decide how image tags are written back into GitOps overlays.
+  - [x] Decide how image tags are written back into GitOps overlays.
 - [ ] Define secrets handling by environment:
   - [ ] Use External Secrets local Fake generator only for local/dev demos.
   - [ ] Choose real k3s dev/prod secret management: SOPS, Ansible Vault, sealed-secrets, or External Secrets provider.
