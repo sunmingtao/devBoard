@@ -145,4 +145,6 @@ nvm install node
 nvm use node
 nvm alias default node
 npm audit fix --force
+
+docker build -t devboard-frontend-vite8-check apps/frontend
 ```

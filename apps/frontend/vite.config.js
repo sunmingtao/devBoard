@@ -5,14 +5,14 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig(({ command, mode }) => {
   // Load environment variables based on mode (development, production, etc.)
   const env = loadEnv(mode, process.cwd(), '')
-  
+
   // Determine if we're in production mode
   const isProduction = mode === 'production'
   const apiTarget = env.VITE_API_URL || 'http://localhost:8080'
-  
+
   return {
     plugins: [vue()],
-    
+
     // Environment-specific build configuration
     build: {
       // Enable source maps conditionally
@@ -26,36 +26,37 @@ export default defineConfig(({ command, mode }) => {
       // Rollup options for optimization
       rollupOptions: {
         output: {
-          manualChunks: {
-            vendor: ['vue', 'vue-router'],
-            utils: ['axios']
-          }
-        }
-      }
+          manualChunks(id) {
+            if (id.includes('/node_modules/vue')) return 'vendor'
+            if (id.includes('/node_modules/vue-router')) return 'vendor'
+            if (id.includes('/node_modules/axios')) return 'utils'
+          },
+        },
+      },
     },
-    
+
     // Development server configuration
     server: {
       host: env.VITE_DEV_SERVER_HOST || '0.0.0.0',
       port: parseInt(env.VITE_DEV_SERVER_PORT) || 5173,
       hmr: {
-        port: parseInt(env.VITE_DEV_SERVER_PORT) || 5173
+        port: parseInt(env.VITE_DEV_SERVER_PORT) || 5173,
       },
       proxy: {
         '/api': {
           target: apiTarget,
-          changeOrigin: true
-        }
-      }
+          changeOrigin: true,
+        },
+      },
     },
-    
+
     // Define global constants
     define: {
       __APP_VERSION__: JSON.stringify(env.VITE_APP_VERSION),
-      __APP_ENVIRONMENT__: JSON.stringify(env.VITE_APP_ENVIRONMENT)
+      __APP_ENVIRONMENT__: JSON.stringify(env.VITE_APP_ENVIRONMENT),
     },
-    
+
     // Environment variables prefix
-    envPrefix: 'VITE_'
+    envPrefix: 'VITE_',
   }
 })
