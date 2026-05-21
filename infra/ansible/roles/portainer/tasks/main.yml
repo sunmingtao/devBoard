@@ -75,8 +75,9 @@
 
 - name: Verify Portainer web UI is reachable
   ansible.builtin.uri:
-    url: "https://127.0.0.1:{{ portainer_https_port }}/"
-    validate_certs: false
+    url: "https://{{ portainer_tls_host }}:{{ portainer_https_port }}/"
+    validate_certs: true
+    ca_path: "{{ portainer_tls_ca_path }}"
     status_code:
       - 200
       - 301

@@ -148,3 +148,60 @@ npm audit fix --force
 
 docker build -t devboard-frontend-vite8-check apps/frontend
 ```
+
+### 2026-05-22
+
+```
+mkdir -p ~/.devboard-certs/portainer
+cd ~/.devboard-certs/portainer
+
+openssl genrsa -out homelab-ca.key 4096
+
+openssl req -x509 -new -nodes \
+  -key homelab-ca.key \
+  -sha256 \
+  -days 3650 \
+  -out homelab-ca.crt \
+  -subj "/CN=DevBoard Homelab CA"
+
+openssl genrsa -out portainer.key 2048
+
+cat > portainer.cnf <<'EOF'
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+req_extensions = req_ext
+
+[dn]
+CN = 192.168.0.46
+
+[req_ext]
+subjectAltName = @alt_names
+
+[alt_names]
+IP.1 = 192.168.0.46
+DNS.1 = homelab01
+EOF
+
+openssl req -new \
+  -key portainer.key \
+  -out portainer.csr \
+  -config portainer.cnf
+
+openssl x509 -req \
+  -in portainer.csr \
+  -CA homelab-ca.crt \
+  -CAkey homelab-ca.key \
+  -CAcreateserial \
+  -out portainer.crt \
+  -days 825 \
+  -sha256 \
+  -extensions req_ext \
+  -extfile portainer.cnf
+
+ssh homelab 'mkdir -p /opt/stacks/portainer/certs'
+
+scp portainer.crt portainer.key homelab-ca.crt homelab:/opt/stacks/portainer/certs/
+```

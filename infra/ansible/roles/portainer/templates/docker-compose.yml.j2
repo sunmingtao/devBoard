@@ -10,3 +10,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
+      - ./certs:/certs:ro
+    command:
+      - --sslcert
+      - /certs/portainer.crt
+      - --sslkey
+      - /certs/portainer.key

@@ -7,4 +7,6 @@ portainer_container_name: portainer
 portainer_image: portainer/portainer-ce:lts
 portainer_http_port: 9000
 portainer_https_port: 9443
+portainer_tls_host: "{{ ansible_host | default(inventory_hostname) }}"
+portainer_tls_ca_path: "{{ portainer_dir }}/certs/homelab-ca.crt"
 portainer_wait_timeout: 180
