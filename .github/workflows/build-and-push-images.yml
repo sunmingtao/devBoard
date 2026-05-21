@@ -56,7 +56,7 @@ jobs:
           - service: frontend
             runtime: node
             context: apps/frontend
-            node_version: 18
+            node_version: 22
             test_command: npm run test:run
           - service: event-service
             runtime: java

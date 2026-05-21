@@ -1,0 +1,108 @@
+name: Promote Prod k3s
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Existing immutable image tag to promote to prod."
+        required: true
+        type: string
+
+concurrency:
+  group: promote-prod-k3s
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  IMAGE_NAMESPACE: sunmingtao
+  KUSTOMIZATION: deploy/k8s/overlays/prod-k3s/kustomization.yaml
+
+jobs:
+  promote-prod:
+    name: Promote prod k3s
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Validate image tag
+        id: image
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "${IMAGE_TAG}" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+            echo "Invalid image tag: ${IMAGE_TAG}" >&2
+            exit 1
+          fi
+
+          if [[ "${IMAGE_TAG}" == "latest" ]]; then
+            echo "Refusing to promote mutable tag: latest" >&2
+            exit 1
+          fi
+
+          echo "image_tag=${IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Verify promoted images exist
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.image.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+
+          for image in \
+            devboard-backend \
+            devboard-frontend \
+            devboard-event-service \
+            devboard-event-frontend
+          do
+            docker manifest inspect "${IMAGE_NAMESPACE}/${image}:${IMAGE_TAG}" >/dev/null
+          done
+
+      - name: Update prod k3s image tags
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.image.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+
+          sed -i -E "s#value: ${IMAGE_NAMESPACE}/devboard-backend:.*#value: ${IMAGE_NAMESPACE}/devboard-backend:${IMAGE_TAG}#" "${KUSTOMIZATION}"
+          sed -i -E "/path: \\/spec\\/template\\/metadata\\/labels\\/app\\.kubernetes\\.io~1version/{n;s#value: .*#value: ${IMAGE_TAG}#;}" "${KUSTOMIZATION}"
+          sed -i -E "s#value: ${IMAGE_NAMESPACE}/devboard-frontend:.*#value: ${IMAGE_NAMESPACE}/devboard-frontend:${IMAGE_TAG}#" "${KUSTOMIZATION}"
+          sed -i -E "s#value: ${IMAGE_NAMESPACE}/devboard-event-service:.*#value: ${IMAGE_NAMESPACE}/devboard-event-service:${IMAGE_TAG}#" "${KUSTOMIZATION}"
+          sed -i -E "s#value: ${IMAGE_NAMESPACE}/devboard-event-frontend:.*#value: ${IMAGE_NAMESPACE}/devboard-event-frontend:${IMAGE_TAG}#" "${KUSTOMIZATION}"
+
+          git diff -- "${KUSTOMIZATION}"
+
+      - name: Commit prod k3s manifest update
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.image.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- "${KUSTOMIZATION}"; then
+            echo "Prod k3s manifest already points to ${IMAGE_TAG}."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "${KUSTOMIZATION}"
+          git commit -m "chore(gitops): promote prod k3s image tag to ${IMAGE_TAG} [skip ci]"
+          git push origin "HEAD:main"

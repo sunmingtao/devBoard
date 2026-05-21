@@ -39,3 +39,14 @@ Required repository secrets:
 Image tags default to the short commit SHA. Manual runs can override the tag and
 can optionally publish `latest` for recovery/testing, but normal dev/prod
 promotion should use immutable tags.
+
+### `promote-prod-k3s.yml`
+
+Manually promotes an existing image tag to the prod k3s overlay without
+rebuilding images. The workflow targets the protected `prod` GitHub Actions
+environment, so GitHub pauses the job until a required reviewer approves it.
+
+The `image_tag` input must reference already-published Docker Hub images for all
+four application services. The workflow rejects `latest`, verifies each image
+manifest exists, updates `deploy/k8s/overlays/prod-k3s/kustomization.yaml`, and
+pushes a `[skip ci]` GitOps commit for Argo CD to reconcile.

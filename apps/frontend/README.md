@@ -5,16 +5,19 @@ Vue 3 + Vite frontend for the DevBoard task management system.
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 20+
+
+- Node.js 20.19+ or 22.12+
 - npm 10+
 
 ### Install Dependencies
+
 ```bash
 cd apps/frontend
 npm install
 ```
 
 ### Run Locally
+
 ```bash
 npm run dev
 ```
@@ -41,6 +44,7 @@ npm run test:ui        # Run Vitest UI
 ```
 
 ## 🧱 Tech Stack
+
 - Vue 3
 - Vue Router
 - Axios
@@ -86,6 +90,7 @@ docker run -p 80:80 devboard-frontend
 ```
 
 ## ✅ Development Notes
+
 - Keep components small and composable.
 - Prefer service modules for API calls over in-component request logic.
 - Add/update tests when changing behavior.

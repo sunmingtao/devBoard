@@ -346,13 +346,13 @@ services:
   - [x] Build backend, frontend, event service, and event frontend images.
   - [x] Push images to the chosen registry.
   - [x] Update dev k3s manifests automatically after successful `main` build.
-  - [ ] Add a protected `prod` GitHub Actions environment with required manual approval.
-  - [ ] Promote an already-built image tag to prod instead of rebuilding a different artifact.
+  - [x] Add a protected `prod` GitHub Actions environment with required manual approval.
+  - [x] Promote an already-built image tag to prod instead of rebuilding a different artifact.
   - [x] Keep cloud/EKS deploy as a separate manual workflow.
 - [ ] Define image registry and tag strategy:
   - [x] Decide between Docker Hub and GHCR for homelab images.
-  - [ ] Use immutable image tags for dev/prod promotion.
-  - [ ] Avoid deploying `latest` to prod.
+  - [x] Use immutable image tags for dev/prod promotion.
+  - [x] Avoid deploying `latest` to prod.
   - [x] Decide how image tags are written back into GitOps overlays.
 - [ ] Define secrets handling by environment:
   - [ ] Use External Secrets local Fake generator only for local/dev demos.

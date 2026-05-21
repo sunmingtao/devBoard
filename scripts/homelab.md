@@ -137,4 +137,12 @@ creds.findAll { it.id == 'dockerhub-creds' }.each { c ->
   println "username=${c.password}"
   println "description=${c.description}"
 }
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+source ~/.bashrc
+nvm --version
+nvm install node
+nvm use node
+nvm alias default node
+npm audit fix --force
 ```

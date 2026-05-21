@@ -4,8 +4,8 @@
 # =====================================
 # Stage 1: BUILD STAGE
 # =====================================
-# Use Node.js 18 Alpine (lightweight Linux) - ~170MB vs ~900MB for regular node
-FROM node:18-alpine AS build-stage
+# Use Node.js 22 Alpine for Vite 8 compatibility.
+FROM node:22-alpine AS build-stage
 
 # Set working directory inside container
 WORKDIR /app
