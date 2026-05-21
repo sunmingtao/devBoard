@@ -50,6 +50,9 @@ dist/
 *.env
 !.env.example
 
+# Local Kubernetes secrets
+deploy/k8s/overlays/local/backend-secret.yaml
+
 # Compiled class files
 *.class
 

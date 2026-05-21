@@ -29,13 +29,26 @@ kubectl wait --for condition=Established crd/rollouts.argoproj.io --timeout=180s
 kubectl wait --for condition=Established crd/externalsecrets.external-secrets.io --timeout=180s
 ```
 
-3️⃣ Deploy all resources
+3️⃣ Create local-only backend secrets
+
+`backend-secret.yaml` is intentionally ignored by Git. Create it from the
+example and replace `JWT_SECRET` with a local base64 signing secret:
+
+```bash
+cp deploy/k8s/overlays/local/backend-secret.example.yaml deploy/k8s/overlays/local/backend-secret.yaml
+openssl rand -base64 64
+```
+
+Then edit `deploy/k8s/overlays/local/backend-secret.yaml` and paste the
+generated value into `JWT_SECRET`.
+
+4️⃣ Deploy all resources
 
 ```
 kubectl apply -k deploy/k8s/overlays/local
 ```
 
-4️⃣ Verify deployment
+5️⃣ Verify deployment
 
 ```
 kubectl get all -n devboard
@@ -48,7 +61,7 @@ frontend → Running
 backend → Running
 mysql → Running
 ```
-5️⃣ Access the application
+6️⃣ Access the application
 
 ```
 minikube service devboard-frontend -n devboard
