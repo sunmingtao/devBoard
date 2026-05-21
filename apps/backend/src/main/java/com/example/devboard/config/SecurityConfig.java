@@ -48,7 +48,9 @@ public class SecurityConfig {
     
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
+        http.cors().and().csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/h2-console/**")
+                )
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeHttpRequests(authz -> authz
