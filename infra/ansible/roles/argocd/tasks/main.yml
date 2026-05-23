@@ -32,6 +32,87 @@
     - argocd
     - argocd_manifests
 
+- name: Apply Argo CD namespace before SOPS age secret
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - apply
+      - -f
+      - "{{ argocd_remote_argocd_dir }}/00-namespace.yaml"
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: >-
+    'created' in argocd_namespace_result.stdout
+    or 'configured' in argocd_namespace_result.stdout
+  register: argocd_namespace_result
+  tags:
+    - argocd
+    - argocd_install
+    - argocd_sops
+
+- name: Check SOPS age key on control node
+  ansible.builtin.stat:
+    path: "{{ argocd_sops_age_key_file }}"
+  delegate_to: localhost
+  become: false
+  register: argocd_sops_age_key_stat
+  tags:
+    - argocd
+    - argocd_sops
+
+- name: Read SOPS age key from control node
+  ansible.builtin.slurp:
+    src: "{{ argocd_sops_age_key_file }}"
+  delegate_to: localhost
+  become: false
+  register: argocd_sops_age_key
+  no_log: true
+  when: argocd_sops_age_key_stat.stat.exists
+  tags:
+    - argocd
+    - argocd_sops
+
+- name: Apply Argo CD SOPS age key secret
+  ansible.builtin.command:
+    argv:
+      - "{{ argocd_kubectl }}"
+      - -n
+      - "{{ argocd_namespace }}"
+      - apply
+      - -f
+      - -
+    stdin: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: {{ argocd_sops_age_secret }}
+        namespace: {{ argocd_namespace }}
+      type: Opaque
+      stringData:
+        {{ argocd_sops_age_secret_key }}: |
+      {{ argocd_sops_age_key.content | b64decode | indent(4, true) }}
+  environment:
+    KUBECONFIG: "{{ argocd_kubeconfig }}"
+  changed_when: >-
+    'created' in argocd_sops_age_secret_result.stdout
+    or 'configured' in argocd_sops_age_secret_result.stdout
+  register: argocd_sops_age_secret_result
+  no_log: true
+  when: argocd_sops_age_key_stat.stat.exists
+  tags:
+    - argocd
+    - argocd_sops
+
+- name: Show missing SOPS age key guidance
+  ansible.builtin.debug:
+    msg:
+      - "SOPS age key was not found at {{ argocd_sops_age_key_file }} on the Ansible control node."
+      - "Argo CD will install, but k3s DevBoard apps that use KSOPS cannot decrypt secrets until the {{ argocd_sops_age_secret }} secret exists in {{ argocd_namespace }}."
+  when: not argocd_sops_age_key_stat.stat.exists
+  tags:
+    - argocd
+    - argocd_sops
+
 - name: Install Argo CD
   ansible.builtin.command:
     argv:

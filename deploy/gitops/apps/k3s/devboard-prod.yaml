@@ -15,6 +15,8 @@ spec:
     repoURL: https://github.com/sunmingtao/devBoard.git
     targetRevision: main
     path: deploy/k8s/overlays/prod-k3s
+    plugin:
+      name: ksops-v1.0
   destination:
     server: https://kubernetes.default.svc
     namespace: devboard-prod
@@ -24,4 +26,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-

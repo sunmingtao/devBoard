@@ -52,6 +52,8 @@ dist/
 
 # Local Kubernetes secrets
 deploy/k8s/overlays/local/backend-secret.yaml
+deploy/k8s/overlays/dev-k3s/*-secret.yaml
+deploy/k8s/overlays/prod-k3s/*-secret.yaml
 
 # Compiled class files
 *.class

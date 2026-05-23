@@ -77,6 +77,7 @@ ansible-playbook playbooks/docker.yml
 ansible-playbook playbooks/sysctl.yml
 ansible-playbook playbooks/netplan.yml
 ansible-playbook playbooks/stacks.yml
+ansible-playbook playbooks/pihole.yml
 ansible-playbook playbooks/k3s.yml
 ansible-playbook playbooks/argocd.yml
 ```
@@ -108,6 +109,11 @@ It also deploys Home Assistant at `http://192.168.0.46:8123` using host
 networking for LAN discovery. Persistent Home Assistant config and state live in
 `/opt/stacks/home-assistant/data`.
 
+The Pi-hole playbook deploys Pi-hole at `http://192.168.0.46:8081/admin/` and
+exposes DNS on `192.168.0.46:53`. On the first run, pass
+`pihole_web_password`; later runs use the server-local
+`/opt/stacks/pihole/pihole-web-password.txt` file.
+
 The k3s playbook installs a single-node k3s cluster, disables bundled Traefik so
 repo-managed ingress-nginx can own ingress later, keeps the default `local-path`
 storage class, copies kubeconfig to `mike` at `~/.kube/config`, and validates
@@ -116,8 +122,9 @@ with mode `0640` so `mike` can run the k3s-provided `kubectl` without exporting
 `KUBECONFIG`.
 
 The Argo CD playbook installs Argo CD from `deploy/gitops/argocd`, waits for the
-Argo CD CRDs and pods, and keeps UI access on port-forward for the first k3s
-pass:
+Argo CD CRDs and pods, wires the SOPS age key into the `argocd/sops-age`
+secret when `~/.config/sops/age/keys.txt` exists on the control node, and keeps
+UI access on port-forward for the first k3s pass:
 
 ```bash
 kubectl -n argocd port-forward svc/argocd-server 8080:443
@@ -145,6 +152,11 @@ k3s overlay and app manifests are available on that branch:
 ```bash
 ansible-playbook playbooks/argocd.yml -e argocd_bootstrap_k3s_apps=true
 ```
+
+The k3s DevBoard applications use the `ksops-v1.0` Argo CD config-management
+plugin to decrypt SOPS-encrypted Kubernetes Secrets during sync. See
+`docs/k3s-sops-age-secrets.md` from the repository root for key handling and
+secret editing.
 
 Run the full flow:
 

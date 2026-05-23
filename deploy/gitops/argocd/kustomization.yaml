@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - 00-namespace.yaml
+  - ksops-cmp-plugin.yaml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.4.1/manifests/install.yaml
 
 namespace: argocd
@@ -31,6 +32,60 @@ patches:
           requests:
             cpu: 500m
             memory: 1Gi
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: ksops-cmp-plugin
+          configMap:
+            name: ksops-cmp-plugin
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: sops-age
+          secret:
+            secretName: sops-age
+            optional: true
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: cmp-tmp
+          emptyDir: {}
+      - op: add
+        path: /spec/template/spec/containers/-
+        value:
+          name: ksops
+          image: viaductoss/ksops:v4.4.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /var/run/argocd/argocd-cmp-server
+          env:
+            - name: SOPS_AGE_KEY_FILE
+              value: /home/argocd/.config/sops/age/keys.txt
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            allowPrivilegeEscalation: false
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: var-files
+              mountPath: /var/run/argocd
+            - name: plugins
+              mountPath: /home/argocd/cmp-server/plugins
+            - name: ksops-cmp-plugin
+              mountPath: /home/argocd/cmp-server/config/plugin.yaml
+              subPath: plugin.yaml
+            - name: sops-age
+              mountPath: /home/argocd/.config/sops/age/keys.txt
+              subPath: keys.txt
+              readOnly: true
+            - name: cmp-tmp
+              mountPath: /tmp
     target:
       kind: Deployment
       name: argocd-repo-server

@@ -354,11 +354,11 @@ services:
   - [x] Use immutable image tags for dev/prod promotion.
   - [x] Avoid deploying `latest` to prod.
   - [x] Decide how image tags are written back into GitOps overlays.
-- [ ] Define secrets handling by environment:
-  - [ ] Use External Secrets local Fake generator only for local/dev demos.
-  - [ ] Choose real k3s dev/prod secret management: SOPS, Ansible Vault, sealed-secrets, or External Secrets provider.
-  - [ ] Keep prod secrets separate from dev secrets.
-  - [ ] Remove or avoid committing real credentials.
+- [x] Define secrets handling by environment:
+  - [x] Use External Secrets local Fake generator only for local/dev demos.
+  - [x] Choose real k3s dev/prod secret management: SOPS + age with Argo CD KSOPS.
+  - [x] Keep prod secrets separate from dev secrets.
+  - [x] Remove or avoid committing real credentials.
 - [ ] Define ingress and DNS:
   - [ ] Decide local laptop hostname for Minikube, such as `devboard.local`.
   - [ ] Decide k3s dev hostname, such as `dev.devboard.local`.

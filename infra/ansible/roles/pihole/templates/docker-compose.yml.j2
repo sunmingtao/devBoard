@@ -1,0 +1,26 @@
+# Managed by Ansible.
+services:
+  pihole:
+    image: {{ pihole_image }}
+    container_name: {{ pihole_container_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ pihole_dns_bind_address }}:{{ pihole_dns_port }}:53/tcp"
+      - "{{ pihole_dns_bind_address }}:{{ pihole_dns_port }}:53/udp"
+      - "{{ pihole_web_bind_address }}:{{ pihole_web_port }}:80/tcp"
+    cap_add:
+      - NET_ADMIN
+    environment:
+      TZ: {{ pihole_timezone }}
+      WEBPASSWORD_FILE: /run/secrets/pihole_web_password
+      FTLCONF_dns_listeningMode: {{ pihole_dns_listening_mode }}
+      FTLCONF_dns_upstreams: "{{ pihole_upstream_dns | join(';') }}"
+    volumes:
+      - ./etc-pihole:/etc/pihole
+      - ./etc-dnsmasq.d:/etc/dnsmasq.d
+    secrets:
+      - pihole_web_password
+
+secrets:
+  pihole_web_password:
+    file: ./pihole-web-password.txt

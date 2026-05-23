@@ -1,0 +1,19 @@
+---
+pihole_dir: "{{ stacks_root }}/pihole"
+pihole_config_dir: "{{ pihole_dir }}/etc-pihole"
+pihole_dnsmasq_dir: "{{ pihole_dir }}/etc-dnsmasq.d"
+pihole_compose_file: "{{ pihole_dir }}/docker-compose.yml"
+pihole_password_file: "{{ pihole_dir }}/pihole-web-password.txt"
+pihole_project_name: pihole
+pihole_container_name: pihole
+pihole_image: pihole/pihole:latest
+pihole_dns_bind_address: "{{ ansible_host | default(inventory_hostname) }}"
+pihole_dns_port: 53
+pihole_web_bind_address: "{{ ansible_host | default(inventory_hostname) }}"
+pihole_web_port: 8081
+pihole_timezone: "{{ homelab_timezone }}"
+pihole_dns_listening_mode: all
+pihole_upstream_dns:
+  - 1.1.1.1
+  - 8.8.8.8
+pihole_wait_timeout: 180

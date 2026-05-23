@@ -8,6 +8,10 @@ argocd_remote_manifest_root: /tmp/devboard-gitops
 argocd_remote_argocd_dir: "{{ argocd_remote_manifest_root }}/argocd"
 argocd_remote_apps_dir: "{{ argocd_remote_manifest_root }}/apps"
 
+argocd_sops_age_key_file: "{{ lookup('env', 'SOPS_AGE_KEY_FILE') | default(lookup('env', 'HOME') + '/.config/sops/age/keys.txt', true) }}"
+argocd_sops_age_secret: sops-age
+argocd_sops_age_secret_key: keys.txt
+
 argocd_install_timeout: 300s
 argocd_crd_timeout: 180s
 argocd_app_crd_timeout: 180s

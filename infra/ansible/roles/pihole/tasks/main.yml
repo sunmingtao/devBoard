@@ -1,0 +1,150 @@
+---
+- name: Ensure Pi-hole stack directory exists
+  ansible.builtin.file:
+    path: "{{ pihole_dir }}"
+    state: directory
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "{{ stacks_service_mode | default('0755') }}"
+  tags:
+    - pihole
+    - pihole_dirs
+
+- name: Ensure Pi-hole persistent directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "{{ stacks_data_mode | default('0750') }}"
+  loop:
+    - "{{ pihole_config_dir }}"
+    - "{{ pihole_dnsmasq_dir }}"
+  tags:
+    - pihole
+    - pihole_dirs
+
+- name: Check Pi-hole web password file
+  ansible.builtin.stat:
+    path: "{{ pihole_password_file }}"
+  register: pihole_password_file_check
+  tags:
+    - pihole
+    - pihole_secret
+
+- name: Require Pi-hole web password on first install
+  ansible.builtin.assert:
+    that:
+      - pihole_password_file_check.stat.exists or pihole_web_password is defined
+    fail_msg: >-
+      Set pihole_web_password on the first run, or create
+      {{ pihole_password_file }} on the homelab host before running this role.
+  tags:
+    - pihole
+    - pihole_secret
+
+- name: Write Pi-hole web password file when provided
+  ansible.builtin.copy:
+    content: "{{ pihole_web_password }}"
+    dest: "{{ pihole_password_file }}"
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "0640"
+  when: pihole_web_password is defined
+  no_log: true
+  tags:
+    - pihole
+    - pihole_secret
+
+- name: Template Pi-hole Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ pihole_compose_file }}"
+    owner: "{{ stacks_owner | default(homelab_admin_user) }}"
+    group: "{{ stacks_group | default('docker') }}"
+    mode: "0644"
+  tags:
+    - pihole
+    - pihole_compose
+
+- name: Deploy Pi-hole with Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ pihole_dir }}"
+    project_name: "{{ pihole_project_name }}"
+    state: present
+    pull: missing
+    remove_orphans: true
+  register: pihole_compose_result
+  tags:
+    - pihole
+    - pihole_deploy
+
+- name: Reset Pi-hole web password when provided
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "{{ pihole_container_name }}"
+      - pihole
+      - setpassword
+      - "{{ pihole_web_password }}"
+  when: pihole_web_password is defined
+  no_log: true
+  changed_when: true
+  tags:
+    - pihole
+    - pihole_secret
+
+- name: Wait for Pi-hole DNS TCP port
+  ansible.builtin.wait_for:
+    host: "{{ pihole_dns_bind_address }}"
+    port: "{{ pihole_dns_port }}"
+    timeout: "{{ pihole_wait_timeout }}"
+  tags:
+    - pihole
+    - pihole_verify
+
+- name: Inspect Pi-hole container
+  community.docker.docker_container_info:
+    name: "{{ pihole_container_name }}"
+  register: pihole_container
+  tags:
+    - pihole
+    - pihole_verify
+
+- name: Verify Pi-hole container is running
+  ansible.builtin.assert:
+    that:
+      - pihole_container.exists
+      - pihole_container.container.State.Running
+    fail_msg: Pi-hole container is not running.
+  tags:
+    - pihole
+    - pihole_verify
+
+- name: Verify Pi-hole web UI is reachable
+  ansible.builtin.uri:
+    url: "http://{{ pihole_web_bind_address }}:{{ pihole_web_port }}/admin/"
+    status_code:
+      - 200
+      - 301
+      - 302
+      - 303
+      - 307
+      - 308
+  register: pihole_web_check
+  retries: 30
+  delay: 5
+  until: pihole_web_check.status in [200, 301, 302, 303, 307, 308]
+  tags:
+    - pihole
+    - pihole_verify
+
+- name: Show Pi-hole setup note
+  ansible.builtin.debug:
+    msg:
+      - "Open http://{{ pihole_web_bind_address }}:{{ pihole_web_port }}/admin/ to manage Pi-hole."
+      - "After verification, point router/client DNS to {{ pihole_dns_bind_address }}."
+  tags:
+    - pihole
+    - pihole_docs

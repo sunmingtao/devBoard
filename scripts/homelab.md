@@ -204,4 +204,11 @@ openssl x509 -req \
 ssh homelab 'mkdir -p /opt/stacks/portainer/certs'
 
 scp portainer.crt portainer.key homelab-ca.crt homelab:/opt/stacks/portainer/certs/
+
+cd infra/ansible
+read -rsp "Pi-hole web password: " PIHOLE_WEB_PASSWORD
+ansible-playbook playbooks/pihole.yml \
+  -e "pihole_web_password=${PIHOLE_WEB_PASSWORD}"
+unset PIHOLE_WEB_PASSWORD
+
 ```

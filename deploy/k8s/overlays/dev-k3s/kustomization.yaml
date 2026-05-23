@@ -8,12 +8,13 @@ resources:
   - mysql-deployment.yaml
   - mysql-service.yaml
   - mysql-pvc.yaml
-  - mysql-secret.yaml
   - backend-configmap.yaml
-  - backend-secret.yaml
   - event-service-configmap.yaml
   - frontend-nginx-configmap.yaml
   - ingress.yaml
+
+generators:
+  - secrets-generator.yaml
 
 patches:
   - target:
@@ -59,4 +60,3 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/image
         value: sunmingtao/devboard-event-frontend:1eadfd8
-

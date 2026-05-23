@@ -12,6 +12,9 @@ bind-mounted state.
     data/
   home-assistant/
     data/
+  pihole/
+    etc-pihole/
+    etc-dnsmasq.d/
   devboard/
     data/
 ```

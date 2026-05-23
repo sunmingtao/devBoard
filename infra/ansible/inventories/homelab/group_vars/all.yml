@@ -64,3 +64,8 @@ portainer_https_port: 9443
 home_assistant_dir: "{{ stacks_root }}/home-assistant"
 home_assistant_network_mode: host
 home_assistant_port: 8123
+
+pihole_dir: "{{ stacks_root }}/pihole"
+pihole_dns_bind_address: "{{ ansible_host | default(inventory_hostname) }}"
+pihole_web_bind_address: "{{ ansible_host | default(inventory_hostname) }}"
+pihole_web_port: 8081

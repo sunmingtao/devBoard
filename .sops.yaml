@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: deploy/k8s/overlays/(dev-k3s|prod-k3s)/.*-secret\.sops\.ya?ml$
+    encrypted_regex: "^(data|stringData)$"
+    age: age1xnfrlsaxxx68e09r0ayyywg6v067cstaurmwwqd3uak9etpshqasdcaew3

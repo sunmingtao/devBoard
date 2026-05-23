@@ -19,6 +19,9 @@ stacks_services:
   - name: home-assistant
     path: "{{ stacks_root }}/home-assistant"
     data_path: "{{ stacks_root }}/home-assistant/{{ stacks_persistent_data_dir_name }}"
+  - name: pihole
+    path: "{{ stacks_root }}/pihole"
+    data_path: "{{ stacks_root }}/pihole/etc-pihole"
   - name: devboard
     path: "{{ stacks_root }}/devboard"
     data_path: "{{ stacks_root }}/devboard/{{ stacks_persistent_data_dir_name }}"

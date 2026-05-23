@@ -1,0 +1,7 @@
+---
+- name: Deploy Pi-hole DNS stack
+  hosts: homelab
+  become: true
+  roles:
+    - stacks
+    - pihole

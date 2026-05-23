@@ -26,6 +26,11 @@ The playbook installs Argo CD and waits for the Argo CD CRDs and pods. It does
 not apply the k3s `Application` manifests by default because they read from
 GitHub `main`; enable them after the k3s manifests are on that branch:
 
+The k3s DevBoard apps use SOPS + age secrets rendered by the KSOPS Argo CD
+repo-server sidecar. Keep the age private key on the Ansible control node at
+`~/.config/sops/age/keys.txt`; the playbook creates the `argocd/sops-age`
+Kubernetes secret when that file exists. See `docs/k3s-sops-age-secrets.md`.
+
 ```bash
 cd infra/ansible
 ansible-playbook playbooks/argocd.yml -e argocd_bootstrap_k3s_apps=true
@@ -119,6 +124,7 @@ argocd account update-password --current-password <current-password> --new-passw
 ```
 deploy/gitops/argocd/
 ├── 00-namespace.yaml      # Creates argocd namespace
+├── ksops-cmp-plugin.yaml  # Configures the KSOPS config-management plugin
 ├── kustomization.yaml     # Kustomize entrypoint for kubectl apply -k
 ├── port-forward.sh        # Script to access Argo CD UI
 └── README.md              # This file
