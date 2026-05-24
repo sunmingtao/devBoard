@@ -212,3 +212,11 @@ ansible-playbook playbooks/pihole.yml \
 unset PIHOLE_WEB_PASSWORD
 
 ```
+
+### 2026-05-24
+```
+k get deploy argocd-repo-server -n argocd -o yaml
+
+ansible-playbook -vvv playbooks/argocd.yml -e argocd_bootstrap_k3s_apps=true
+
+```

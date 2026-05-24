@@ -59,9 +59,4 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/image
-<<<<<<< HEAD
-        value: sunmingtao/devboard-event-frontend:1eadfd8
-=======
         value: sunmingtao/devboard-event-frontend:343c3fd
-
->>>>>>> d62e8f0a75576fc6d6e15a815149dd7f7d6a6abc

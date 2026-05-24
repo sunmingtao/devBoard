@@ -80,7 +80,7 @@
       - "{{ argocd_namespace }}"
       - apply
       - -f
-      - -
+      - "-"
     stdin: |
       apiVersion: v1
       kind: Secret
@@ -97,7 +97,7 @@
     'created' in argocd_sops_age_secret_result.stdout
     or 'configured' in argocd_sops_age_secret_result.stdout
   register: argocd_sops_age_secret_result
-  no_log: true
+  no_log: false
   when: argocd_sops_age_key_stat.stat.exists
   tags:
     - argocd
