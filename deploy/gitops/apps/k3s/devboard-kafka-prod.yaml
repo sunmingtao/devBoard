@@ -29,7 +29,9 @@ spec:
         controller:
           replicaCount: 1
           persistence:
-            enabled: false
+            enabled: true
+            storageClass: local-path
+            size: 20Gi
           heapOpts: "-Xmx384m -Xms384m"
           resources:
             requests:

@@ -359,16 +359,18 @@ services:
   - [x] Choose real k3s dev/prod secret management: SOPS + age with Argo CD KSOPS.
   - [x] Keep prod secrets separate from dev secrets.
   - [x] Remove or avoid committing real credentials.
-- [ ] Define ingress and DNS:
-  - [ ] Decide local laptop hostname for Minikube, such as `devboard.local`.
-  - [ ] Decide k3s dev hostname, such as `dev.devboard.local`.
-  - [ ] Decide k3s prod hostname, such as `prod.devboard.local`.
-  - [ ] Add LAN DNS or `/etc/hosts` entries pointing k3s hostnames to `192.168.0.46`.
-  - [ ] Confirm ingress-nginx NodePorts `30080` and `30443`, or switch to host ports/LoadBalancer strategy.
-  - [ ] Confirm backend CORS origins include the final dev/prod URLs.
+- [x] Define ingress and DNS:
+  - [x] Decide local laptop hostname for Minikube, such as `devboard.local`.
+  - [x] Decide k3s dev hostname, such as `dev.devboard.local`.
+  - [x] Decide k3s prod hostname, such as `prod.devboard.local`.
+  - [x] Add LAN DNS or `/etc/hosts` entries pointing k3s hostnames to `192.168.0.46`.
+  - [x] Confirm ingress-nginx NodePorts `30080` and `30443`, or switch to host ports/LoadBalancer strategy.
+  - [x] Confirm backend CORS origins include the final dev/prod URLs.
 - [ ] Define persistent data and backups:
-  - [ ] MySQL PVC per environment.
-  - [ ] Kafka persistence decision per environment.
+  - [x] MySQL PVC per environment.
+  - [x] Kafka persistence decision per environment:
+    - [x] k3s dev Kafka uses Bitnami controller persistence with `local-path`, `5Gi`.
+    - [x] k3s prod Kafka uses Bitnami controller persistence with `local-path`, `20Gi`.
   - [ ] Include k3s state and application PVCs in backup planning.
   - [ ] Document restore order: k3s, Argo CD, GitOps apps, persistent data.
 - [ ] Define validation and health checks:

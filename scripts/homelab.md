@@ -228,6 +228,8 @@ k get svc -n argocd
 # ssh tunnel map laptop port 8079 to homlab host 8080
  ssh -L 8079:127.0.0.1:8080 homelab   'kubectl -n argocd port-forward svc/argocd-server 8080:443'
 
+# broardcast to the entire network
+kubectl port-forward --address 0.0.0.0 svc/argocd-server 8080:443
 
 # Get password in homelab
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
@@ -251,4 +253,21 @@ ansible homelab -m command -a "kubectl -n argocd rollout restart deployment/argo
 ansible homelab -m command -a "kubectl -n argocd rollout status deployment/argocd-repo-server --timeout=300s"
 
 ansible homelab -m command -a "kubectl -n argocd annotate application devboard-dev-k3s argocd.argoproj.io/refresh=hard --overwrite"
+```
+
+### 2026-05-25
+
+```
+### View annotation of an app
+kubectl -n argocd get app devboard-dev-k3s -o yaml | grep annotations
+
+### View secret
+
+kubectl get secret/devboard-backend-secret -n devboard-dev -o yaml
+
+echo 'ZGV2LWszcy1wbGFjZWhvbGRlci1qd3Qtc2VjcmV0LWNoYW5nZS1tZQ==' | base64 -d
+
+### Get statefulset -- pod is not ephemeral, e.g. kafka 
+kubectl get sts -n devboard-dev
+
 ```
