@@ -95,7 +95,7 @@ command is running on the homelab server and you are browsing from your laptop,
 use an SSH tunnel:
 
 ```bash
-ssh -t -L 8080:127.0.0.1:8080 mike@192.168.0.46 \
+ssh -L 8080:127.0.0.1:8080 mike@192.168.0.46 \
   'kubectl -n argocd port-forward svc/argocd-server 8080:443'
 ```
 

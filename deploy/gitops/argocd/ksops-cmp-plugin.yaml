@@ -10,7 +10,7 @@ data:
     metadata:
       name: ksops
     spec:
-      version: v1.0
+      version: ksops-v1.0
       discover:
         find:
           command:

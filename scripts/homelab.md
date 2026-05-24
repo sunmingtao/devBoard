@@ -219,4 +219,24 @@ k get deploy argocd-repo-server -n argocd -o yaml
 
 ansible-playbook -vvv playbooks/argocd.yml -e argocd_bootstrap_k3s_apps=true
 
+ansible-playbook playbooks/argocd.yml --tags argocd_cli
+
+# check argocd-server exposed port
+k get svc -n argocd
+
+# port-forward map homelab host port 8080 to container 443
+# ssh tunnel map laptop port 8079 to homlab host 8080
+ ssh -L 8079:127.0.0.1:8080 homelab   'kubectl -n argocd port-forward svc/argocd-server 8080:443'
+
+
+# Get password in homelab
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+# Log in 
+argocd login localhost:8079 --username admin --password "$ARGOCD_K3S_DEV_PASSWORD" --insecure
+
+argocd app list
+argocd app sync devboard-dev-k3s
+
+
 ```
