@@ -10,15 +10,14 @@ data:
     metadata:
       name: ksops
     spec:
-      version: ksops-v1.0
+      version: v1.0
       discover:
-        find:
-          command:
-            - sh
-            - -c
-            - find . \( -name 'secrets-generator.yaml' -o -name '*-secret.sops.yaml' \) | grep -q .
+        fileName: secrets-generator.yaml
       generate:
         command:
-          - sh
-          - -c
-          - kustomize build --enable-alpha-plugins --enable-exec .
+          - kustomize
+        args:
+          - build
+          - --enable-alpha-plugins
+          - --enable-exec
+          - .

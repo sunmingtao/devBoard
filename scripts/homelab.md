@@ -239,4 +239,8 @@ argocd app list
 argocd app sync devboard-dev-k3s
 
 
+kubectl -n argocd exec -it argocd-repo-server-56d64fd75b-75svw -c ksops -- bash
+kubectl -n argocd exec -it argocd-server-5f94d97985-jpm8l -c ksops -- echo $PATH
+kubectl -n argocd exec -it argocd-repo-server-56d64fd75b-75svw -c ksops -- echo $PATH
+
 ```
