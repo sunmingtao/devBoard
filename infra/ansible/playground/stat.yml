@@ -1,0 +1,12 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Stat the file
+      delegate_to: localhost
+      stat: 
+        path: /home/jacky/workspace/devBoard/infra/ansible/playground/stat2.yml
+      register: stat_result
+
+    - name: Show the stat result
+      debug:
+        msg: "{{ stat_result.stat }}"

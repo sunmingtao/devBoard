@@ -1,4 +1,8 @@
 ---
+argocd_cli_version: v3.4.1
+argocd_cli_arch: amd64
+argocd_cli_path: /usr/local/bin/argocd
+
 argocd_namespace: argocd
 argocd_kubectl: /usr/local/bin/kubectl
 argocd_kubeconfig: /etc/rancher/k3s/k3s.yaml

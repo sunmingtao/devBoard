@@ -1,4 +1,16 @@
 ---
+
+- name: Install Argo CD CLI
+  ansible.builtin.get_url:
+    url: "https://github.com/argoproj/argo-cd/releases/download/{{ argocd_cli_version }}/argocd-linux-{{ argocd_cli_arch }}"
+    dest: "{{ argocd_cli_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - argocd
+    - argocd_cli
+    
 - name: Create remote GitOps manifest root
   ansible.builtin.file:
     path: "{{ argocd_remote_manifest_root }}"

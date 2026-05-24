@@ -1,0 +1,12 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Slurp the file
+      delegate_to: localhost
+      slurp:
+        src: /home/jacky/workspace/devBoard/infra/ansible/playground/slurp.yml
+      register: slurp_result
+
+    - name: Show the content of the file
+      debug:
+        msg: "{{ slurp_result.content | b64decode }}"
