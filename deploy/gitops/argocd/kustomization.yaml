@@ -59,6 +59,12 @@ patches:
           command:
             - /var/run/argocd/argocd-cmp-server
           env:
+            - name: HOME
+              value: /home/argocd
+            - name: XDG_CONFIG_HOME
+              value: /home/argocd/.config
+            - name: KUSTOMIZE_PLUGIN_HOME
+              value: /home/argocd/.config/kustomize/plugin
             - name: SOPS_AGE_KEY_FILE
               value: /home/argocd/.config/sops/age/keys.txt
           securityContext:

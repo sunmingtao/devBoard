@@ -243,4 +243,12 @@ kubectl -n argocd exec -it argocd-repo-server-56d64fd75b-75svw -c ksops -- bash
 kubectl -n argocd exec -it argocd-server-5f94d97985-jpm8l -c ksops -- echo $PATH
 kubectl -n argocd exec -it argocd-repo-server-56d64fd75b-75svw -c ksops -- echo $PATH
 
+
+cd infra/ansible
+
+ansible homelab -m command -a "/usr/local/bin/kubectl -n argocd rollout restart deployment/argocd-repo-server"
+
+ansible homelab -m command -a "/usr/local/bin/kubectl -n argocd rollout status deployment/argocd-repo-server --timeout=300s"
+
+ansible homelab -m command -a "/usr/local/bin/kubectl -n argocd annotate application devboard-dev-k3s argocd.argoproj.io/refresh=hard --overwrite"
 ```
