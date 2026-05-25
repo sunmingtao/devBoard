@@ -289,6 +289,13 @@ sudo systemctl start k3s-state-backup.service
 
 journalctl -u k3s-state-backup.service
 systemctl list-units
-systemctl timers
+systemctl list-timers
 
 ```
+
+### 2026-05-26
+
+systemctl stop k3s-state-backup.service
+systemctl disable k3s-state-backup.service
+rm /etc/systemd/system/k3s-state-backup.service
+systemctl daemon-reload

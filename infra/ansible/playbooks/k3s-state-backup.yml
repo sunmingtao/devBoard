@@ -1,0 +1,6 @@
+---
+- name: Backup k3s state on homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - k3s-backup
