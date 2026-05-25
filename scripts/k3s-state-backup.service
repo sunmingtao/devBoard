@@ -1,0 +1,6 @@
+[Unit]
+description=backup k3s state
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup-k3s-state.sh

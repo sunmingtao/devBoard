@@ -1,0 +1,16 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Copy backup script
+      copy:
+        src: ./backup-k3s-state.sh
+        dest: /tmp/backup-k3s-state.sh
+        mode: '0755'
+
+    - name: Run backup script
+      shell: /tmp/backup-k3s-state.sh
+      register: backup_result
+
+    - name: Show script output
+      debug:
+        var: backup_result.stdout_lines

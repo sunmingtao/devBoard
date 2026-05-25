@@ -270,4 +270,25 @@ echo 'ZGV2LWszcy1wbGFjZWhvbGRlci1qd3Qtc2VjcmV0LWNoYW5nZS1tZQ==' | base64 -d
 ### Get statefulset -- pod is not ephemeral, e.g. kafka 
 kubectl get sts -n devboard-dev
 
+kubectl delete sts/devboard-kafka-controller -n devboard-dev
+kubectl -n devboard-dev wait --for=delete pod/devboard-kafka-controller-0 --timeout=120s
+kubectl -n devboard-dev get pvc
+
+sudo ls -la /var/lib/rancher/k3s/server/db
+
+kubectl -n devboard-prod scale sts devboard-kafka-controller --replicas=0
+
+getent host
+getent passwd
+getent group
+
+kubectl get pv
+
+sudo systemctl daemon-reload
+sudo systemctl start k3s-state-backup.service
+
+journalctl -u k3s-state-backup.service
+systemctl list-units
+systemctl timers
+
 ```
