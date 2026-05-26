@@ -1,0 +1,6 @@
+---
+- name: Backup mysql on homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - mysql-backup

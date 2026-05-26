@@ -299,3 +299,16 @@ systemctl stop k3s-state-backup.service
 systemctl disable k3s-state-backup.service
 rm /etc/systemd/system/k3s-state-backup.service
 systemctl daemon-reload
+
+
+kubectl -n devboard-prod exec deploy/mysql -- \
+  sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --all-databases --single-transaction' \
+  > devboard-prod-mysql-$(date +%F-%H%M%S).sql
+  
+kubectl -n devboard-prod scale sts devboard-kafka-controller --replicas=0
+kubectl -n devboard-prod wait --for=delete pod/devboard-kafka-controller-0 --timeout=120s
+
+sudo tar -czf /var/backups/devboard/kafka-prod-pvc-$(date +%F-%H%M%S).tar.gz \
+  /var/lib/rancher/k3s/storage/<actual-kafka-prod-pv-dir>
+
+kubectl -n devboard-prod scale sts devboard-kafka-controller --replicas=1

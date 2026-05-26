@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+
+BACKUP_DIR="{{ mysql_backup_dir }}"
+TIMESTAMP=$(date +%F-%H%M%S)
+
+sudo mkdir -p "$BACKUP_DIR"
+
+kubectl -n devboard-prod exec deploy/mysql -- \
+  sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --all-databases --single-transaction' \
+  | sudo tee -a $BACKUP_DIR/devboard-prod-mysql-$TIMESTAMP.sql >/dev/null

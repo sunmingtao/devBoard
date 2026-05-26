@@ -1,0 +1,21 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Backup MySQL databases
+      command: 
+        argv:
+          - kubectl
+          - -n
+          - devboard-prod
+          - exec
+          - deploy/mysql
+          - --
+          - sh
+          - -c
+          - mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --all-databases --single-transaction
+      register: command_result
+
+    - name: Show the output of the command
+      copy:
+          content: "{{ command_result.stdout }}"
+          dest: /tmp/mysql_backup-{{ now() }}.sql
