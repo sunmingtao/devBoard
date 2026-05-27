@@ -351,3 +351,17 @@ mike@homelab:~$ echo $?
 
 kubectl -n argocd patch application devboard-kafka-prod-k3s   --type merge   -p '{"spec":{"syncPolicy":null}}'
 kubectl -n argocd patch application devboard-kafka-prod-k3s   --type merge   -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+kubectl -n argocd patch application devboard-kafka-prod-k3s   --type merge   -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
+
+
+kubectl -n devboard-prod get sts devboard-kafka-controller -o json | jq '.spec.syncPolicy
+
+
+### 2026-05-28
+
+exec 9> /tmp/file.lock
+flock -n 9
+
+# View File descriptor
+ls -l /proc/$$/fd
+echo $$
