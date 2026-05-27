@@ -306,9 +306,48 @@ kubectl -n devboard-prod exec deploy/mysql -- \
   > devboard-prod-mysql-$(date +%F-%H%M%S).sql
   
 kubectl -n devboard-prod scale sts devboard-kafka-controller --replicas=0
-kubectl -n devboard-prod wait --for=delete pod/devboard-kafka-controller-0 --timeout=120s
+
+kubectl -n devboard-prod wait \
+  --for=delete pod/devboard-kafka-controller-0 \
+  --timeout=120s
 
 sudo tar -czf /var/backups/devboard/kafka-prod-pvc-$(date +%F-%H%M%S).tar.gz \
-  /var/lib/rancher/k3s/storage/<actual-kafka-prod-pv-dir>
+  -C /var/lib/rancher/k3s/storage \
+  <actual-kafka-prod-pv-dir>
 
 kubectl -n devboard-prod scale sts devboard-kafka-controller --replicas=1
+
+kubectl -n devboard-prod rollout status sts/devboard-kafka-controller
+
+### 2026-05-27
+
+argocd app set devboard-kafka-prod-k3s --sync-policy none
+argocd app set devboard-kafka-prod-k3s --sync-policy automated --self-heal --auto-prune
+
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+argocd login localhost:8080 --username admin --password "$ARGOCD_PASSWORD" --insecure
+
+argocd app get devboard-kafka-prod-k3s
+
+
+python3 - << 'PY'
+import socket
+s = socket.socket()
+s.bind(('',0))
+print(s.getsockname())
+s.close()
+PY
+
+mike@homelab:~$ set -u; echo "$HAHA" || true
+-bash: HAHA: unbound variable
+mike@homelab:~$ set -u; echo "$HAHA" || true
+-bash: HAHA: unbound variable
+mike@homelab:~$ echo $?
+1
+mike@homelab:~$ set +u; echo "$HAHA" || true
+
+mike@homelab:~$ echo $?
+0
+
+kubectl -n argocd patch application devboard-kafka-prod-k3s   --type merge   -p '{"spec":{"syncPolicy":null}}'
+kubectl -n argocd patch application devboard-kafka-prod-k3s   --type merge   -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'

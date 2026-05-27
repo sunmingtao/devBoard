@@ -1,0 +1,6 @@
+---
+- name: Backup kafka on homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - kafka-backup

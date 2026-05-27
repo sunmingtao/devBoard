@@ -21,6 +21,11 @@
       Type=oneshot
       ExecStart={{ local_bin }}/backup-mysql.sh
 
+      Restart=on-failure
+      RestartSec=2min
+      StartLimitIntervalSec=30min
+      StartLimitBurst=5
+
 - name: Install backup timer
   copy:
     dest: /etc/systemd/system/backup-mysql.timer
@@ -32,9 +37,10 @@
       Description=Run backup-mysql.service every 24 hours
 
       [Timer]
-      OnCalendar=daily
+      OnCalendar=*-*-* 00:20:00
       Persistent=true
       Unit=backup-mysql.service
+      RandomizedDelaySec=300
 
       [Install]
       WantedBy=timers.target

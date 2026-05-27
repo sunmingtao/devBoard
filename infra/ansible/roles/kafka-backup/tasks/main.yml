@@ -1,0 +1,47 @@
+---
+- name: Backup kafka on homelab server
+  template:
+    src: backup-kafka.sh.j2
+    dest: "{{ local_bin }}/backup-kafka.sh"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install backup service
+  copy:
+    dest: /etc/systemd/system/backup-kafka.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Backup kafka
+
+      [Service]
+      Type=oneshot
+      ExecStart={{ local_bin }}/backup-kafka.sh
+
+- name: Install backup timer
+  copy:
+    dest: /etc/systemd/system/backup-kafka.timer
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Run backup-kafka.service every 24 hours
+
+      [Timer]
+      OnCalendar=daily
+      Persistent=true
+      Unit=backup-kafka.service
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Reload systemd and enable backup timer
+  systemd:
+    daemon_reload: yes
+    name: backup-kafka.timer
+    enabled: yes
+    state: started

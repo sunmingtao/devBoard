@@ -1,0 +1,4 @@
+---
+kafka_backup_dir: /var/backup/devboard/kafka
+local_bin: /usr/local/bin
+kafka_pvc_dir: pvc-b24dd439-6aad-4d5c-99b7-a870ffd11142_devboard-prod_data-devboard-kafka-controller-0

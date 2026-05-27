@@ -371,7 +371,7 @@ services:
   - [x] Kafka persistence decision per environment:
     - [x] k3s dev Kafka uses Bitnami controller persistence with `local-path`, `5Gi`.
     - [x] k3s prod Kafka uses Bitnami controller persistence with `local-path`, `20Gi`.
-  - [ ] Include k3s state and application PVCs in backup planning.
+  - [x] Include k3s state and application PVCs in backup planning.
   - [ ] Document restore order: k3s, Argo CD, GitOps apps, persistent data.
 - [ ] Define validation and health checks:
   - [ ] Validate Argo CD applications are `Synced` and `Healthy`.

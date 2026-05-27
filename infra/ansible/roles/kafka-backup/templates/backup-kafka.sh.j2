@@ -1,0 +1,66 @@
+#!/bin/bash
+set -euo pipefail
+
+BACKUP_DIR="/var/kafka/devboard/mysql"
+TIMESTAMP=$(date +%F-%H%M%S)
+
+sudo mkdir -p "$BACKUP_DIR"
+
+cleanup() {
+
+  set +e # Allow cleanup to continue even if commands fail
+
+  echo "Scaling the Kafka controller back up"
+  kubectl -n devboard-prod scale sts devboard-kafka-controller --replicas=1
+  echo "Waiting for the Kafka controller to be ready"
+  kubectl -n devboard-prod rollout status sts devboard-kafka-controller --timeout=180s
+  echo "Restoring ArgoCD auto-sync for the Kafka application"
+  argocd app set devboard-kafka-prod-k3s --sync-policy automated --self-heal --auto-prune
+
+  # -n checks PORT_FORWARD_PID is non-empty before trying to kill it
+  # :- sets a default value of empty string if PORT_FORWARD_PID is not set, preventing an error from 'kill' if the variable is unset
+  if [[ -n "${PORT_FORWARD_PID:-}" ]]; then 
+    echo "Stopping port-forward process"
+    kill $PORT_FORWARD_PID 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+
+# Pick a random available local port
+LOCAL_PORT="$(python3 - <<'PY'
+import socket
+s = socket.socket()
+s.bind(('', 0))
+print(s.getsockname()[1])
+s.close()
+PY
+)"
+
+echo "starting port-forward on localhost:$LOCAL_PORT"
+kubectl -n argocd port-forward svc/argocd-server ${LOCAL_PORT}:443 > /tmp/argocd-port-forward.log 2>&1 &
+PORT_FORWARD_PID=$!
+
+sleep 5
+
+if ! kill -0 $PORT_FORWARD_PID 2>/dev/null; then
+  echo "Port forward process failed to start."
+  cat /tmp/argocd-port-forward.log
+  exit 1
+fi
+
+# Login to ArgoCD
+argocd login localhost:${LOCAL_PORT} --username admin --password "$ARGOCD_PASSWORD" --insecure
+
+# Disable ArgoCD auto-sync for the Kafka application
+argocd app set devboard-kafka-prod-k3s --sync-policy none
+
+# Scale down the Kafka controller to prevent changes during backup
+kubectl -n devboard-prod scale sts devboard-kafka-controller --replicas=0
+kubectl -n devboard-prod wait \
+  --for=delete pod/devboard-kafka-controller-0 \
+  --timeout=120s
+
+sudo tar -czf $BACKUP_DIR/kafka-prod-pvc-$TIMESTAMP.tar.gz \
+  -C /var/lib/rancher/k3s/storage pvc-b24dd439-6aad-4d5c-99b7-a870ffd11142_devboard-prod_data-devboard-kafka-controller-0
+
+echo "Backup completed: $BACKUP_DIR/kafka-prod-pvc-$TIMESTAMP.tar.gz"
