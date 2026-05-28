@@ -16,6 +16,7 @@
     content: |
       [Unit]
       Description=Backup k3s state
+      OnFailure=email-alert@%n.service
 
       [Service]
       Type=oneshot

@@ -11,10 +11,13 @@
 - name: Configure msmtp
   template:
     src: msmtprc.j2
-    dest: /home/mike/.msmtprc
+    dest: "{{ item }}"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: "0600"
+  loop:
+    - /home/mike/.msmtprc
+    - /root/.msmtprc
   vars:
     google_app_password: "{{ lookup('env', 'GOOGLE_APP_PASSWORD') }}"
 
