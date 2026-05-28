@@ -18,9 +18,4 @@
   vars:
     google_app_password: "{{ lookup('env', 'GOOGLE_APP_PASSWORD') }}"
 
-- name: Replace YOUR_APP_PASSWORD with actual password
-  command: sed -i s/YOUR_APP_PASSWORD/$GOOGLE_APP_PASSWORD/g /home/mike/.msmtprc
-  environment:
-    GOOGLE_APP_PASSWORD: "{{ lookup('env', 'GOOGLE_APP_PASSWORD') }}"
-
   
