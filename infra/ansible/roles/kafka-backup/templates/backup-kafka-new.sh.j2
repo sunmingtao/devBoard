@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
+LOCK_FILE="/run/backup-kafka.lock"
 BACKUP_DIR="/var/backup/devboard/kafka"
 TIMESTAMP=$(date +%F-%H%M%S)
 KAFKA_APP_NAME="devboard-kafka-prod-k3s"
@@ -11,6 +12,12 @@ FULL_PVC_PATH="$K3S_STORAGE_DIR/$KAFKA_PVC_DIR"
 NAMESPACE="devboard-prod"
 OUTPUT_FILE="$BACKUP_DIR/kafka-prod-pvc-$TIMESTAMP.tar.gz"
 TMP_FILE="$OUTPUT_FILE.tmp"
+
+exec 9> "$LOCK_FILE"
+flock -n 9 || {
+  echo "Another kafka backup is already running. Exiting."
+  exit 1
+}
 
 sudo mkdir -p "$BACKUP_DIR"
 
