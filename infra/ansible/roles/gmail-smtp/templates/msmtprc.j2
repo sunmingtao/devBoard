@@ -1,0 +1,14 @@
+defaults
+auth     on
+tls      on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+logfile  /home/mike/.msmtp.log
+
+account gmail
+host smtp.gmail.com
+port 587
+from sunmingtao@gmail.com
+user sunmingtao@gmail.com
+password {{ google_app_password }}
+
+account default : gmail

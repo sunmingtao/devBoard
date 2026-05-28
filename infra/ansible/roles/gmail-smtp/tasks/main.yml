@@ -1,0 +1,26 @@
+---
+- name: Install msmtp msmtp-mta mailutils
+  apt:
+    name: 
+      - msmtp 
+      - msmtp-mta 
+      - mailutils
+    state: present
+    update_cache: yes
+
+- name: Configure msmtp
+  template:
+    src: msmtprc.j2
+    dest: /home/mike/.msmtprc
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0600"
+  vars:
+    google_app_password: "{{ lookup('env', 'GOOGLE_APP_PASSWORD') }}"
+
+- name: Replace YOUR_APP_PASSWORD with actual password
+  command: sed -i s/YOUR_APP_PASSWORD/$GOOGLE_APP_PASSWORD/g /home/mike/.msmtprc
+  environment:
+    GOOGLE_APP_PASSWORD: "{{ lookup('env', 'GOOGLE_APP_PASSWORD') }}"
+
+  

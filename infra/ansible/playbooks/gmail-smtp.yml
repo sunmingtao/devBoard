@@ -1,0 +1,6 @@
+---
+- name: Set up Gmail SMTP on homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - gmail-smtp
