@@ -1,7 +1,7 @@
 import smtplib
+from collections.abc import Iterable
 from email.message import EmailMessage
 from pathlib import Path
-from typing import Iterable
 
 from app.config import (
     EMAIL_FROM,

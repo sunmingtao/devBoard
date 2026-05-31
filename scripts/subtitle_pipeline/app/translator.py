@@ -1,8 +1,10 @@
 import ollama
 import re
 from pathlib import Path
+from typing import TypedDict
 
 from app.config import (
+    OLLAMA_MODEL,
     TARGET_LANGUAGE
 )
 
@@ -10,38 +12,50 @@ from app.prompts import (
     TRANSLATION_PROMPTS
 )
 
-def parse_srt(filename):
+
+class SubtitleCue(TypedDict):
+    index: int
+    time: str
+    text: str
+
+
+def parse_srt(filename: str | Path) -> list[SubtitleCue]:
     with open(filename, "r", encoding="utf-8") as f:
-        content = f.read()
+        content = f.read().replace("\r\n", "\n").replace("\r", "\n").strip()
 
-    pattern = re.compile(
-        r"(\d+)\n" 
-        r"([0-9:,]+ --> [0-9:,]+)\n" 
-        r"(.*?)\n\n",
-        re.DOTALL,
-    )
+    if not content:
+        return []
 
-    subtitles = []
+    subtitles: list[SubtitleCue] = []
 
-    for match in pattern.finditer(content):
+    for block in re.split(r"\n\s*\n", content):
+        lines = block.splitlines()
+        if len(lines) < 3 or "-->" not in lines[1]:
+            continue
+
+        try:
+            index = int(lines[0].strip())
+        except ValueError:
+            continue
+
         subtitles.append(
             {
-                "index": int(match.group(1)),
-                "time": match.group(2),
-                "text": match.group(3).strip(),
+                "index": index,
+                "time": lines[1].strip(),
+                "text": "\n".join(lines[2:]).strip(),
             }
         )
 
     return subtitles
 
-def translate_single(text, template):
+def translate_single(text: str, template: str) -> str:
     print(f"Translating text: {text}")
     prompt = template.format(
         text=text
     )
 
     response = ollama.chat(
-        model="qwen3:8b",
+        model=OLLAMA_MODEL,
         messages=[
             {"role": "user", "content": prompt}
         ],
@@ -53,7 +67,8 @@ def translate_single(text, template):
 
     return response["message"]["content"].strip()
 
-def translate_srt(srt_path, language):
+def translate_srt(srt_path: str | Path, language: str) -> Path:
+    srt_path = Path(srt_path)
     subtitles = parse_srt(srt_path)
 
     template = TRANSLATION_PROMPTS[

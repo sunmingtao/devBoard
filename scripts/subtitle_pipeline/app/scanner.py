@@ -15,9 +15,12 @@ def is_video_file(path: Path) -> bool:
 
 
 def is_file_stable(path: Path, wait_seconds: int = 30) -> bool:
-    size1 = path.stat().st_size
-    time.sleep(wait_seconds)
-    size2 = path.stat().st_size
+    try:
+        size1 = path.stat().st_size
+        time.sleep(wait_seconds)
+        size2 = path.stat().st_size
+    except FileNotFoundError:
+        return False
 
     return size1 == size2
 
@@ -37,7 +40,7 @@ def is_valid_video(path: Path) -> bool:
     return result.returncode == 0
 
 
-def find_new_videos():
+def find_new_videos() -> list[Path]:
     """
     Scan input folder and return stable, valid video files.
     """

@@ -10,7 +10,8 @@ from app.notifier import send_success, send_failure
 from app.config import ARCHIVE_DIR
 
 
-def unique_archive_path(path: Path) -> Path:
+def unique_archive_path(path: str | Path) -> Path:
+    path = Path(path)
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 
     destination = ARCHIVE_DIR / path.name
@@ -25,7 +26,9 @@ def unique_archive_path(path: Path) -> Path:
         counter += 1
 
 
-def cleanup_completed_job(video_path: Path, job_dir: Path) -> Path:
+def cleanup_completed_job(video_path: str | Path, job_dir: str | Path) -> Path:
+    video_path = Path(video_path)
+    job_dir = Path(job_dir)
     archived_video_path = unique_archive_path(video_path)
     shutil.move(str(video_path), archived_video_path)
     shutil.rmtree(job_dir, ignore_errors=True)
@@ -34,7 +37,7 @@ def cleanup_completed_job(video_path: Path, job_dir: Path) -> Path:
     return archived_video_path
 
 
-def process_video(video_path):
+def process_video(video_path: str | Path) -> None:
     video_path = Path(video_path)
     language = "ja" if "~" in video_path.name else "en"
     try:
@@ -51,7 +54,7 @@ def process_video(video_path):
         raise
 
 
-def main():
+def main() -> None:
     videos = find_new_videos()
     failed_videos = []
 

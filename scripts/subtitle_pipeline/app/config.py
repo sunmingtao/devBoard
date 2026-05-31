@@ -4,7 +4,7 @@ from pathlib import Path
 try:
     from dotenv import load_dotenv
 except ImportError:
-    def load_dotenv(*args, **kwargs):
+    def load_dotenv(*args: object, **kwargs: object) -> bool:
         return False
 
 # Base directory

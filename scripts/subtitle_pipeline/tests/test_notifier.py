@@ -6,7 +6,7 @@ from app import notifier
 
 
 class NotifierTests(unittest.TestCase):
-    def test_recipient_list_accepts_commas_and_semicolons(self):
+    def test_recipient_list_accepts_commas_and_semicolons(self) -> None:
         recipients = notifier._recipient_list("a@example.com, b@example.com; c@example.com")
 
         self.assertEqual(
@@ -14,7 +14,7 @@ class NotifierTests(unittest.TestCase):
             ["a@example.com", "b@example.com", "c@example.com"],
         )
 
-    def test_send_email_skips_when_required_settings_are_missing(self):
+    def test_send_email_skips_when_required_settings_are_missing(self) -> None:
         with (
             patch.object(notifier, "SMTP_USERNAME", ""),
             patch.object(notifier, "SMTP_PASSWORD", ""),
@@ -27,7 +27,7 @@ class NotifierTests(unittest.TestCase):
         print_mock.assert_called_once()
         self.assertIn("missing settings", print_mock.call_args.args[0])
 
-    def test_send_email_sends_message_through_smtp(self):
+    def test_send_email_sends_message_through_smtp(self) -> None:
         with (
             patch.object(notifier, "SMTP_HOST", "smtp.example.com"),
             patch.object(notifier, "SMTP_PORT", 587),
@@ -56,7 +56,7 @@ class NotifierTests(unittest.TestCase):
         self.assertEqual(email_message["To"], "recipient@example.com")
         self.assertEqual(email_message["Subject"], "Pipeline finished")
 
-    def test_send_email_returns_false_when_smtp_fails(self):
+    def test_send_email_returns_false_when_smtp_fails(self) -> None:
         with (
             patch.object(notifier, "SMTP_HOST", "smtp.example.com"),
             patch.object(notifier, "SMTP_PORT", 587),

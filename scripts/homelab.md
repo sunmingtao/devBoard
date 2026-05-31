@@ -445,3 +445,22 @@ python -c "from faster_whisper import WhisperModel; print('OK')"
 pip freeze > requirements.txt
 
 python -m unittest discover -s tests
+
+tmux
+Ctrl+D b
+tmux attach
+
+### 2026-06-01
+
+```
+ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 input.mp4
+ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 extracted.wav
+
+ffmpeg -i SW-473~S.mp4 \
+-map 0:a:0 \
+-vn \
+-ac 1 \
+-ar 16000 \
+-af "dynaudnorm" \
+-c:a pcm_s16le \
+SW-473~S-new.wav

@@ -7,11 +7,11 @@ from app import main
 
 
 class MainBatchTests(unittest.TestCase):
-    def test_main_continues_after_one_video_fails(self):
+    def test_main_continues_after_one_video_fails(self) -> None:
         videos = [Path("one.mp4"), Path("two.mp4"), Path("three.mp4")]
         processed = []
 
-        def fake_process_video(video):
+        def fake_process_video(video: Path) -> None:
             processed.append(video.name)
             if video.name == "two.mp4":
                 raise RuntimeError("boom")
@@ -27,7 +27,7 @@ class MainBatchTests(unittest.TestCase):
 
 
 class CompletedJobCleanupTests(unittest.TestCase):
-    def test_cleanup_archives_video_and_removes_working_directory(self):
+    def test_cleanup_archives_video_and_removes_working_directory(self) -> None:
         with TemporaryDirectory() as tmp:
             base_dir = Path(tmp)
             video_path = base_dir / "input.mp4"
@@ -50,7 +50,7 @@ class CompletedJobCleanupTests(unittest.TestCase):
             self.assertFalse(video_path.exists())
             self.assertFalse(job_dir.exists())
 
-    def test_unique_archive_path_adds_suffix_when_file_exists(self):
+    def test_unique_archive_path_adds_suffix_when_file_exists(self) -> None:
         with TemporaryDirectory() as tmp:
             archive_dir = Path(tmp) / "archive"
             archive_dir.mkdir()
@@ -64,34 +64,30 @@ class CompletedJobCleanupTests(unittest.TestCase):
 
 
 class ProcessVideoTests(unittest.TestCase):
-    def test_process_video_runs_steps_and_sends_success_after_cleanup(self):
-        video_path = Path("input.mp4")
+    def test_process_video_transcribes_and_translates_with_detected_language(self) -> None:
+        video_path = Path("input~ja.mp4")
         audio_path = Path("working/input/audio.wav")
-        ja_srt_path = Path("working/input/subtitle.srt")
+        srt_path = Path("working/input/subtitle.srt")
         zh_srt_path = Path("working/input/subtitle_translated.srt")
-        output_path = Path("output/input_zh_burned.mp4")
-        archived_path = Path("archive/input.mp4")
 
         with (
             patch.object(main, "extract_audio", return_value=audio_path) as extract_audio,
-            patch.object(main, "transcribe_audio", return_value=ja_srt_path) as transcribe_audio,
+            patch.object(main, "transcribe_audio", return_value=srt_path) as transcribe_audio,
             patch.object(main, "translate_srt", return_value=zh_srt_path) as translate_srt,
-            patch.object(main, "burn_subtitles", return_value=output_path) as burn_subtitles,
-            patch.object(main, "cleanup_completed_job", return_value=archived_path) as cleanup_completed_job,
+            patch.object(main, "cleanup_completed_job") as cleanup_completed_job,
             patch.object(main, "send_success") as send_success,
             patch.object(main, "send_failure") as send_failure,
         ):
             main.process_video(video_path)
 
         extract_audio.assert_called_once_with(video_path)
-        transcribe_audio.assert_called_once_with(audio_path)
-        translate_srt.assert_called_once_with(ja_srt_path)
-        burn_subtitles.assert_called_once_with(video_path, zh_srt_path)
-        cleanup_completed_job.assert_called_once_with(video_path, audio_path.parent)
-        send_success.assert_called_once_with(archived_path, output_path)
+        transcribe_audio.assert_called_once_with(audio_path, language="ja")
+        translate_srt.assert_called_once_with(srt_path, language="ja")
+        cleanup_completed_job.assert_not_called()
+        send_success.assert_not_called()
         send_failure.assert_not_called()
 
-    def test_process_video_sends_failure_and_reraises(self):
+    def test_process_video_sends_failure_and_reraises(self) -> None:
         video_path = Path("input.mp4")
 
         with (

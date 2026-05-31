@@ -1,13 +1,12 @@
 # app/transcriber.py
 
-import shutil
 import subprocess
 from pathlib import Path
+from typing import TypedDict
 
 from faster_whisper import WhisperModel
 
 from app.config import (
-    WORKING_DIR,
     WHISPER_MODEL,
     WHISPER_DEVICE,
     WHISPER_COMPUTE_TYPE,
@@ -18,6 +17,14 @@ from app.config import (
 CHUNK_SECONDS = 300
 OVERLAP_SECONDS = 15
 MAX_SEGMENT_SECONDS = 15
+
+
+class AudioChunk(TypedDict):
+    file: Path
+    chunk_index: int
+    main_start: float
+    main_end: float
+    actual_start: float
 
 
 def format_time(seconds: float) -> str:
@@ -35,7 +42,7 @@ def format_time(seconds: float) -> str:
     return f"{hrs:02}:{mins:02}:{secs:02},{millis:03}"
 
 
-def split_audio_with_overlap(audio_path: Path, chunk_dir: Path):
+def split_audio_with_overlap(audio_path: Path, chunk_dir: Path) -> list[AudioChunk]:
     chunk_dir.mkdir(parents=True, exist_ok=True)
 
     # Clear old chunks
@@ -44,7 +51,7 @@ def split_audio_with_overlap(audio_path: Path, chunk_dir: Path):
 
     duration = get_audio_duration(audio_path)
 
-    chunks = []
+    chunks: list[AudioChunk] = []
     start = 0
     index = 0
 
@@ -104,7 +111,7 @@ def get_audio_duration(audio_path: Path) -> float:
     return float(result.stdout.strip())
 
 
-def create_model():
+def create_model() -> WhisperModel:
     return WhisperModel(
         WHISPER_MODEL,
         device=WHISPER_DEVICE,
@@ -114,7 +121,7 @@ def create_model():
     )
 
 
-def transcribe_audio(audio_path: Path, language: str = None) -> Path:
+def transcribe_audio(audio_path: str | Path, language: str | None = None) -> Path:
     """
     audio.wav -> subtitle.srt
     """
