@@ -365,3 +365,83 @@ flock -n 9
 # View File descriptor
 ls -l /proc/$$/fd
 echo $$
+
+### 2026-05-29
+
+sudo apt install ffmpeg -y
+ffmpeg -version
+sudo apt install python3.12-venv
+python3 -m venv whisper-env
+source whisper-env/bin/activate
+pip install faster-whisper
+
+nproc
+
+### 2026-05-30
+
+alias transjap="source /home/jacky/workspace/devBoard/scripts/whisper-env/bin/activate; cd /home/jacky/workspace/devBoard/scripts/whisper-env"
+
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull qwen3:8b
+
+cat test.json | ollama run qwen3:8b --think=false
+
+FILE_NAME="聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate"
+ffmpeg -i $FILE_NAME.mp4 -vn -ac 1 -ar 16000 -af loudnorm $FILE_NAME.wav
+
+ffmpeg -i $FILE_NAME.mp4 -t 00:20:00 -c copy $FILE_NAME-sample.mp4
+
+yt-dlp -f "bestvideo[height<=1080]+bestaudio/best" "https://www.youtube.com/watch?v=Oe2hY2PyaVQ"
+
+python translate_srt_english.py
+
+### 2026-05-31
+
+ffmpeg -i INPUT.mp4 -i subtitle.srt \
+-c:v copy \
+-c:a copy \
+-c:s mov_text \
+OUTPUT.mp4
+
+
+ffmpeg -i 聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate-sample.mp4 -i 聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate-sample_zh.srt \
+-c:v copy \
+-c:a copy \
+-c:s mov_text \
+聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate-sample中文字幕.mp4
+
+
+ffmpeg -i 聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate-sample.mp4 -vf "subtitles=聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate-sample_zh.srt" 聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate-sample中文字幕.mp4
+
+sudo apt update
+sudo apt install fonts-noto-cjk
+
+INPUT="聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate-sample"
+SRT="聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate-sample_zh"
+OUTPUT="$INPUT中文字幕"
+ffmpeg -i $INPUT.mp4 \
+-vf "subtitles=$SRT.srt:force_style='FontName=Noto Sans CJK SC,FontSize=24'" \
+$OUTPUT.mp4
+
+python3 -m venv venv
+pip install -r requirements.txt
+
+FILE_NAME=“聪明哥-2026年最新视频-20BB-Poker-500NL-GG-winrate”
+ffmpeg -i $FILE_NAME.mp4 -t 00:09:00 -c copy $FILE_NAME-sample2.mp4
+
+
+deactivate
+rm -rf venv
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+
+pip install faster-whisper
+pip install ollama
+pip install python-dotenv
+
+python -c "from faster_whisper import WhisperModel; print('OK')"
+
+pip freeze > requirements.txt
+
+python -m unittest discover -s tests

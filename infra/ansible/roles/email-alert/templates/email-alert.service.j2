@@ -1,0 +1,6 @@
+[Unit]
+Description=Send email alert when %i fails
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/systemd-email-alert.sh %i

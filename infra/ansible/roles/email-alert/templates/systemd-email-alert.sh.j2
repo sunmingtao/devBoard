@@ -1,0 +1,15 @@
+#!/bin/bash
+
+UNIT="$1"
+HOST="$(hostname)"
+TO="sunmingtao@gmail.com"
+
+{
+  echo "Systemd service failed: $UNIT"
+  echo "Host: $HOST"
+  echo "Time: $(date)"
+  echo
+  echo "Recent logs:"
+  echo
+  journalctl -u "$UNIT" -n 80 --no-pager
+} | mail -s "[ALERT] $UNIT failed on $HOST" "$TO"

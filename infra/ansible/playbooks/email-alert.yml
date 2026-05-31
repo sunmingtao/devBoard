@@ -1,0 +1,6 @@
+---
+- name: set up email alert for service failure on homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - email-alert
