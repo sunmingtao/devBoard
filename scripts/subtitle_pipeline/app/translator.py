@@ -3,17 +3,12 @@ import re
 from pathlib import Path
 
 from app.config import (
-    SOURCE_LANGUAGE,
     TARGET_LANGUAGE
 )
 
 from app.prompts import (
     TRANSLATION_PROMPTS
 )
-
-template = TRANSLATION_PROMPTS[
-    (SOURCE_LANGUAGE, TARGET_LANGUAGE)
-]
 
 def parse_srt(filename):
     with open(filename, "r", encoding="utf-8") as f:
@@ -39,7 +34,7 @@ def parse_srt(filename):
 
     return subtitles
 
-def translate_single(text):
+def translate_single(text, template):
     print(f"Translating text: {text}")
     prompt = template.format(
         text=text
@@ -58,8 +53,12 @@ def translate_single(text):
 
     return response["message"]["content"].strip()
 
-def translate_srt(srt_path):
+def translate_srt(srt_path, language):
     subtitles = parse_srt(srt_path)
+
+    template = TRANSLATION_PROMPTS[
+        (language, TARGET_LANGUAGE)
+    ]
 
     job_dir = srt_path.parent
     output_srt = job_dir / "subtitle_translated.srt"
@@ -74,7 +73,7 @@ def translate_srt(srt_path):
 
             print(f"Translating {i}/{total}")
 
-            translated = translate_single(sub["text"])
+            translated = translate_single(sub["text"], template)
 
             f.write(f"{sub['index']}\n")
             f.write(f"{sub['time']}\n")

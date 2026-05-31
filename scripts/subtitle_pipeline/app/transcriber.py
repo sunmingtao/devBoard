@@ -2,7 +2,6 @@
 
 import shutil
 import subprocess
-from app.config import SOURCE_LANGUAGE
 from pathlib import Path
 
 from faster_whisper import WhisperModel
@@ -115,11 +114,11 @@ def create_model():
     )
 
 
-def transcribe_audio(audio_path: Path) -> Path:
+def transcribe_audio(audio_path: Path, language: str = None) -> Path:
     """
     audio.wav -> subtitle.srt
     """
-    print(f"Transcribing audio: {audio_path.name}")
+    print(f"Transcribing audio: {audio_path.name}, language={language}...")
     audio_path = Path(audio_path)
 
     job_dir = audio_path.parent
@@ -143,22 +142,16 @@ def transcribe_audio(audio_path: Path) -> Path:
 
             segments, info = model.transcribe(
                 str(chunk_file),
-                language=SOURCE_LANGUAGE,
-                beam_size=1,
-                best_of=1,
+                language=language,
+                beam_size=5,
+                best_of=5,
                 temperature=0,
-                vad_filter=True,
-                vad_parameters=dict(
-                    min_silence_duration_ms=500,
-                    speech_pad_ms=200,
-                ),
+                vad_filter=False,
                 condition_on_previous_text=False,
-                no_speech_threshold=0.5,
-                log_prob_threshold=-0.8,
-                compression_ratio_threshold=2.4,
             )
 
             for segment in segments:
+                print(segment)
                 text = segment.text.strip()
 
                 if not text:

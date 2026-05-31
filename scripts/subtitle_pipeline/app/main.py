@@ -36,15 +36,15 @@ def cleanup_completed_job(video_path: Path, job_dir: Path) -> Path:
 
 def process_video(video_path):
     video_path = Path(video_path)
-
+    language = "ja" if "~" in video_path.name else "en"
     try:
         audio_path = extract_audio(video_path)
-        ja_srt_path = transcribe_audio(audio_path)
-        zh_srt_path = translate_srt(ja_srt_path)
-        output_path = burn_subtitles(video_path, zh_srt_path)
+        srt_path = transcribe_audio(audio_path, language=language)
+        zh_srt_path = translate_srt(srt_path, language=language)
+        # output_path = burn_subtitles(video_path, zh_srt_path)
 
-        archived_video_path = cleanup_completed_job(video_path, audio_path.parent)
-        send_success(archived_video_path, output_path)
+        # archived_video_path = cleanup_completed_job(video_path, audio_path.parent)
+        # send_success(archived_video_path, output_path)
 
     except Exception as e:
         send_failure(video_path, str(e))

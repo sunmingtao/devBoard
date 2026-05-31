@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 import subprocess
 from time import time
-from faster_whisper import WhisperModel
 import time
 
 CHUNK_DIR = Path("/home/jacky/workspace/devBoard/scripts/whisper-env/chunks")
@@ -13,6 +12,12 @@ glob_result = sorted(CHUNK_DIR.glob("chunk_*.wav"))
 abc='abc'
 print(f"{abc=}")
 
+file='iiio-kkkC.mp4'
+
+if '~' in file:
+    print("File contains tilde.")
+else:
+    print("File does not contain tilde.")
 
 start_time = time.perf_counter() # 高精度计时器
 time.sleep(2)  # 模拟某个操作耗时2秒

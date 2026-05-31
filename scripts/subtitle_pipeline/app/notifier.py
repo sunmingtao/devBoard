@@ -12,7 +12,6 @@ from app.config import (
     SMTP_USERNAME,
 )
 
-
 class NotificationError(RuntimeError):
     """Raised when an email notification cannot be sent."""
 

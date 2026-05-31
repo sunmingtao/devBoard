@@ -46,6 +46,4 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 EMAIL_FROM = os.getenv("EMAIL_FROM", SMTP_USERNAME)
 EMAIL_TO = os.getenv("EMAIL_TO", "")
 
-SOURCE_LANGUAGE = "en"
-
 TARGET_LANGUAGE = "zh"
