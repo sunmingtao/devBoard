@@ -67,6 +67,27 @@ def translate_single(text: str, template: str) -> str:
 
     return response["message"]["content"].strip()
 
+
+def generate_bilingual_srt(
+    original_srt_path: str | Path,
+    translated_srt_path: str | Path,
+) -> Path:
+    original_srt_path = Path(original_srt_path)
+    translated_srt_path = Path(translated_srt_path)
+    original_subtitles = parse_srt(original_srt_path)
+    translated_subtitles = parse_srt(translated_srt_path)
+    output_srt = original_srt_path.parent / "subtitle_bilingual.srt"
+
+    with open(output_srt, "w", encoding="utf-8") as f:
+        for original, translated in zip(original_subtitles, translated_subtitles):
+            f.write(f"{original['index']}\n")
+            f.write(f"{original['time']}\n")
+            f.write(f"{original['text']}\n")
+            f.write(f"{translated['text']}\n\n")
+
+    return output_srt
+
+
 def translate_srt(srt_path: str | Path, language: str) -> Path:
     srt_path = Path(srt_path)
     subtitles = parse_srt(srt_path)

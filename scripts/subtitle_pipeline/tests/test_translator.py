@@ -63,6 +63,52 @@ class SrtParsingTests(unittest.TestCase):
         self.assertEqual(subtitles[0]["text"], "Hello")
 
 
+class BilingualSrtTests(unittest.TestCase):
+    def test_generate_bilingual_srt_combines_original_and_translated_text(self) -> None:
+        original_content = (
+            "1\n"
+            "00:00:01,000 --> 00:00:02,000\n"
+            "こんにちは\n\n"
+            "2\n"
+            "00:00:03,000 --> 00:00:04,000\n"
+            "またね\n"
+        )
+        translated_content = (
+            "1\n"
+            "00:00:01,000 --> 00:00:02,000\n"
+            "你好\n\n"
+            "2\n"
+            "00:00:03,000 --> 00:00:04,000\n"
+            "再见\n"
+        )
+
+        with TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            original_path = tmp_path / "subtitle.srt"
+            translated_path = tmp_path / "subtitle_translated.srt"
+            original_path.write_text(original_content, encoding="utf-8")
+            translated_path.write_text(translated_content, encoding="utf-8")
+
+            bilingual_path = translator.generate_bilingual_srt(
+                original_path,
+                translated_path,
+            )
+
+            self.assertEqual(
+                bilingual_path.read_text(encoding="utf-8"),
+                (
+                    "1\n"
+                    "00:00:01,000 --> 00:00:02,000\n"
+                    "こんにちは\n"
+                    "你好\n\n"
+                    "2\n"
+                    "00:00:03,000 --> 00:00:04,000\n"
+                    "またね\n"
+                    "再见\n\n"
+                ),
+            )
+
+
 class OllamaConfigTests(unittest.TestCase):
     def test_translate_single_uses_configured_ollama_model(self) -> None:
         with (

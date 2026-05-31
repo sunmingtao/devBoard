@@ -452,11 +452,10 @@ tmux attach
 
 ### 2026-06-01
 
-```
 ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 input.mp4
-ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 extracted.wav
+ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 input.wav
 
-ffmpeg -i SW-473~S.mp4 \
+ffmpeg -i input.mp4 \
 -map 0:a:0 \
 -vn \
 -ac 1 \
@@ -464,3 +463,43 @@ ffmpeg -i SW-473~S.mp4 \
 -af "dynaudnorm" \
 -c:a pcm_s16le \
 SW-473~S-new.wav
+
+sudo apt update
+sudo apt install samba -y
+
+smbd --version
+
+sudo vi /etc/samba/smb.conf
+
+[workspaces]
+    comment = Mike Workspace
+    path = /home/mike/workspaces
+
+    browseable = yes
+    writable = yes
+    read only = no
+
+    guest ok = no
+    valid users = mike
+
+    create mask = 0664
+    directory mask = 0775
+
+    force user = mike
+
+sudo smbpasswd -a mike
+sudo smbpasswd -e mike
+
+ls -ld /home/mike/workspaces
+
+sudo testparm
+
+sudo systemctl restart smbd
+sudo systemctl enable smbd
+
+sudo systemctl status smbd
+
+sudo ufw allow samba
+
+sudo ufw status
+sudo ss -tulpn | grep smbd

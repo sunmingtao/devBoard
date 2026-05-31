@@ -69,11 +69,13 @@ class ProcessVideoTests(unittest.TestCase):
         audio_path = Path("working/input/audio.wav")
         srt_path = Path("working/input/subtitle.srt")
         zh_srt_path = Path("working/input/subtitle_translated.srt")
+        bilingual_srt_path = Path("working/input/subtitle_bilingual.srt")
 
         with (
             patch.object(main, "extract_audio", return_value=audio_path) as extract_audio,
             patch.object(main, "transcribe_audio", return_value=srt_path) as transcribe_audio,
             patch.object(main, "translate_srt", return_value=zh_srt_path) as translate_srt,
+            patch.object(main, "generate_bilingual_srt", return_value=bilingual_srt_path) as generate_bilingual_srt,
             patch.object(main, "cleanup_completed_job") as cleanup_completed_job,
             patch.object(main, "send_success") as send_success,
             patch.object(main, "send_failure") as send_failure,
@@ -83,6 +85,7 @@ class ProcessVideoTests(unittest.TestCase):
         extract_audio.assert_called_once_with(video_path)
         transcribe_audio.assert_called_once_with(audio_path, language="ja")
         translate_srt.assert_called_once_with(srt_path, language="ja")
+        generate_bilingual_srt.assert_called_once_with(srt_path, zh_srt_path)
         cleanup_completed_job.assert_not_called()
         send_success.assert_not_called()
         send_failure.assert_not_called()

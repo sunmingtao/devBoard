@@ -4,7 +4,7 @@ from pathlib import Path
 from app.scanner import find_new_videos
 from app.audio import extract_audio
 from app.transcriber import transcribe_audio
-from app.translator import translate_srt
+from app.translator import generate_bilingual_srt, translate_srt
 from app.video import burn_subtitles
 from app.notifier import send_success, send_failure
 from app.config import ARCHIVE_DIR
@@ -44,7 +44,14 @@ def process_video(video_path: str | Path) -> None:
         audio_path = extract_audio(video_path)
         srt_path = transcribe_audio(audio_path, language=language)
         zh_srt_path = translate_srt(srt_path, language=language)
-        # output_path = burn_subtitles(video_path, zh_srt_path)
+
+        subtitle_path = (
+            generate_bilingual_srt(srt_path, zh_srt_path)
+            if language == "ja"
+            else zh_srt_path
+        )
+
+        # output_path = burn_subtitles(video_path, subtitle_path)
 
         # archived_video_path = cleanup_completed_job(video_path, audio_path.parent)
         # send_success(archived_video_path, output_path)
