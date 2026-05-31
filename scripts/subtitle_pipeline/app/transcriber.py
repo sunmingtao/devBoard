@@ -15,7 +15,7 @@ from app.config import (
 )
 
 
-CHUNK_SECONDS = 600
+CHUNK_SECONDS = 300
 OVERLAP_SECONDS = 15
 MAX_SEGMENT_SECONDS = 15
 
