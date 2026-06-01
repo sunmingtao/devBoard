@@ -503,3 +503,5 @@ sudo ufw allow samba
 
 sudo ufw status
 sudo ss -tulpn | grep smbd
+
+python3 -c "import inspect, ollama; print(inspect.signature(ollama.chat))"
