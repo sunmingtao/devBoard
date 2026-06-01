@@ -23,7 +23,7 @@ LOG_DIR = BASE_DIR / "logs"
 OLLAMA_MODEL = "qwen3:8b"
 
 # Translation
-TRANSLATION_BATCH_SIZE = 5
+TRANSLATION_CONCURRENCY = 3
 
 # Whisper
 WHISPER_MODEL = "turbo"

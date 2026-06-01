@@ -1,13 +1,13 @@
 import ollama
-import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import TypedDict
 
 from app.config import (
     OLLAMA_MODEL,
     TARGET_LANGUAGE,
-    TRANSLATION_BATCH_SIZE,
+    TRANSLATION_CONCURRENCY,
 )
 
 from app.prompts import (
@@ -19,30 +19,6 @@ class SubtitleCue(TypedDict):
     index: int
     time: str
     text: str
-
-
-def translation_schema(batch_size: int) -> dict:
-    return {
-        "type": "object",
-        "properties": {
-            "translations": {
-                "type": "array",
-                "minItems": batch_size,
-                "maxItems": batch_size,
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "id": {"type": "integer"},
-                        "text": {"type": "string"},
-                    },
-                    "required": ["id", "text"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        "required": ["translations"],
-        "additionalProperties": False,
-    }
 
 
 def parse_srt(filename: str | Path) -> list[SubtitleCue]:
@@ -75,7 +51,6 @@ def parse_srt(filename: str | Path) -> list[SubtitleCue]:
     return subtitles
 
 def translate_single(text: str, template: str) -> str:
-    print(f"Translating text: {text}")
     prompt = template.format(
         text=text
     )
@@ -92,58 +67,6 @@ def translate_single(text: str, template: str) -> str:
     )
 
     return response["message"]["content"].strip()
-
-
-def translate_batch(texts: list[str], language: str) -> list[str]:
-    if len(texts) == 1:
-        template = TRANSLATION_PROMPTS[
-            (language, TARGET_LANGUAGE)
-        ]
-        return [translate_single(texts[0], template)]
-
-    payload = [
-        {"id": index, "text": text}
-        for index, text in enumerate(texts, start=1)
-    ]
-    prompt = (
-        "你是一名专业字幕翻译。\n"
-        f"请把下面 JSON 数组中每个 text 字段从 {language} 翻译成 {TARGET_LANGUAGE}。\n"
-        "必须逐条独立翻译，不能合并、拆分、省略或改写 id。\n"
-        "即使字幕很短或只有一个字母，也必须为每个输入返回一个独立结果。\n"
-        "只输出符合 schema 的 JSON。\n\n"
-        f"输入 JSON:\n{json.dumps(payload, ensure_ascii=False)}"
-    )
-
-    response = ollama.chat(
-        model=OLLAMA_MODEL,
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
-        think=False,
-        format=translation_schema(len(texts)),
-        options={
-            "temperature": 0,
-        }
-    )
-
-    content = response["message"]["content"].strip()
-    data = json.loads(content)
-    translations = data.get("translations")
-
-    if not isinstance(translations, list) or len(translations) != len(texts):
-        raise ValueError(f"Unexpected translation response: {content}")
-
-    translated_texts: list[str] = []
-    for expected_id, item in enumerate(translations, start=1):
-        if (
-            not isinstance(item, dict)
-            or item.get("id") != expected_id
-            or not isinstance(item.get("text"), str)
-        ):
-            raise ValueError(f"Unexpected translation response: {content}")
-        translated_texts.append(item["text"].strip())
-
-    return translated_texts
 
 
 def generate_bilingual_srt(
@@ -170,33 +93,31 @@ def translate_srt(srt_path: str | Path, language: str) -> Path:
     srt_path = Path(srt_path)
     subtitles = parse_srt(srt_path)
 
+    template = TRANSLATION_PROMPTS[
+        (language, TARGET_LANGUAGE)
+    ]
+
     job_dir = srt_path.parent
     output_srt = job_dir / "subtitle_translated.srt"
 
     open(output_srt, "w", encoding="utf-8").close()
 
     total = len(subtitles)
+    worker_count = max(1, TRANSLATION_CONCURRENCY)
+
+    def translate_subtitle(item: tuple[int, SubtitleCue]) -> tuple[SubtitleCue, str]:
+        i, sub = item
+        print(f"Translating {i}/{total}")
+        return sub, translate_single(sub["text"], template)
 
     with open(output_srt, "a", encoding="utf-8") as f:
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            results = executor.map(
+                translate_subtitle,
+                enumerate(subtitles, start=1),
+            )
 
-        for start in range(0, total, TRANSLATION_BATCH_SIZE):
-            batch = subtitles[start:start + TRANSLATION_BATCH_SIZE]
-
-            print(f"Translating {start + 1}-{start + len(batch)}/{total}")
-
-            for attempt in range(1, 4):
-                try:
-                    translated_texts = translate_batch(
-                        [sub["text"] for sub in batch],
-                        language,
-                    )
-                    break
-                except (json.JSONDecodeError, ValueError):
-                    if attempt == 3:
-                        raise
-                    print(f"Retrying {start + 1}-{start + len(batch)}/{total}")
-
-            for sub, translated in zip(batch, translated_texts):
+            for sub, translated in results:
                 f.write(f"{sub['index']}\n")
                 f.write(f"{sub['time']}\n")
                 f.write(f"{translated}\n\n")
