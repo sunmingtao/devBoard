@@ -505,3 +505,25 @@ sudo ufw status
 sudo ss -tulpn | grep smbd
 
 python3 -c "import inspect, ollama; print(inspect.signature(ollama.chat))"
+
+
+useradd -m -s /bin/bash connor
+passwd connor
+
+# show wireless interface info
+iw dev wlp2s0 link
+iwconfig wlp2s0
+
+# Windows Powershell
+netsh wlan show interfaces
+
+
+iperf3 -s
+iperf3 -c 192.168.0.46
+
+sudo apt install cifs-utils
+smbclient -L //192.168.0.61 -U smt
+sudo mount -t cifs //192.168.0.61/homes /mnt/sun   -o username=smt,password=*****
+
+
+sudo iw dev wlp2s0 set power_save off

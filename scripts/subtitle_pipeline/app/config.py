@@ -10,6 +10,7 @@ except ImportError:
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+CPU_COUNT = os.cpu_count() or 1
 
 # Folders
 INPUT_DIR = BASE_DIR / "input"
@@ -20,16 +21,20 @@ FAILED_DIR = BASE_DIR / "failed"
 LOG_DIR = BASE_DIR / "logs"
 
 # Ollama
-OLLAMA_MODEL = "qwen3:8b"
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 
 # Translation
-TRANSLATION_CONCURRENCY = 3
+TRANSLATION_CONCURRENCY = int(
+    os.getenv("TRANSLATION_CONCURRENCY", str(min(4, CPU_COUNT)))
+)
 
 # Whisper
-WHISPER_MODEL = "turbo"
-WHISPER_DEVICE = "cpu"
-WHISPER_COMPUTE_TYPE = "int8"
-WHISPER_CPU_THREADS = 12
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "turbo")
+WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
+WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
+WHISPER_CPU_THREADS = int(
+    os.getenv("WHISPER_CPU_THREADS", str(CPU_COUNT))
+)
 
 # Audio
 AUDIO_SAMPLE_RATE = 16000
