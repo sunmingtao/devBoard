@@ -1,11 +1,13 @@
 import ollama
 import re
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import TypedDict
 
 from app.config import (
     OLLAMA_MODEL,
-    TARGET_LANGUAGE
+    TARGET_LANGUAGE,
+    TRANSLATION_CONCURRENCY,
 )
 
 from app.prompts import (
@@ -49,7 +51,6 @@ def parse_srt(filename: str | Path) -> list[SubtitleCue]:
     return subtitles
 
 def translate_single(text: str, template: str) -> str:
-    print(f"Translating text: {text}")
     prompt = template.format(
         text=text
     )
@@ -76,7 +77,7 @@ def generate_bilingual_srt(
     translated_srt_path = Path(translated_srt_path)
     original_subtitles = parse_srt(original_srt_path)
     translated_subtitles = parse_srt(translated_srt_path)
-    output_srt = original_srt_path.parent / "subtitle_bilingual.srt"
+    output_srt = original_srt_path.parent / f"{original_srt_path.name.replace('.srt', '')}_bilingual.srt"
 
     with open(output_srt, "w", encoding="utf-8") as f:
         for original, translated in zip(original_subtitles, translated_subtitles):
@@ -97,23 +98,29 @@ def translate_srt(srt_path: str | Path, language: str) -> Path:
     ]
 
     job_dir = srt_path.parent
-    output_srt = job_dir / "subtitle_translated.srt"
+    output_srt = job_dir / f"{srt_path.name.replace('.srt', '')}_translated.srt"
 
     open(output_srt, "w", encoding="utf-8").close()
 
     total = len(subtitles)
+    worker_count = max(1, TRANSLATION_CONCURRENCY)
+
+    def translate_subtitle(item: tuple[int, SubtitleCue]) -> tuple[SubtitleCue, str]:
+        i, sub = item
+        print(f"Translating {i}/{total}")
+        return sub, translate_single(sub["text"], template)
 
     with open(output_srt, "a", encoding="utf-8") as f:
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            results = executor.map(
+                translate_subtitle,
+                enumerate(subtitles, start=1),
+            )
 
-        for i, sub in enumerate(subtitles, start=1):
-
-            print(f"Translating {i}/{total}")
-
-            translated = translate_single(sub["text"], template)
-
-            f.write(f"{sub['index']}\n")
-            f.write(f"{sub['time']}\n")
-            f.write(f"{translated}\n\n")
+            for sub, translated in results:
+                f.write(f"{sub['index']}\n")
+                f.write(f"{sub['time']}\n")
+                f.write(f"{translated}\n\n")
 
     print(
         f"\nDone.\n"

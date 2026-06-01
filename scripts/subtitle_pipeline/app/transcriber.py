@@ -130,7 +130,7 @@ def transcribe_audio(audio_path: str | Path, language: str | None = None) -> Pat
 
     job_dir = audio_path.parent
     chunk_dir = job_dir / "chunks"
-    srt_path = job_dir / "subtitle.srt"
+    srt_path = job_dir / f"{audio_path.name.replace('.wav', '')}.srt"
 
     chunks = split_audio_with_overlap(audio_path, chunk_dir)
     model = create_model()
