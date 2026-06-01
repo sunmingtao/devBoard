@@ -7,7 +7,7 @@ from app.transcriber import transcribe_audio
 from app.translator import generate_bilingual_srt, translate_srt
 from app.video import burn_subtitles
 from app.notifier import send_success, send_failure
-from app.config import ARCHIVE_DIR
+from app.config import ARCHIVE_DIR, OUTPUT_DIR
 
 
 def unique_archive_path(path: str | Path) -> Path:
@@ -37,6 +37,15 @@ def cleanup_completed_job(video_path: str | Path, job_dir: str | Path) -> Path:
     return archived_video_path
 
 
+def copy_subtitle_to_output(subtitle_path: str | Path) -> Path:
+    subtitle_path = Path(subtitle_path)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = OUTPUT_DIR / subtitle_path.name
+    shutil.copyfile(subtitle_path, output_path)
+    print(f"Copied subtitle to output: {output_path}")
+    return output_path
+
+
 def process_video(video_path: str | Path) -> None:
     video_path = Path(video_path)
     language = "ja" if "~" in video_path.name else "en"
@@ -51,10 +60,14 @@ def process_video(video_path: str | Path) -> None:
             else zh_srt_path
         )
 
-        # output_path = burn_subtitles(video_path, subtitle_path)
+        subtitle_output_path = copy_subtitle_to_output(subtitle_path)
 
-        # archived_video_path = cleanup_completed_job(video_path, audio_path.parent)
-        # send_success(archived_video_path, output_path)
+        if language == "en":
+            output_path = burn_subtitles(video_path, subtitle_path)
+        else:
+            output_path = subtitle_output_path  # No burning for Japanese videos
+        archived_video_path = cleanup_completed_job(video_path, audio_path.parent)
+        send_success(archived_video_path, output_path)
 
     except Exception as e:
         send_failure(video_path, str(e))

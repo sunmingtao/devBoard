@@ -63,6 +63,25 @@ class CompletedJobCleanupTests(unittest.TestCase):
             self.assertEqual(archive_path, archive_dir / "input_2.mp4")
 
 
+class SubtitleOutputTests(unittest.TestCase):
+    def test_copy_subtitle_to_output_copies_generated_srt(self) -> None:
+        with TemporaryDirectory() as tmp:
+            base_dir = Path(tmp)
+            subtitle_path = base_dir / "working" / "subtitle_bilingual.srt"
+            subtitle_path.parent.mkdir()
+            subtitle_path.write_text("1\n00:00:00,000 --> 00:00:01,000\nHello\n", encoding="utf-8")
+            output_dir = base_dir / "output"
+
+            with (
+                patch.object(main, "OUTPUT_DIR", output_dir),
+                patch("builtins.print"),
+            ):
+                output_path = main.copy_subtitle_to_output(subtitle_path)
+
+            self.assertEqual(output_path, output_dir / subtitle_path.name)
+            self.assertEqual(output_path.read_text(encoding="utf-8"), subtitle_path.read_text(encoding="utf-8"))
+
+
 class ProcessVideoTests(unittest.TestCase):
     def test_process_video_transcribes_and_translates_with_detected_language(self) -> None:
         video_path = Path("input~ja.mp4")
@@ -70,13 +89,17 @@ class ProcessVideoTests(unittest.TestCase):
         srt_path = Path("working/input/subtitle.srt")
         zh_srt_path = Path("working/input/subtitle_translated.srt")
         bilingual_srt_path = Path("working/input/subtitle_bilingual.srt")
+        subtitle_output_path = Path("output/subtitle_bilingual.srt")
+        archived_video_path = Path("archive/input~ja.mp4")
 
         with (
             patch.object(main, "extract_audio", return_value=audio_path) as extract_audio,
             patch.object(main, "transcribe_audio", return_value=srt_path) as transcribe_audio,
             patch.object(main, "translate_srt", return_value=zh_srt_path) as translate_srt,
             patch.object(main, "generate_bilingual_srt", return_value=bilingual_srt_path) as generate_bilingual_srt,
-            patch.object(main, "cleanup_completed_job") as cleanup_completed_job,
+            patch.object(main, "copy_subtitle_to_output", return_value=subtitle_output_path) as copy_subtitle_to_output,
+            patch.object(main, "burn_subtitles") as burn_subtitles,
+            patch.object(main, "cleanup_completed_job", return_value=archived_video_path) as cleanup_completed_job,
             patch.object(main, "send_success") as send_success,
             patch.object(main, "send_failure") as send_failure,
         ):
@@ -86,8 +109,10 @@ class ProcessVideoTests(unittest.TestCase):
         transcribe_audio.assert_called_once_with(audio_path, language="ja")
         translate_srt.assert_called_once_with(srt_path, language="ja")
         generate_bilingual_srt.assert_called_once_with(srt_path, zh_srt_path)
-        cleanup_completed_job.assert_not_called()
-        send_success.assert_not_called()
+        copy_subtitle_to_output.assert_called_once_with(bilingual_srt_path)
+        burn_subtitles.assert_not_called()
+        cleanup_completed_job.assert_called_once_with(video_path, audio_path.parent)
+        send_success.assert_called_once_with(archived_video_path, subtitle_output_path)
         send_failure.assert_not_called()
 
     def test_process_video_sends_failure_and_reraises(self) -> None:
