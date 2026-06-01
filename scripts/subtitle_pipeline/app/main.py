@@ -1,13 +1,13 @@
 import shutil
 from pathlib import Path
 
-from app.scanner import find_new_videos
+from app.scanner import find_new_media_files, is_audio_file
 from app.audio import extract_audio
 from app.transcriber import transcribe_audio
 from app.translator import generate_bilingual_srt, translate_srt
 from app.video import burn_subtitles
 from app.notifier import send_success, send_failure
-from app.config import ARCHIVE_DIR, OUTPUT_DIR
+from app.config import ARCHIVE_DIR, OUTPUT_DIR, WORKING_DIR
 
 
 def unique_archive_path(path: str | Path) -> Path:
@@ -46,11 +46,34 @@ def copy_subtitle_to_output(subtitle_path: str | Path) -> Path:
     return output_path
 
 
-def process_video(video_path: str | Path) -> None:
-    video_path = Path(video_path)
-    language = "ja" if "~" in video_path.name else "en"
+def stage_audio_file(audio_path: str | Path) -> Path:
+    audio_path = Path(audio_path)
+    job_dir = WORKING_DIR / audio_path.stem
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    staged_audio_path = job_dir / audio_path.name
+    if staged_audio_path.exists():
+        staged_audio_path.unlink()
+
     try:
-        audio_path = extract_audio(video_path)
+        staged_audio_path.hardlink_to(audio_path)
+    except OSError:
+        shutil.copyfile(audio_path, staged_audio_path)
+
+    print(f"Using input audio directly: {audio_path.name}")
+    return staged_audio_path
+
+
+def process_media_file(media_path: str | Path) -> None:
+    media_path = Path(media_path)
+    language = "ja" if "~" in media_path.name else "en"
+    try:
+        input_is_audio = is_audio_file(media_path)
+        audio_path = (
+            stage_audio_file(media_path)
+            if input_is_audio
+            else extract_audio(media_path)
+        )
         srt_path = transcribe_audio(audio_path, language=language)
         zh_srt_path = translate_srt(srt_path, language=language)
 
@@ -62,30 +85,31 @@ def process_video(video_path: str | Path) -> None:
 
         subtitle_output_path = copy_subtitle_to_output(subtitle_path)
 
-        if language == "en":
-            output_path = burn_subtitles(video_path, subtitle_path)
+        if language == "en" and not input_is_audio:
+            output_path = burn_subtitles(media_path, subtitle_path)
         else:
-            output_path = subtitle_output_path  # No burning for Japanese videos
-        archived_video_path = cleanup_completed_job(video_path, audio_path.parent)
+            output_path = subtitle_output_path
+        archived_video_path = cleanup_completed_job(media_path, audio_path.parent)
         send_success(archived_video_path, output_path)
 
     except Exception as e:
-        send_failure(video_path, str(e))
+        send_failure(media_path, str(e))
         raise
 
 
 def main() -> None:
-    videos = find_new_videos()
-    failed_videos = []
+    media_files = find_new_media_files()
 
-    for video in videos:
+    failed_media_files = []
+
+    for media_file in media_files:
         try:
-            process_video(video)
+            process_media_file(media_file)
         except Exception as exc:
-            failed_videos.append((video, exc))
-            print(f"Failed processing {video.name}; continuing with next video.")
+            failed_media_files.append((media_file, exc))
+            print(f"Failed processing {media_file.name}; continuing with next file.")
 
-    if failed_videos:
-        print("\nFailed videos:")
-        for video, exc in failed_videos:
-            print(f"- {video.name}: {exc}")
+    if failed_media_files:
+        print("\nFailed media files:")
+        for media_file, exc in failed_media_files:
+            print(f"- {media_file.name}: {exc}")

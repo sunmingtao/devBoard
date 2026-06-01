@@ -7,18 +7,18 @@ from app import main
 
 
 class MainBatchTests(unittest.TestCase):
-    def test_main_continues_after_one_video_fails(self) -> None:
-        videos = [Path("one.mp4"), Path("two.mp4"), Path("three.mp4")]
+    def test_main_continues_after_one_media_file_fails(self) -> None:
+        media_files = [Path("one.mp4"), Path("two.mp4"), Path("three.mp4")]
         processed = []
 
-        def fake_process_video(video: Path) -> None:
+        def fake_process_media_file(video: Path) -> None:
             processed.append(video.name)
             if video.name == "two.mp4":
                 raise RuntimeError("boom")
 
         with (
-            patch.object(main, "find_new_videos", return_value=videos),
-            patch.object(main, "process_video", side_effect=fake_process_video),
+            patch.object(main, "find_new_media_files", return_value=media_files),
+            patch.object(main, "process_media_file", side_effect=fake_process_media_file),
             patch("builtins.print"),
         ):
             main.main()
@@ -82,8 +82,8 @@ class SubtitleOutputTests(unittest.TestCase):
             self.assertEqual(output_path.read_text(encoding="utf-8"), subtitle_path.read_text(encoding="utf-8"))
 
 
-class ProcessVideoTests(unittest.TestCase):
-    def test_process_video_transcribes_and_translates_with_detected_language(self) -> None:
+class ProcessMediaFileTests(unittest.TestCase):
+    def test_process_media_file_transcribes_and_translates_with_detected_language(self) -> None:
         video_path = Path("input~ja.mp4")
         audio_path = Path("working/input/audio.wav")
         srt_path = Path("working/input/subtitle.srt")
@@ -103,7 +103,7 @@ class ProcessVideoTests(unittest.TestCase):
             patch.object(main, "send_success") as send_success,
             patch.object(main, "send_failure") as send_failure,
         ):
-            main.process_video(video_path)
+            main.process_media_file(video_path)
 
         extract_audio.assert_called_once_with(video_path)
         transcribe_audio.assert_called_once_with(audio_path, language="ja")
@@ -115,7 +115,7 @@ class ProcessVideoTests(unittest.TestCase):
         send_success.assert_called_once_with(archived_video_path, subtitle_output_path)
         send_failure.assert_not_called()
 
-    def test_process_video_sends_failure_and_reraises(self) -> None:
+    def test_process_media_file_sends_failure_and_reraises(self) -> None:
         video_path = Path("input.mp4")
 
         with (
@@ -124,7 +124,7 @@ class ProcessVideoTests(unittest.TestCase):
             patch.object(main, "send_success") as send_success,
         ):
             with self.assertRaises(RuntimeError):
-                main.process_video(video_path)
+                main.process_media_file(video_path)
 
         send_failure.assert_called_once_with(video_path, "ffmpeg failed")
         send_success.assert_not_called()

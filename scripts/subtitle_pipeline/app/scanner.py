@@ -8,10 +8,20 @@ from app.config import INPUT_DIR
 
 
 VIDEO_EXTENSIONS = {".mp4", ".mkv", ".mov", ".avi", ".webm"}
+AUDIO_EXTENSIONS = {".aac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav", ".wma"}
+MEDIA_EXTENSIONS = VIDEO_EXTENSIONS | AUDIO_EXTENSIONS
 
 
 def is_video_file(path: Path) -> bool:
     return path.is_file() and path.suffix.lower() in VIDEO_EXTENSIONS
+
+
+def is_audio_file(path: Path) -> bool:
+    return path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS
+
+
+def is_media_file(path: Path) -> bool:
+    return path.is_file() and path.suffix.lower() in MEDIA_EXTENSIONS
 
 
 def is_file_stable(path: Path, wait_seconds: int = 30) -> bool:
@@ -40,30 +50,30 @@ def is_valid_video(path: Path) -> bool:
     return result.returncode == 0
 
 
-def find_new_videos() -> list[Path]:
+def find_new_media_files() -> list[Path]:
     """
-    Scan input folder and return stable, valid video files.
+    Scan input folder and return stable, valid media files.
     """
 
     INPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    videos = []
+    media_files = []
 
     for path in sorted(INPUT_DIR.iterdir()):
 
-        if not is_video_file(path):
+        if not is_media_file(path):
             continue
 
-        print(f"Found video: {path.name}")
+        print(f"Found media: {path.name}")
 
         if not is_file_stable(path):
             print(f"Skipping unstable file: {path.name}")
             continue
 
         if not is_valid_video(path):
-            print(f"Skipping invalid video: {path.name}")
+            print(f"Skipping invalid media: {path.name}")
             continue
 
-        videos.append(path)
+        media_files.append(path)
 
-    return videos
+    return media_files
