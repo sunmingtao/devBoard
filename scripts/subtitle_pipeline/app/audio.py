@@ -35,10 +35,11 @@ def extract_audio(video_path: str | Path) -> Path:
         "-i", str(video_path),
         "-map", "0:a:0",
         "-vn",
-        "-af", "aresample=async=1000:first_pts=0,dynaudnorm",
+        "-af", "dynaudnorm",
         "-ac", "1",
         "-ar", "16000",
         "-c:a", "pcm_s16le",
+        "-t", str(video_duration), 
         str(audio_path)
     ], check=True)
 
