@@ -27,7 +27,8 @@ def extract_audio(video_path: str | Path) -> Path:
     job_dir = WORKING_DIR / video_path.stem
     job_dir.mkdir(parents=True, exist_ok=True)
 
-    audio_path = job_dir / f"{video_path.stem}.wav"
+    audio_path = job_dir / f"{video_path.stem}.wav"     
+    video_duration = _probe_duration(video_path)
 
     subprocess.run([
         "ffmpeg", "-y",
@@ -42,8 +43,7 @@ def extract_audio(video_path: str | Path) -> Path:
         "-t", str(video_duration), 
         str(audio_path)
     ], check=True)
-
-    video_duration = _probe_duration(video_path)
+    
     audio_duration = _probe_duration(audio_path)
     if abs(video_duration - audio_duration) > 0.5:
         raise RuntimeError(
