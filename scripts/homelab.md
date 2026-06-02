@@ -527,3 +527,40 @@ sudo mount -t cifs //192.168.0.61/homes /mnt/sun   -o username=smt,password=****
 
 
 sudo iw dev wlp2s0 set power_save off
+
+### 2026-06-03
+
+ssh-keygen -t ed25519 -f ~/.ssh/linode -C "mike@linode"
+
+AWS service quota
+request g6.xlarge
+
+Run Script
+
+```
+#!/usr/bin/env bash
+set -e
+
+echo "== Update system =="
+sudo apt update
+sudo apt install -y curl git htop nvtop ffmpeg python3 python3-venv python3-pip
+
+echo "== Check NVIDIA GPU =="
+nvidia-smi || true
+
+echo "== Install Ollama =="
+curl -fsSL https://ollama.com/install.sh | sh
+
+echo "== Enable Ollama =="
+sudo systemctl enable ollama
+sudo systemctl restart ollama
+
+echo "== Install Python env for Whisper =="
+mkdir -p ~/whisper-job
+cd ~/whisper-job
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install --upgrade pip
+pip install faster-whisper
+```
