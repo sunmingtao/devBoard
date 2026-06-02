@@ -1,0 +1,10 @@
+[Unit]
+Description=Run subtitle pipeline
+Wants=network-online.target
+After=network-online.target
+OnFailure=email-alert@%n.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/mike/workspaces/devBoard/scripts/subtitle_pipeline
+ExecStart=/home/mike/workspaces/devBoard/scripts/subtitle_pipeline/run.sh

@@ -15,6 +15,34 @@ ARGOCD_APPS=(
   devboard-kafka
   ingress-nginx
 )
+MAIL_TO="sunmingtao@gmail.com"
+STARTED_AT="$(date -Is)"
+
+notify_result() {
+  local exit_code=$?
+  local status="SUCCESS"
+
+  if [ "$exit_code" -ne 0 ]; then
+    status="FAILURE"
+  fi
+
+  if command -v mail >/dev/null 2>&1; then
+    {
+      echo "devBoard EKS destroy finished with status: $status"
+      echo "Exit code: $exit_code"
+      echo "Cluster: $CLUSTER_NAME"
+      echo "Region: $REGION"
+      echo "Started: $STARTED_AT"
+      echo "Finished: $(date -Is)"
+    } | mail -s "devBoard EKS destroy $status" "$MAIL_TO" || true
+  else
+    echo "mail command not found; could not send destroy result to $MAIL_TO" >&2
+  fi
+
+  exit "$exit_code"
+}
+
+trap notify_result EXIT
 
 echo "Updating kubeconfig..."
 aws eks update-kubeconfig --region "$REGION" --name "$CLUSTER_NAME" || true
@@ -83,5 +111,8 @@ fi
 
 echo "Destroying Terraform infra..."
 terraform destroy -auto-approve
+
+echo "Waiting for EKS cluster deletion..."
+aws eks wait cluster-deleted --region "$REGION" --name "$CLUSTER_NAME"
 
 echo "Done."

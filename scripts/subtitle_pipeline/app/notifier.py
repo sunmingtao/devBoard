@@ -1,5 +1,7 @@
 import smtplib
+import time
 from collections.abc import Iterable
+from datetime import timedelta
 from email.message import EmailMessage
 from pathlib import Path
 
@@ -11,6 +13,9 @@ from app.config import (
     SMTP_PORT,
     SMTP_USERNAME,
 )
+
+_PROCESSING_STARTED_AT = time.perf_counter()
+
 
 class NotificationError(RuntimeError):
     """Raised when an email notification cannot be sent."""
@@ -35,6 +40,10 @@ def _missing_settings(recipients: list[str]) -> list[str]:
     }
 
     return [name for name, value in required_settings.items() if not value]
+
+
+def _elapsed_processing_time() -> str:
+    return str(timedelta(seconds=int(time.perf_counter() - _PROCESSING_STARTED_AT)))
 
 
 def send_email(
@@ -83,7 +92,6 @@ def send_email(
     print(f"Email notification sent to {', '.join(to_addresses)}")
     return True
 
-
 def send_success(video_path: str | Path, output_path: str | Path) -> bool:
     video_path = Path(video_path)
     output_path = Path(output_path)
@@ -93,10 +101,10 @@ def send_success(video_path: str | Path, output_path: str | Path) -> bool:
         "Subtitle pipeline completed successfully.\n\n"
         f"Input video: {video_path}\n"
         f"Output video: {output_path}\n"
+        f"Processing time: {_elapsed_processing_time()}\n"
     )
 
     return send_email(subject, body)
-
 
 def send_failure(video_path: str | Path, error_message: str) -> bool:
     video_path = Path(video_path)
@@ -106,6 +114,7 @@ def send_failure(video_path: str | Path, error_message: str) -> bool:
         "Subtitle pipeline failed.\n\n"
         f"Input video: {video_path}\n"
         f"Error: {error_message}\n"
+        f"Processing time: {_elapsed_processing_time()}\n"
     )
 
     return send_email(subject, body)
