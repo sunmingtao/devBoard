@@ -564,3 +564,5 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install faster-whisper
 ```
+
+timeout -k 1m 12h python run.py > job-$(date +%F).log 2>&1

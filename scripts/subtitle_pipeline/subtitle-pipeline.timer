@@ -1,0 +1,10 @@
+[Unit]
+Description=Run subtitle pipeline hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=subtitle-pipeline.service
+
+[Install]
+WantedBy=timers.target
