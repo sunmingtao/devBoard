@@ -112,6 +112,8 @@ class BilingualSrtTests(unittest.TestCase):
 class OllamaConfigTests(unittest.TestCase):
     def test_translate_single_uses_configured_ollama_model(self) -> None:
         with (
+            patch.object(translator, "OLLAMA_CONTEXT_LENGTH", 1024),
+            patch.object(translator, "OLLAMA_KEEP_ALIVE", "12h"),
             patch.object(translator, "OLLAMA_MODEL", "configured-model"),
             patch.object(translator.ollama, "chat") as chat,
             patch("builtins.print"),
@@ -122,6 +124,8 @@ class OllamaConfigTests(unittest.TestCase):
 
         self.assertEqual(translated, "翻译")
         self.assertEqual(chat.call_args.kwargs["model"], "configured-model")
+        self.assertEqual(chat.call_args.kwargs["keep_alive"], "12h")
+        self.assertEqual(chat.call_args.kwargs["options"]["num_ctx"], 1024)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import TypedDict
 
 from app.config import (
+    OLLAMA_CONTEXT_LENGTH,
+    OLLAMA_KEEP_ALIVE,
     OLLAMA_MODEL,
     TARGET_LANGUAGE,
     TRANSLATION_CONCURRENCY,
@@ -60,8 +62,10 @@ def translate_single(text: str, template: str) -> str:
         messages=[
             {"role": "user", "content": prompt}
         ],
+        keep_alive=OLLAMA_KEEP_ALIVE,
         think=False,
         options={
+            "num_ctx": OLLAMA_CONTEXT_LENGTH,
             "temperature": 0,
         }
     )

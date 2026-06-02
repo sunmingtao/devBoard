@@ -22,10 +22,12 @@ LOG_DIR = BASE_DIR / "logs"
 
 # Ollama
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
+OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "24h")
+OLLAMA_CONTEXT_LENGTH = int(os.getenv("OLLAMA_CONTEXT_LENGTH", "2048"))
 
 # Translation
 TRANSLATION_CONCURRENCY = int(
-    os.getenv("TRANSLATION_CONCURRENCY", str(min(4, CPU_COUNT)))
+    os.getenv("TRANSLATION_CONCURRENCY", "1")
 )
 
 # Whisper
