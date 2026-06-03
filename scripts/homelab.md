@@ -575,7 +575,7 @@ sudo mkdir -p /etc/samba
 sudo vi /etc/samba/sun.cred
 
 username=smt
-password=your_password
+password=*************
 
 sudo chmod 600 /etc/samba/sun.cred
 sudo chown root:root /etc/samba/sun.cred
@@ -583,3 +583,19 @@ sudo chown root:root /etc/samba/sun.cred
 sudo vi /etc/fstab
 
 //192.168.0.61/homes  /mnt/sun  cifs  credentials=/etc/samba/sun.cred,uid=1000,gid=1000,nofail,x-systemd.automount,_netdev  0  0
+
+sudo systemctl daemon-reload
+
+sudo mount -a 
+
+### 2026-06-04
+
+opkg update
+sudo opkg install msmtp
+sudo opkg install msmtp-mta
+sudo opkg install mailutils
+
+sudo visudo
+id smt
+
+ansible-playbook playbooks/organize-sun-vid.yml --ask-become-pass
