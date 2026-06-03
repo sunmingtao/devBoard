@@ -566,3 +566,20 @@ pip install faster-whisper
 ```
 
 timeout -k 1m 12h python run.py > job-$(date +%F).log 2>&1
+
+ssh-keygen -t ed25519 -f ~/.ssh/smtsun -C "smt@sun"
+
+
+sudo mkdir -p /etc/samba
+
+sudo vi /etc/samba/sun.cred
+
+username=smt
+password=your_password
+
+sudo chmod 600 /etc/samba/sun.cred
+sudo chown root:root /etc/samba/sun.cred
+
+sudo vi /etc/fstab
+
+//192.168.0.61/homes  /mnt/sun  cifs  credentials=/etc/samba/sun.cred,uid=1000,gid=1000,nofail,x-systemd.automount,_netdev  0  0

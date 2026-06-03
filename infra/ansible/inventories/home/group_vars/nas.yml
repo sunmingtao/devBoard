@@ -1,0 +1,4 @@
+---
+homelab_admin_user: smt
+
+ssh_authorized_key_file: ~/.ssh/localsun.pub

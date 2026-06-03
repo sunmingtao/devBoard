@@ -5,6 +5,13 @@ Target host:
 ```ini
 [homelab]
 homelab01 ansible_host=192.168.0.46 ansible_user=mike ansible_ssh_private_key_file=~/.ssh/homelab
+
+[nas]
+sun01 ansible_host=192.168.0.61 ansible_user=smt ansible_ssh_private_key_file=~/.ssh/localsun
+
+[home:children]
+homelab
+nas
 ```
 
 Long-term goal: deploy DevBoard on a headless Ubuntu 22.04 server.
@@ -19,12 +26,15 @@ Use `infra/ansible` because this is infrastructure provisioning, parallel to the
 infra/ansible/
   ansible.cfg
   inventories/
-    homelab/
+    home/
       hosts.ini
       group_vars/
         all.yml
-      host_vars/
         homelab.yml
+        nas.yml
+      host_vars/
+        homelab01.yml
+        sun01.yml
   playbooks/
     site.yml
     bootstrap.yml
@@ -95,7 +105,7 @@ Optional later split if this grows:
 ```text
 infra/ansible/
   inventories/dev/
-  inventories/homelab/
+  inventories/home/
   inventories/prod/
 ```
 
@@ -150,7 +160,7 @@ ansible-playbook playbooks/sudoers.yml --ask-become-pass
 - [x] Add an SSH key for passwordless login.
 - [x] Create `infra/ansible` folder structure.
 - [x] Add `ansible.cfg`.
-- [x] Add homelab inventory.
+- [x] Add home inventory with homelab and NAS groups.
 - [x] Add `group_vars/all.yml` for shared variables.
 - [x] Add `host_vars/homelab01.yml` for machine-specific values.
 - [x] Add `collections/requirements.yml`.
@@ -429,6 +439,13 @@ This is the immediate scope from the rough plan.
 ```ini
 [homelab]
 homelab01 ansible_host=192.168.0.46 ansible_user=mike ansible_ssh_private_key_file=~/.ssh/homelab
+
+[nas]
+sun01 ansible_host=192.168.0.61 ansible_user=smt ansible_ssh_private_key_file=~/.ssh/localsun
+
+[home:children]
+homelab
+nas
 ```
 
 - [ ] Create `playbooks/bootstrap.yml`.

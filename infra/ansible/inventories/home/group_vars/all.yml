@@ -1,0 +1,29 @@
+---
+homelab_timezone: Australia/Sydney
+homelab_manage_locale: true
+homelab_locale: en_AU.UTF-8
+
+common_packages:
+  - vim
+  - curl
+  - git
+  - htop
+  - net-tools
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - ufw
+  - unzip
+  - tree
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+common_apt_cache_valid_time: 3600
+common_apt_upgrade: true
+common_reboot_if_required: true
+common_enable_unattended_security_upgrades: true

@@ -1,21 +1,26 @@
-# DevBoard Homelab Ansible
+# DevBoard Home Ansible
 
 Ansible control node: your laptop or workstation.
 
-Managed node: the headless Ubuntu server at `192.168.0.46`.
+Default inventory: `inventories/home/hosts.ini`.
 
-Inventory alias: `homelab01`.
+Managed nodes:
 
-Inventory group: `homelab`.
+- Homelab server: `homelab01` at `192.168.0.46`, group `homelab`
+- NAS server: `sun01` at `192.168.0.61`, group `nas`
+
+Parent inventory group: `home`.
 
 ## Prerequisites
 
 - SSH access to `mike@192.168.0.46`
+- SSH access to `smt@192.168.0.61` for NAS automation
 - `mike` can use `sudo`
 - Passwordless SSH key login works
 - Python 3 is installed on the Ubuntu server
 - Ansible is installed on the control node
 - Private key exists at `~/.ssh/homelab`
+- NAS private key exists at `~/.ssh/localsun`
 
 On Ubuntu control nodes:
 
@@ -47,6 +52,8 @@ Run from this directory:
 ```bash
 cd infra/ansible
 ansible homelab -m ping
+ansible nas -m ping
+ansible home -m ping
 ```
 
 From the repository root:
@@ -54,11 +61,14 @@ From the repository root:
 ```bash
 cd infra/ansible
 ansible homelab -m ping
+ansible nas -m ping
+ansible home -m ping
 ```
 
 ## Playbooks
 
-Ansible privilege escalation uses the remote `mike` sudo password, not a root password.
+The existing playbooks target the `homelab` group. Ansible privilege escalation
+uses the remote `mike` sudo password, not a root password.
 
 If `mike` still requires a sudo password, run the sudoers playbook once and enter `mike`'s remote sudo password:
 
