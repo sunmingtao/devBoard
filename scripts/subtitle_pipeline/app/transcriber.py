@@ -112,10 +112,26 @@ def get_audio_duration(audio_path: Path) -> float:
 
 
 def create_model() -> WhisperModel:
+    device = WHISPER_DEVICE.lower()
+    compute_type = WHISPER_COMPUTE_TYPE
+
+    if device in {"auto", "cuda"}:
+        try:
+            import ctranslate2
+
+            cuda_available = ctranslate2.get_cuda_device_count() > 0
+        except Exception:
+            cuda_available = False
+
+        device = "cuda" if cuda_available else "cpu"
+
+    if device == "cpu" and compute_type in {"float16", "bfloat16"}:
+        compute_type = "int8"
+
     return WhisperModel(
         WHISPER_MODEL,
-        device=WHISPER_DEVICE,
-        compute_type=WHISPER_COMPUTE_TYPE,
+        device=device,
+        compute_type=compute_type,
         cpu_threads=WHISPER_CPU_THREADS,
         num_workers=1,
     )
