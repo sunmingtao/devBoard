@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euo pipefail
+
+shopt -s nullglob # 当一个通配符（如 * 或 *.txt）找不到任何匹配的文件时，让它直接被替换为空（即什么都不返回）
+
+SOURCE_DIR="/var/services/homes/smt/work/vid"
+
+for file in "$SOURCE_DIR"/*.mp4; do
+  echo "$file"
+  if lsof "$file" &>/dev/null; then
+    echo "$file" is being copied, ignore
+  else
+    if [[ "$file" == *"~S"* ]]; then
+      echo "$file" contains "~S"
+      mv "$file" "$SOURCE_DIR"/S
+    else
+      echo "$file" does not contain "~S"
+      mv "$file" "$SOURCE_DIR"/A
+    fi
+  fi
+done

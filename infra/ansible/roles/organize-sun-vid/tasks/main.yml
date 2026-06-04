@@ -1,0 +1,50 @@
+---
+- name: Copy organize-sun-vid.sh to NAS
+  template:
+    src: organize-sun-vid.sh.j2
+    dest: "{{ local_bin }}/organize-sun-vid.sh"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install organize-sun-vid service
+  copy:
+    dest: /etc/systemd/system/organize-sun-vid.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Organize Sun Vid media files
+      OnFailure=email-alert@%n.service
+
+      [Service]
+      Type=oneshot
+      ExecStart={{ local_bin }}/organize-sun-vid.sh
+
+- name: Install organize-sun-vid timer
+  copy:
+    dest: /etc/systemd/system/organize-sun-vid.timer
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Run organize-sun-vid.service every 24 hours
+
+      [Timer]
+      OnCalendar=daily
+      Persistent=true
+      Unit=organize-sun-vid.service
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Reload systemd and enable organize-sun-vid timer
+  systemd:
+    daemon_reload: yes
+    name: organize-sun-vid.timer
+    enabled: yes
+    state: started
+
+  

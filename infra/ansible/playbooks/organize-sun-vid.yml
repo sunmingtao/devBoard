@@ -1,0 +1,6 @@
+---
+- name: Organize Sun Vid media files on NAS
+  hosts: nas
+  become: true
+  roles:
+    - organize-sun-vid
