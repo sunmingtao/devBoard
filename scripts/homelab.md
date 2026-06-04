@@ -431,7 +431,7 @@ ffmpeg -i $FILE_NAME.mp4 -t 00:09:00 -c copy $FILE_NAME-sample2.mp4
 
 
 deactivate
-rm -rf venv
+	
 python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
@@ -599,3 +599,64 @@ sudo visudo
 id smt
 
 ansible-playbook playbooks/organize-sun-vid.yml --ask-become-pass
+
+sudo sh -c 'echo "smt ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/smt'
+sudo chmod 440 /etc/sudoers.d/smt
+
+ssh -i "aws-gpu-key.pem" ubuntu@3.27.236.123
+
+scp -i "~/.ssh/aws-gpu-key.pem" JUFD-503~SS.mp4  ubuntu@3.27.236.123:/home/ubuntu/devBoard/scripts/subtitle_pipeline/input
+
+
+ssh -i "~/.ssh/aws-gpu-key.pem" ubuntu@3.27.236.123
+
+sudo apt update -y
+sudo apt install python3-venv
+sudo apt install ffmpeg -y
+python3 -m venv venv、
+source venv/bin/activate
+pip install --upgrade pip
+pip install faster-whisper
+pip install ollama
+pip install python-dotenv
+
+rm venv
+deactivate
+
+
+lspci | grep -i nvidia
+sudo apt install ubuntu-drivers-common
+ubuntu-drivers devices
+sudo apt update
+sudo apt install -y nvidia-driver-595-open
+sudo du -xh / | sort -hr | head -30
+
+sudo reboot
+
+lsblk -f
+sudo mkfs.ext4 /dev/nvme1n1
+sudo mkdir -p /data
+sudo mount /dev/nvme1n1 /data
+df -h
+
+
+sudo chown -R ubuntu:ubuntu /data/devBoard/scripts/subtitle_pipeline/venv
+sudo chown -R ubuntu:ubuntu /data/devBoard/scripts/subtitle_pipeline
+
+
+sudo mkdir -p /data/hf-cache/hub
+sudo chown -R ubuntu:ubuntu /data/hf-cache
+chmod -R u+rwX /data/hf-cache
+
+find / -name "libcublas.so*" 2>/dev/null
+export LD_LIBRARY_PATH=$VIRTUAL_ENV/lib/python3.12/site-packages/nvidia/cublas/lib:$VIRTUAL_ENV/lib/python3.12/site-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
+
+df -h /
+
+
+### 2026-06-05
+
+
+./gpu-setup.py
+scp -i "~/.ssh/aws-gpu-key.pem" JUFD-503~SS.mp4  ubuntu@54.253.193.78:/home/ubuntu/devBoard/scripts/subtitle_pipeline/input
+
