@@ -24,6 +24,7 @@ LOG_DIR = BASE_DIR / "logs"
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "24h")
 OLLAMA_CONTEXT_LENGTH = int(os.getenv("OLLAMA_CONTEXT_LENGTH", "2048"))
+OLLAMA_GPU_LAYERS = int(os.getenv("OLLAMA_GPU_LAYERS", "-1"))
 
 # Translation
 TRANSLATION_CONCURRENCY = int(
