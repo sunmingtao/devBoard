@@ -11,7 +11,10 @@ class MainBatchTests(unittest.TestCase):
         media_files = [Path("one.mp4"), Path("two.mp4"), Path("three.mp4")]
         processed = []
 
-        def fake_process_media_file(video: Path) -> None:
+        def fake_process_media_file(
+            video: Path,
+            translation_mode: main.TranslationMode = "batch",
+        ) -> None:
             processed.append(video.name)
             if video.name == "two.mp4":
                 raise RuntimeError("boom")
@@ -107,7 +110,11 @@ class ProcessMediaFileTests(unittest.TestCase):
 
         extract_audio.assert_called_once_with(video_path)
         transcribe_audio.assert_called_once_with(audio_path, language="ja")
-        translate_srt.assert_called_once_with(srt_path, language="ja")
+        translate_srt.assert_called_once_with(
+            srt_path,
+            language="ja",
+            mode="batch",
+        )
         generate_bilingual_srt.assert_called_once_with(srt_path, zh_srt_path)
         copy_subtitle_to_output.assert_called_once_with(bilingual_srt_path)
         burn_subtitles.assert_not_called()

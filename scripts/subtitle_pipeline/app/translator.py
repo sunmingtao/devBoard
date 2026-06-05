@@ -3,7 +3,7 @@ import ollama
 import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 from app.config import (
     OLLAMA_CONTEXT_LENGTH,
@@ -23,6 +23,9 @@ class SubtitleCue(TypedDict):
     index: int
     time: str
     text: str
+
+
+TranslationMode = Literal["single", "batch"]
 
 
 def parse_srt(filename: str | Path) -> list[SubtitleCue]:
@@ -152,9 +155,15 @@ def generate_bilingual_srt(
     return output_srt
 
 
-def translate_srt(srt_path: str | Path, language: str) -> Path:
+def translate_srt(
+    srt_path: str | Path,
+    language: str,
+    mode: TranslationMode = "batch",
+) -> Path:
     srt_path = Path(srt_path)
     subtitles = parse_srt(srt_path)
+    if mode not in ("single", "batch"):
+        raise ValueError("Translation mode must be 'single' or 'batch'")
 
     template = TRANSLATION_PROMPTS[
         (language, TARGET_LANGUAGE)
@@ -163,35 +172,48 @@ def translate_srt(srt_path: str | Path, language: str) -> Path:
     job_dir = srt_path.parent
     output_srt = job_dir / f"{srt_path.name.replace('.srt', '')}_translated.srt"
 
-    open(output_srt, "w", encoding="utf-8").close()
-
     total = len(subtitles)
     worker_count = max(1, TRANSLATION_CONCURRENCY)
 
-    batch_size = 3
-    batches = [
-        subtitles[i:i + batch_size]
-        for i in range(0, total, batch_size)
-    ]
-    total_batches = len(batches)
+    def write_translation(f, sub: SubtitleCue, translated: str) -> None:
+        f.write(f"{sub['index']}\n")
+        f.write(f"{sub['time']}\n")
+        f.write(f"{translated}\n\n")
 
-    def translate_subtitle_batch(item: tuple[int, list[SubtitleCue]]) -> list[tuple[SubtitleCue, str]]:
-        i, batch = item
-        print(f"Translating batch {i}/{total_batches}")
-        return translate_batch(batch, template)
-
-    with open(output_srt, "a", encoding="utf-8") as f:
+    with open(output_srt, "w", encoding="utf-8") as f:
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
-            results = executor.map(
-                translate_subtitle_batch,
-                enumerate(batches, start=1),
-            )
+            if mode == "single":
+                def translate_subtitle(item: tuple[int, SubtitleCue]) -> tuple[SubtitleCue, str]:
+                    i, sub = item
+                    print(f"Translating subtitle {i}/{total}")
+                    return sub, translate_single(sub["text"], template)
 
-            for batch_results in results:
-                for sub, translated in batch_results:
-                    f.write(f"{sub['index']}\n")
-                    f.write(f"{sub['time']}\n")
-                    f.write(f"{translated}\n\n")
+                for sub, translated in executor.map(
+                    translate_subtitle,
+                    enumerate(subtitles, start=1),
+                ):
+                    write_translation(f, sub, translated)
+            else:
+                batch_size = 3
+                batches = [
+                    subtitles[i:i + batch_size]
+                    for i in range(0, total, batch_size)
+                ]
+                total_batches = len(batches)
+
+                def translate_subtitle_batch(item: tuple[int, list[SubtitleCue]]) -> list[tuple[SubtitleCue, str]]:
+                    i, batch = item
+                    print(f"Translating batch {i}/{total_batches}")
+                    return translate_batch(batch, template)
+
+                results = executor.map(
+                    translate_subtitle_batch,
+                    enumerate(batches, start=1),
+                )
+
+                for batch_results in results:
+                    for sub, translated in batch_results:
+                        write_translation(f, sub, translated)
 
     print(
         f"\nDone.\n"

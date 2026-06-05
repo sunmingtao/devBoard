@@ -4,7 +4,7 @@ from pathlib import Path
 from app.scanner import find_new_media_files, is_audio_file
 from app.audio import extract_audio
 from app.transcriber import transcribe_audio
-from app.translator import generate_bilingual_srt, translate_srt
+from app.translator import TranslationMode, generate_bilingual_srt, translate_srt
 from app.video import burn_subtitles
 from app.notifier import send_success, send_failure
 from app.config import ARCHIVE_DIR, OUTPUT_DIR, WORKING_DIR
@@ -64,7 +64,10 @@ def stage_audio_file(audio_path: str | Path) -> Path:
     return staged_audio_path
 
 
-def process_media_file(media_path: str | Path) -> None:
+def process_media_file(
+    media_path: str | Path,
+    translation_mode: TranslationMode = "batch",
+) -> None:
     media_path = Path(media_path)
     language = "ja" if "~" in media_path.name else "en"
     try:
@@ -75,7 +78,11 @@ def process_media_file(media_path: str | Path) -> None:
             else extract_audio(media_path)
         )
         srt_path = transcribe_audio(audio_path, language=language)
-        zh_srt_path = translate_srt(srt_path, language=language)
+        zh_srt_path = translate_srt(
+            srt_path,
+            language=language,
+            mode=translation_mode,
+        )
 
         subtitle_path = (
             generate_bilingual_srt(srt_path, zh_srt_path)
@@ -97,14 +104,14 @@ def process_media_file(media_path: str | Path) -> None:
         raise
 
 
-def main() -> None:
+def main(translation_mode: TranslationMode = "batch") -> None:
     media_files = find_new_media_files()
 
     failed_media_files = []
 
     for media_file in media_files:
         try:
-            process_media_file(media_file)
+            process_media_file(media_file, translation_mode=translation_mode)
         except Exception as exc:
             failed_media_files.append((media_file, exc))
             print(f"Failed processing {media_file.name}; continuing with next file.")
