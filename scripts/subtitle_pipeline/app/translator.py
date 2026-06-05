@@ -1,3 +1,4 @@
+import json
 import ollama
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -75,6 +76,62 @@ def translate_single(text: str, template: str) -> str:
     return response["message"]["content"].strip()
 
 
+def translate_batch(subtitles: list[SubtitleCue], template: str) -> list[tuple[SubtitleCue, str]]:
+    payload = [
+        {
+            "id": sub["index"],
+            "text": sub["text"],
+        }
+        for sub in subtitles
+    ]
+    prompt = (
+        "Follow the translation rules below, but translate all input subtitles "
+        "and return only valid JSON in this exact shape:\n"
+        '{"translations":[{"id":1,"text":"translated subtitle"}]}\n'
+        "Use the original numeric id for each translation. Do not include "
+        "Markdown or explanatory text.\n\n"
+        f"Translation rules:\n{template}\n\n"
+        f"Input subtitles:\n{json.dumps(payload, ensure_ascii=False)}"
+    )
+
+    response = ollama.chat(
+        model=OLLAMA_MODEL,
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
+        keep_alive=OLLAMA_KEEP_ALIVE,
+        think=False,
+        format="json",
+        options={
+            "num_ctx": OLLAMA_CONTEXT_LENGTH,
+            "num_gpu": OLLAMA_GPU_LAYERS,
+            "temperature": 0,
+        }
+    )
+
+    raw_content = response["message"]["content"].strip()
+    try:
+        parsed = json.loads(raw_content)
+        translations = parsed["translations"]
+    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+        ids = ", ".join(str(sub["index"]) for sub in subtitles)
+        print(f"Skipping batch [{ids}]: invalid JSON response ({exc})")
+        return []
+
+    translated_by_id: dict[int, str] = {}
+    for item in translations:
+        try:
+            translated_by_id[int(item["id"])] = str(item["text"]).strip()
+        except (KeyError, TypeError, ValueError):
+            print(f"Skipping invalid translation item: {item!r}")
+
+    return [
+        (sub, translated_by_id[sub["index"]])
+        for sub in subtitles
+        if sub["index"] in translated_by_id
+    ]
+
+
 def generate_bilingual_srt(
     original_srt_path: str | Path,
     translated_srt_path: str | Path,
@@ -111,22 +168,30 @@ def translate_srt(srt_path: str | Path, language: str) -> Path:
     total = len(subtitles)
     worker_count = max(1, TRANSLATION_CONCURRENCY)
 
-    def translate_subtitle(item: tuple[int, SubtitleCue]) -> tuple[SubtitleCue, str]:
-        i, sub = item
-        print(f"Translating {i}/{total}")
-        return sub, translate_single(sub["text"], template)
+    batch_size = 3
+    batches = [
+        subtitles[i:i + batch_size]
+        for i in range(0, total, batch_size)
+    ]
+    total_batches = len(batches)
+
+    def translate_subtitle_batch(item: tuple[int, list[SubtitleCue]]) -> list[tuple[SubtitleCue, str]]:
+        i, batch = item
+        print(f"Translating batch {i}/{total_batches}")
+        return translate_batch(batch, template)
 
     with open(output_srt, "a", encoding="utf-8") as f:
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
             results = executor.map(
-                translate_subtitle,
-                enumerate(subtitles, start=1),
+                translate_subtitle_batch,
+                enumerate(batches, start=1),
             )
 
-            for sub, translated in results:
-                f.write(f"{sub['index']}\n")
-                f.write(f"{sub['time']}\n")
-                f.write(f"{translated}\n\n")
+            for batch_results in results:
+                for sub, translated in batch_results:
+                    f.write(f"{sub['index']}\n")
+                    f.write(f"{sub['time']}\n")
+                    f.write(f"{translated}\n\n")
 
     print(
         f"\nDone.\n"
