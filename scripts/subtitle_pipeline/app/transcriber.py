@@ -174,7 +174,6 @@ def transcribe_audio(audio_path: str | Path, language: str | None = None) -> Pat
             )
 
             for segment in segments:
-                print(segment)
                 text = segment.text.strip()
 
                 if not text:
