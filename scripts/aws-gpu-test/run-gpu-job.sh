@@ -14,6 +14,7 @@ MAX_LIFESPAN_MINUTES="${MAX_LIFESPAN_MINUTES:-60}"
 INSTANCE_NAME="${INSTANCE_NAME:-devboard-gpu-$(date +%Y%m%d-%H%M%S)}"
 SG_NAME="${SG_NAME:-devboard-gpu-test-ssh}"
 AMI_PARAMETER="${AMI_PARAMETER:-/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id}"
+MARKET_TYPE="${MARKET_TYPE:-demand}"
 REMOTE_INPUT_DIR="/data/devBoard/scripts/subtitle_pipeline/input"
 REMOTE_PIPELINE_DIR="/data/devBoard/scripts/subtitle_pipeline"
 
@@ -21,7 +22,7 @@ AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
 
 usage() {
   cat <<'EOF'
-Usage: run-gpu-job.sh [--no-run]
+Usage: run-gpu-job.sh [--no-run] [--market-type spot|demand]
 
 Environment overrides:
   AWS_REGION              AWS region to use. Defaults to aws configure get region.
@@ -30,6 +31,7 @@ Environment overrides:
   MEDIA_DIR               Directory containing *.wav and *.mp4 files. Default: current directory
   MODEL                   Ollama model to pull. Default: qwen3:8b
   MAX_LIFESPAN_MINUTES    Instance wall-clock lifespan before poweroff/termination. Default: 60
+  MARKET_TYPE             EC2 market type: demand or spot. Default: demand
   SUBNET_ID               Use this subnet instead of the first default subnet.
   VPC_ID                  Use this VPC for the generated SSH security group.
   SECURITY_GROUP_ID       Use this security group instead of creating/reusing one.
@@ -43,6 +45,18 @@ while (($#)); do
     --no-run)
       RUN_PIPELINE=0
       ;;
+    --market-type)
+      if [[ $# -lt 2 ]]; then
+        echo "--market-type requires spot or demand" >&2
+        usage >&2
+        exit 2
+      fi
+      MARKET_TYPE="$2"
+      shift
+      ;;
+    --market-type=*)
+      MARKET_TYPE="${1#*=}"
+      ;;
     -h|--help)
       usage
       exit 0
@@ -55,6 +69,19 @@ while (($#)); do
   esac
   shift
 done
+
+case "$MARKET_TYPE" in
+  demand|on-demand)
+    MARKET_TYPE="demand"
+    ;;
+  spot)
+    ;;
+  *)
+    echo "MARKET_TYPE must be demand or spot" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
 
 log() {
   printf '\n== %s ==\n' "$*"
@@ -236,19 +263,60 @@ resolve_network
 ensure_security_group
 build_user_data
 
-log "Launching $INSTANCE_TYPE ($INSTANCE_NAME)"
-INSTANCE_ID="$(aws_ec2 run-instances \
-  --image-id "$AMI_ID" \
-  --instance-type "$INSTANCE_TYPE" \
-  --key-name "$KEY_NAME" \
-  --network-interfaces "DeviceIndex=0,SubnetId=$SUBNET_ID,Groups=[$SG_ID],AssociatePublicIpAddress=true" \
-  --block-device-mappings "DeviceName=$ROOT_DEVICE_NAME,Ebs={VolumeSize=$ROOT_VOLUME_SIZE,VolumeType=gp3,DeleteOnTermination=true}" \
-  --instance-initiated-shutdown-behavior terminate \
-  --user-data "file://$USER_DATA_FILE" \
-  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME},{Key=Project,Value=devBoard},{Key=MaxLifespanMinutes,Value=$MAX_LIFESPAN_MINUTES}]" \
-  --query 'Instances[0].InstanceId' \
-  --output text)"
-text_or_empty "$INSTANCE_ID" || die "Failed to launch instance"
+RUN_INSTANCE_MARKET_ARGS=()
+if [[ "$MARKET_TYPE" == "spot" ]]; then
+  RUN_INSTANCE_MARKET_ARGS=(
+    --instance-market-options "MarketType=spot,SpotOptions={SpotInstanceType=one-time,InstanceInterruptionBehavior=terminate}"
+  )
+fi
+
+launch_instance() {
+  local instance_type="$1"
+
+  aws_ec2 run-instances \
+    --image-id "$AMI_ID" \
+    --instance-type "$instance_type" \
+    "${RUN_INSTANCE_MARKET_ARGS[@]}" \
+    --key-name "$KEY_NAME" \
+    --network-interfaces "DeviceIndex=0,SubnetId=$SUBNET_ID,Groups=[$SG_ID],AssociatePublicIpAddress=true" \
+    --block-device-mappings "DeviceName=$ROOT_DEVICE_NAME,Ebs={VolumeSize=$ROOT_VOLUME_SIZE,VolumeType=gp3,DeleteOnTermination=true}" \
+    --instance-initiated-shutdown-behavior terminate \
+    --user-data "file://$USER_DATA_FILE" \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME},{Key=Project,Value=devBoard},{Key=MaxLifespanMinutes,Value=$MAX_LIFESPAN_MINUTES}]" \
+    --query 'Instances[0].InstanceId' \
+    --output text
+}
+
+GPU_INSTANCE_TYPES=(
+  g6.xlarge
+  g4dn.xlarge
+  g5.xlarge
+)
+
+INSTANCE_TYPE_CANDIDATES=("$INSTANCE_TYPE")
+if [[ "$MARKET_TYPE" == "spot" ]]; then
+  for gpu_instance_type in "${GPU_INSTANCE_TYPES[@]}"; do
+    [[ "$gpu_instance_type" == "$INSTANCE_TYPE" ]] && continue
+    INSTANCE_TYPE_CANDIDATES+=("$gpu_instance_type")
+  done
+fi
+
+INSTANCE_ID=""
+LAUNCH_ERROR=""
+for candidate_instance_type in "${INSTANCE_TYPE_CANDIDATES[@]}"; do
+  log "Launching $candidate_instance_type ($INSTANCE_NAME, market=$MARKET_TYPE)"
+  if launch_output="$(launch_instance "$candidate_instance_type" 2>&1)" && text_or_empty "$launch_output"; then
+    INSTANCE_TYPE="$candidate_instance_type"
+    INSTANCE_ID="$launch_output"
+    break
+  fi
+
+  LAUNCH_ERROR="$launch_output"
+  if [[ "$MARKET_TYPE" == "spot" ]]; then
+    log "Launch failed for $candidate_instance_type"
+  fi
+done
+text_or_empty "$INSTANCE_ID" || die "Failed to launch instance${LAUNCH_ERROR:+: $LAUNCH_ERROR}"
 
 log "Waiting for instance $INSTANCE_ID"
 aws_ec2 wait instance-running --instance-ids "$INSTANCE_ID"
@@ -283,7 +351,7 @@ fi
 if ((RUN_PIPELINE)); then
   log "Running subtitle pipeline"
   ssh "${SSH_OPTS[@]}" "$SSH_USER@$PUBLIC_IP" \
-    "cd '$REMOTE_PIPELINE_DIR' && source venv/bin/activate && python run.py"
+    "cd '$REMOTE_PIPELINE_DIR' && source venv/bin/activate && python run.py --mode single"
 else
   log "Skipping pipeline run"
 fi
