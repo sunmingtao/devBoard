@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Gmail auto reply
+Wants=network-online.target
+After=network-online.target
+OnFailure=email-alert@%n.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/jacky/workspace/devBoard/scripts/gmail-api
+ExecStart=/home/jacky/workspace/devBoard/scripts/gmail-api/run.sh
