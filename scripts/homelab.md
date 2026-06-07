@@ -659,3 +659,11 @@ df -h /
 
 ./gpu-setup.py
 scp -i "~/.ssh/aws-gpu-key.pem" JUFD-503~SS.mp4  ubuntu@54.253.193.78:/home/ubuntu/devBoard/scripts/subtitle_pipeline/input
+
+
+### 2026-06-07
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+python3 -B -m unittest discover -s tests

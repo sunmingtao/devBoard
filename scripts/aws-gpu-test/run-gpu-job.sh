@@ -32,7 +32,7 @@ Environment overrides:
   MODEL                   Ollama model to pull. Default: qwen3:8b
   MAX_LIFESPAN_MINUTES    Instance wall-clock lifespan before poweroff/termination. Default: 60
   MARKET_TYPE             EC2 market type: demand or spot. Default: demand
-  SUBNET_ID               Use this subnet instead of the first default subnet.
+  SUBNET_ID               Use this subnet instead of trying default subnets.
   VPC_ID                  Use this VPC for the generated SSH security group.
   SECURITY_GROUP_ID       Use this security group instead of creating/reusing one.
   SSH_CIDR                CIDR allowed for SSH. Default: current public IP /32
@@ -132,6 +132,8 @@ current_public_cidr() {
 }
 
 resolve_network() {
+  SUBNET_ID_CANDIDATES=()
+
   if [[ -n "${SUBNET_ID:-}" ]]; then
     if [[ -z "${VPC_ID:-}" ]]; then
       VPC_ID="$(aws_ec2 describe-subnets \
@@ -140,6 +142,7 @@ resolve_network() {
         --output text)"
       text_or_empty "$VPC_ID" || die "Could not resolve VPC for subnet $SUBNET_ID. Set VPC_ID."
     fi
+    SUBNET_ID_CANDIDATES=("$SUBNET_ID")
     return
   fi
 
@@ -151,11 +154,14 @@ resolve_network() {
     text_or_empty "$VPC_ID" || die "No default VPC found. Set VPC_ID and SUBNET_ID."
   fi
 
-  SUBNET_ID="$(aws_ec2 describe-subnets \
+  local subnet_ids
+  subnet_ids="$(aws_ec2 describe-subnets \
     --filters Name=vpc-id,Values="$VPC_ID" Name=default-for-az,Values=true \
-    --query 'Subnets[0].SubnetId' \
+    --query 'Subnets[].SubnetId' \
     --output text)"
-  text_or_empty "$SUBNET_ID" || die "No default subnet found in $VPC_ID. Set SUBNET_ID."
+  read -r -a SUBNET_ID_CANDIDATES <<<"$subnet_ids"
+  text_or_empty "${SUBNET_ID_CANDIDATES[0]:-}" || die "No default subnet found in $VPC_ID. Set SUBNET_ID."
+  SUBNET_ID="${SUBNET_ID_CANDIDATES[0]}"
 }
 
 ensure_security_group() {
@@ -272,13 +278,14 @@ fi
 
 launch_instance() {
   local instance_type="$1"
+  local subnet_id="$2"
 
   aws_ec2 run-instances \
     --image-id "$AMI_ID" \
     --instance-type "$instance_type" \
     "${RUN_INSTANCE_MARKET_ARGS[@]}" \
     --key-name "$KEY_NAME" \
-    --network-interfaces "DeviceIndex=0,SubnetId=$SUBNET_ID,Groups=[$SG_ID],AssociatePublicIpAddress=true" \
+    --network-interfaces "DeviceIndex=0,SubnetId=$subnet_id,Groups=[$SG_ID],AssociatePublicIpAddress=true" \
     --block-device-mappings "DeviceName=$ROOT_DEVICE_NAME,Ebs={VolumeSize=$ROOT_VOLUME_SIZE,VolumeType=gp3,DeleteOnTermination=true}" \
     --instance-initiated-shutdown-behavior terminate \
     --user-data "file://$USER_DATA_FILE" \
@@ -289,8 +296,14 @@ launch_instance() {
 
 GPU_INSTANCE_TYPES=(
   g6.xlarge
+  g6.2xlarge
+  g6.4xlarge
   g4dn.xlarge
+  g4dn.2xlarge
+  g4dn.4xlarge
   g5.xlarge
+  g5.2xlarge
+  g5.4xlarge
 )
 
 INSTANCE_TYPE_CANDIDATES=("$INSTANCE_TYPE")
@@ -304,17 +317,23 @@ fi
 INSTANCE_ID=""
 LAUNCH_ERROR=""
 for candidate_instance_type in "${INSTANCE_TYPE_CANDIDATES[@]}"; do
-  log "Launching $candidate_instance_type ($INSTANCE_NAME, market=$MARKET_TYPE)"
-  if launch_output="$(launch_instance "$candidate_instance_type" 2>&1)" && text_or_empty "$launch_output"; then
-    INSTANCE_TYPE="$candidate_instance_type"
-    INSTANCE_ID="$launch_output"
-    break
-  fi
+  for candidate_subnet_id in "${SUBNET_ID_CANDIDATES[@]}"; do
+    log "Launching $candidate_instance_type in $candidate_subnet_id ($INSTANCE_NAME, market=$MARKET_TYPE)"
+    if launch_output="$(launch_instance "$candidate_instance_type" "$candidate_subnet_id" 2>&1)" && text_or_empty "$launch_output"; then
+      INSTANCE_TYPE="$candidate_instance_type"
+      SUBNET_ID="$candidate_subnet_id"
+      INSTANCE_ID="$launch_output"
+      break 2
+    fi
 
-  LAUNCH_ERROR="$launch_output"
-  if [[ "$MARKET_TYPE" == "spot" ]]; then
-    log "Launch failed for $candidate_instance_type"
-  fi
+    LAUNCH_ERROR="$launch_output"
+    if [[ "$MARKET_TYPE" == "spot" || ${#SUBNET_ID_CANDIDATES[@]} -gt 1 ]]; then
+      log "Launch failed for $candidate_instance_type in $candidate_subnet_id"
+      if text_or_empty "$LAUNCH_ERROR"; then
+        printf '%s\n' "$LAUNCH_ERROR" >&2
+      fi
+    fi
+  done
 done
 text_or_empty "$INSTANCE_ID" || die "Failed to launch instance${LAUNCH_ERROR:+: $LAUNCH_ERROR}"
 
