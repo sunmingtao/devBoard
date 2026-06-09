@@ -21,6 +21,7 @@ DEFAULT_FAMILY_EMAILS = frozenset(
         "smtttt@gmail.com",
     }
 )
+DEFAULT_OLLAMA_HOST = "http://localhost:11434"
 
 
 class ConfigError(RuntimeError):
@@ -32,6 +33,7 @@ class Settings:
     scopes: tuple[str, ...]
     family_emails: frozenset[str]
     ollama_model: str
+    ollama_host: str
     token_file: Path
     client_secret_file: Path
     gmail_query: str
@@ -49,6 +51,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         scopes=SCOPES,
         family_emails=_parse_email_set(values.get("GMAIL_FAMILY_EMAILS")),
         ollama_model=values.get("OLLAMA_MODEL", "qwen3:8b"),
+        ollama_host=values.get("OLLAMA_HOST", DEFAULT_OLLAMA_HOST),
         token_file=_path_setting(values.get("GMAIL_TOKEN_FILE"), "token.json"),
         client_secret_file=_path_setting(
             values.get("GMAIL_CLIENT_SECRET_FILE"),

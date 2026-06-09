@@ -667,3 +667,45 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 python3 -B -m unittest discover -s tests
+
+### 2026-06-08
+
+cat /proc/cpuinfo
+
+### 2026-06-09
+
+docker build -t gmail-api .
+pip freeze > requirements.txt
+docker run -d gmail-api
+
+docker run --rm -it --entrypoint /bin/sh gmail-api:latest
+docker run -it --entrypoint sh gmail-api:latest
+
+
+docker run --rm -it \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/credentials.json \
+  -e GMAIL_TOKEN_FILE=/secrets/token.json \
+  -v $(pwd)/secrets:/secrets:ro \
+  gmail-api:latest
+  
+# Add host gateway to connect to ollama on host
+docker run --rm -it \
+  --add-host=host.docker.internal:host-gateway \
+  --entrypoint sh \
+  gmail-api:latest
+  
+curl http://host.docker.internal:11434/api/tags
+curl -I http://host.docker.internal2:11434/api/tags
+curl -v http://192.168.65.254:11434/api/tags
+
+
+
+python - <<'PY'
+import urllib.request
+print(urllib.request.urlopen("http://host.docker.internal:11435/api/tags").read().decode())
+PY
+
+
+
+curl -H 'Host: host.docker.internal:11434' http://host.docker.internal2:11434/api/tags
+curl -H 'Host: 192.168.65.254:11434' http://host.docker.internal2:11434/api/tags

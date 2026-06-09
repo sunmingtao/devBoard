@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-import ollama
+from ollama import Client
+
+from config import DEFAULT_OLLAMA_HOST
 
 
 class ReplyDraftError(RuntimeError):
@@ -8,9 +10,10 @@ class ReplyDraftError(RuntimeError):
 
 
 class OllamaReplyGenerator:
-    def __init__(self, model: str, body_limit: int) -> None:
+    def __init__(self, model: str, body_limit: int, host: str = DEFAULT_OLLAMA_HOST) -> None:
         self.model = model
         self.body_limit = body_limit
+        self.client = Client(host=host)
 
     def draft(self, sender: str, subject: str, body: str) -> str:
         prompt = (
@@ -22,7 +25,7 @@ class OllamaReplyGenerator:
         )
 
         try:
-            response = ollama.chat(
+            response = self.client.chat(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 think=False,

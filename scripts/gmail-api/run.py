@@ -32,6 +32,7 @@ def main() -> int:
             reply_generator=OllamaReplyGenerator(
                 model=settings.ollama_model,
                 body_limit=settings.reply_body_limit,
+                host=settings.ollama_host,
             ),
         )
         results = responder.process_inbox()
