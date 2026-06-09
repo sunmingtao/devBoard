@@ -709,3 +709,42 @@ PY
 
 curl -H 'Host: host.docker.internal:11434' http://host.docker.internal2:11434/api/tags
 curl -H 'Host: 192.168.65.254:11434' http://host.docker.internal2:11434/api/tags
+
+上下键正常 docker run -it gmail-api:latest bash
+上下键不正常 docker run -it --entrypoint sh   gmail-api:latest
+
+### 2026-06-10
+
+# Pass envrionment variable to the container
+
+docker run --rm -it \
+  --add-host=host.docker.internal:host-gateway \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/credentials.json \
+  -e GMAIL_TOKEN_FILE=/secrets/token.json \
+  -e OLLAMA_HOST=http://host.docker.internal:11434 \
+  -v $(pwd)/secrets:/secrets \
+  gmail-api:latest
+  
+docker compose up -d --build
+docker compose down
+
+sudo apt update
+sudo apt install -y apt-transport-https ca-certificates gnupg curl
+
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+| sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] \
+https://packages.cloud.google.com/apt cloud-sdk main" \
+| sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
+
+sudo apt update
+sudo apt install -y google-cloud-cli
+
+gcloud version
+gcloud auth login
+
+gcloud config list
+gcloud config set project cool-phalanx-303803
+
+gcloud pubsub topics get-iam-policy smt-gmail-sub-topic

@@ -52,10 +52,10 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         family_emails=_parse_email_set(values.get("GMAIL_FAMILY_EMAILS")),
         ollama_model=values.get("OLLAMA_MODEL", "qwen3:8b"),
         ollama_host=values.get("OLLAMA_HOST", DEFAULT_OLLAMA_HOST),
-        token_file=_path_setting(values.get("GMAIL_TOKEN_FILE"), "token.json"),
+        token_file=_path_setting(values.get("GMAIL_TOKEN_FILE"), "secrets/token.json"),
         client_secret_file=_path_setting(
             values.get("GMAIL_CLIENT_SECRET_FILE"),
-            "gmail-api-client-secret.json",
+            "secrets/gmail-api-client-secret.json",
         ),
         gmail_query=values.get("GMAIL_QUERY", "category:primary is:unread"),
         user_id=values.get("GMAIL_USER_ID", "me"),

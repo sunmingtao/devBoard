@@ -26,6 +26,15 @@ def main() -> int:
         configure_logging(settings.log_level)
         credentials = load_credentials(settings)
         service = build_gmail_service(credentials)
+        service.users().watch(
+            userId="me",
+            body={
+                "topicName": "projects/cool-phalanx-303803/topics/smt-gmail-sub-topic",
+                "labelIds": ["INBOX"],
+                "labelFilterBehavior": "INCLUDE"
+            }
+        ).execute()
+        print("Started watching Gmail inbox for changes...")
         responder = GmailAutoResponder(
             service=service,
             settings=settings,

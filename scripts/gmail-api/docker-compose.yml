@@ -1,0 +1,17 @@
+services:
+  gmail-api:
+    build: .
+    container_name: gmail-api
+    restart: unless-stopped
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/credentials.json
+      GMAIL_TOKEN_FILE: /secrets/token.json
+      OLLAMA_HOST: http://host.docker.internal:11434
+
+    volumes:
+      - ./secrets/credentials.json:/secrets/credentials.json:ro
+      - ./secrets/token.json:/secrets/token.json
