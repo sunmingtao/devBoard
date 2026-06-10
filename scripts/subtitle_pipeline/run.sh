@@ -19,4 +19,4 @@ if ! flock -n 9; then
   exit 0
 fi
 
-exec timeout -k "${KILL_AFTER}" "${TIMEOUT_DURATION}" "${VENV_DIR}/bin/python" "${SCRIPT_DIR}/run.py"
+exec timeout -k "${KILL_AFTER}" "${TIMEOUT_DURATION}" "${VENV_DIR}/bin/python" "${SCRIPT_DIR}/run.py" -mode single
