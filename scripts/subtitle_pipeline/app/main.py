@@ -7,7 +7,7 @@ from app.transcriber import transcribe_audio
 from app.translator import TranslationMode, generate_bilingual_srt, translate_srt
 from app.video import burn_subtitles
 from app.notifier import send_success, send_failure
-from app.config import ARCHIVE_DIR, OUTPUT_DIR, WORKING_DIR
+from app.config import ARCHIVE_DIR, FAILED_DIR, OUTPUT_DIR, WORKING_DIR
 
 
 def unique_archive_path(path: str | Path) -> Path:
@@ -24,6 +24,34 @@ def unique_archive_path(path: str | Path) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
+
+
+def unique_failed_path(path: str | Path) -> Path:
+    path = Path(path)
+    FAILED_DIR.mkdir(parents=True, exist_ok=True)
+
+    destination = FAILED_DIR / path.name
+    if not destination.exists():
+        return destination
+
+    counter = 1
+    while True:
+        candidate = FAILED_DIR / f"{path.stem}_{counter}{path.suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
+def move_failed_media_file(media_path: str | Path) -> Path | None:
+    media_path = Path(media_path)
+    if not media_path.exists():
+        print(f"Failed media file no longer exists, skipping failed move: {media_path}")
+        return None
+
+    failed_path = unique_failed_path(media_path)
+    shutil.move(str(media_path), failed_path)
+    print(f"Moved failed media file: {failed_path}")
+    return failed_path
 
 
 def cleanup_completed_job(video_path: str | Path, job_dir: str | Path) -> Path:
@@ -115,6 +143,10 @@ def main(translation_mode: TranslationMode = "batch") -> None:
         except Exception as exc:
             failed_media_files.append((media_file, exc))
             print(f"Failed processing {media_file.name}; continuing with next file.")
+            try:
+                move_failed_media_file(media_file)
+            except OSError as move_exc:
+                print(f"Failed moving {media_file.name} to failed directory: {move_exc}")
 
     if failed_media_files:
         print("\nFailed media files:")

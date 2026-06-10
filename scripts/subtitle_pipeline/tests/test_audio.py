@@ -20,9 +20,9 @@ class AudioExtractionTests(unittest.TestCase):
                 patch("builtins.print"),
             ):
                 run.side_effect = [
-                    CompletedProcess(args=[], returncode=0, stdout="12.0\n", stderr=""),
+                    CompletedProcess(args=[], returncode=0, stdout='{"streams":[{"duration":"12.0"}]}', stderr=""),
                     CompletedProcess(args=[], returncode=0),
-                    CompletedProcess(args=[], returncode=0, stdout="12.2\n", stderr=""),
+                    CompletedProcess(args=[], returncode=0, stdout='{"streams":[{"duration":"12.2"}]}', stderr=""),
                 ]
                 audio_path = audio.extract_audio(video_path)
 
