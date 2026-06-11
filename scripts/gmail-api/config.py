@@ -22,6 +22,9 @@ DEFAULT_FAMILY_EMAILS = frozenset(
     }
 )
 DEFAULT_OLLAMA_HOST = "http://localhost:11434"
+DEFAULT_GMAIL_PUBSUB_PROJECT_ID = "cool-phalanx-303803"
+DEFAULT_GMAIL_PUBSUB_TOPIC_ID = "smt-gmail-sub-topic"
+DEFAULT_GMAIL_PUBSUB_SUBSCRIPTION_ID = "smt-gmail"
 
 
 class ConfigError(RuntimeError):
@@ -42,6 +45,10 @@ class Settings:
     local_server_port: int
     reply_body_limit: int
     max_results: int
+    gmail_pubsub_project_id: str
+    gmail_pubsub_topic_id: str
+    gmail_pubsub_subscription_id: str
+    gmail_pubsub_timeout_seconds: float | None
 
 
 def load_settings(env: Mapping[str, str] | None = None) -> Settings:
@@ -63,6 +70,27 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         local_server_port=_int_setting("GMAIL_OAUTH_PORT", values.get("GMAIL_OAUTH_PORT"), 0),
         reply_body_limit=_int_setting("GMAIL_REPLY_BODY_LIMIT", values.get("GMAIL_REPLY_BODY_LIMIT"), 4000),
         max_results=_int_setting("GMAIL_MAX_RESULTS", values.get("GMAIL_MAX_RESULTS"), 50, minimum=1),
+        gmail_pubsub_project_id=_str_setting(
+            "GMAIL_PUBSUB_PROJECT_ID",
+            values.get("GMAIL_PUBSUB_PROJECT_ID"),
+            DEFAULT_GMAIL_PUBSUB_PROJECT_ID,
+        ),
+        gmail_pubsub_topic_id=_str_setting(
+            "GMAIL_PUBSUB_TOPIC_ID",
+            values.get("GMAIL_PUBSUB_TOPIC_ID"),
+            DEFAULT_GMAIL_PUBSUB_TOPIC_ID,
+        ),
+        gmail_pubsub_subscription_id=_str_setting(
+            "GMAIL_PUBSUB_SUBSCRIPTION_ID",
+            values.get("GMAIL_PUBSUB_SUBSCRIPTION_ID"),
+            DEFAULT_GMAIL_PUBSUB_SUBSCRIPTION_ID,
+        ),
+        gmail_pubsub_timeout_seconds=_optional_float_setting(
+            "GMAIL_PUBSUB_TIMEOUT_SECONDS",
+            values.get("GMAIL_PUBSUB_TIMEOUT_SECONDS"),
+            default=0.0,
+            minimum=0.0,
+        ),
     )
 
 
@@ -91,4 +119,36 @@ def _int_setting(name: str, raw: str | None, default: int, minimum: int | None =
     if minimum is not None and value < minimum:
         raise ConfigError(f"{name} must be >= {minimum}, got {value}")
 
+    return value
+
+
+def _float_setting(name: str, raw: str | None, default: float, minimum: float | None = None) -> float:
+    if raw is None or raw.strip() == "":
+        value = default
+    else:
+        try:
+            value = float(raw)
+        except ValueError as exc:
+            raise ConfigError(f"{name} must be a number, got {raw!r}") from exc
+
+    if minimum is not None and value < minimum:
+        raise ConfigError(f"{name} must be >= {minimum}, got {value}")
+
+    return value
+
+
+def _optional_float_setting(
+    name: str,
+    raw: str | None,
+    default: float,
+    minimum: float | None = None,
+) -> float | None:
+    value = _float_setting(name, raw, default, minimum)
+    return None if value == 0 else value
+
+
+def _str_setting(name: str, raw: str | None, default: str) -> str:
+    value = (raw if raw is not None else default).strip()
+    if not value:
+        raise ConfigError(f"{name} must not be empty")
     return value

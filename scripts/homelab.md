@@ -748,3 +748,12 @@ gcloud config list
 gcloud config set project cool-phalanx-303803
 
 gcloud pubsub topics get-iam-policy smt-gmail-sub-topic
+
+
+### 2026-06-11
+
+https://docs.cloud.google.com/pubsub/docs/subscription-overview
+
+pip install --upgrade google-cloud-pubsub
+
+pip freeze > requirements.txt

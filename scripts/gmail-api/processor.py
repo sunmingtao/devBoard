@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import TimeoutError
 from dataclasses import dataclass
 from typing import Any
 
@@ -95,3 +96,39 @@ class GmailAutoResponder:
             subject=subject,
             sent_message_id=sent_message_id,
         )
+
+    def process_pubsub_notifications(
+        self,
+        subscriber,
+        subscription_path: str,
+        timeout: float | None = None,
+        flow_control: Any | None = None,
+    ) -> list[ProcessResult]:
+        results: list[ProcessResult] = []
+
+        def callback(message) -> None:
+            logger.info("Received Gmail Pub/Sub notification %s", message.message_id)
+            try:
+                results.extend(self.process_inbox())
+            except Exception:
+                logger.exception("Failed to process Gmail Pub/Sub notification %s", message.message_id)
+                message.nack()
+                return
+
+            message.ack()
+
+        subscribe_kwargs: dict[str, Any] = {"callback": callback}
+        if flow_control is not None:
+            subscribe_kwargs["flow_control"] = flow_control
+
+        streaming_pull_future = subscriber.subscribe(subscription_path, **subscribe_kwargs)
+        logger.info("Listening for Gmail Pub/Sub notifications on %s", subscription_path)
+
+        with subscriber:
+            try:
+                streaming_pull_future.result(timeout=timeout)
+            except TimeoutError:
+                streaming_pull_future.cancel()
+                streaming_pull_future.result()
+
+        return results
