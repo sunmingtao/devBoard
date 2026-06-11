@@ -757,3 +757,7 @@ https://docs.cloud.google.com/pubsub/docs/subscription-overview
 pip install --upgrade google-cloud-pubsub
 
 pip freeze > requirements.txt
+
+### 2026-06-12
+
+python -m unittest discover -s tests

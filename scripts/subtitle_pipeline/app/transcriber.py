@@ -1,30 +1,18 @@
-# app/transcriber.py
-
-import subprocess
 from pathlib import Path
-from typing import TypedDict
 
 from faster_whisper import WhisperModel
 
 from app.config import (
+    WORKING_DIR,
     WHISPER_MODEL,
     WHISPER_DEVICE,
     WHISPER_COMPUTE_TYPE,
     WHISPER_CPU_THREADS,
 )
+from app.split_video import VideoChunk
 
 
-CHUNK_SECONDS = 300
-OVERLAP_SECONDS = 15
 MAX_SEGMENT_SECONDS = 15
-
-
-class AudioChunk(TypedDict):
-    file: Path
-    chunk_index: int
-    main_start: float
-    main_end: float
-    actual_start: float
 
 
 def format_time(seconds: float) -> str:
@@ -40,75 +28,6 @@ def format_time(seconds: float) -> str:
     millis %= 1000
 
     return f"{hrs:02}:{mins:02}:{secs:02},{millis:03}"
-
-
-def split_audio_with_overlap(audio_path: Path, chunk_dir: Path) -> list[AudioChunk]:
-    chunk_dir.mkdir(parents=True, exist_ok=True)
-
-    # Clear old chunks
-    for file in chunk_dir.glob("chunk_*.wav"):
-        file.unlink()
-
-    duration = get_audio_duration(audio_path)
-
-    chunks: list[AudioChunk] = []
-    start = 0
-    index = 0
-
-    while start < duration:
-        chunk_start = max(0, start - OVERLAP_SECONDS)
-        chunk_duration = CHUNK_SECONDS + OVERLAP_SECONDS
-
-        chunk_file = chunk_dir / f"chunk_{index:03}.wav"
-
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-y",
-                "-ss", str(chunk_start),
-                "-i", str(audio_path),
-                "-t", str(chunk_duration),
-                "-ac", "1",
-                "-ar", "16000",
-                str(chunk_file),
-            ],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-
-        chunks.append(
-            {
-                "file": chunk_file,
-                "chunk_index": index,
-                "main_start": start,
-                "main_end": min(start + CHUNK_SECONDS, duration),
-                "actual_start": chunk_start,
-            }
-        )
-
-        start += CHUNK_SECONDS
-        index += 1
-
-    return chunks
-
-
-def get_audio_duration(audio_path: Path) -> float:
-    result = subprocess.run(
-        [
-            "ffprobe",
-            "-v", "error",
-            "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1",
-            str(audio_path),
-        ],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-
-    return float(result.stdout.strip())
 
 
 def create_model() -> WhisperModel:
@@ -137,37 +56,40 @@ def create_model() -> WhisperModel:
     )
 
 
-def transcribe_audio(audio_path: str | Path, language: str | None = None) -> Path:
+def transcribe_audio(
+    video_path: str | Path,
+    video_chunks: list[VideoChunk] | None = None,
+    language: str | None = None,
+) -> Path:
     """
-    audio.wav -> subtitle.srt
+    Video chunk audio -> subtitle.srt
     """
-    print(f"Transcribing audio: {audio_path.name}, language={language}...")
-    audio_path = Path(audio_path)
+    video_path = Path(video_path)
+    print(f"Transcribing audio: {video_path.name}, language={language}...")
 
-    job_dir = audio_path.parent
-    chunk_dir = job_dir / "chunks"
-    srt_path = job_dir / f"{audio_path.name.replace('.wav', '')}.srt"
+    if video_chunks is None:
+        raise ValueError("video_chunks must be provided")
 
-    chunks = split_audio_with_overlap(audio_path, chunk_dir)
+    srt_path = WORKING_DIR / f"{video_path.stem}.srt"
+    srt_path.parent.mkdir(parents=True, exist_ok=True)
     model = create_model()
-
     subtitle_index = 1
 
     with open(srt_path, "w", encoding="utf-8") as f:
 
-        for chunk in chunks:
-            chunk_file = chunk["file"]
+        for chunk in video_chunks:
+            chunk_file = Path(chunk["file"])
             actual_start = chunk["actual_start"]
             main_start = chunk["main_start"]
             main_end = chunk["main_end"]
 
             print(f"Transcribing chunk: {chunk_file.name}")
 
-            segments, info = model.transcribe(
+            segments, _ = model.transcribe(
                 str(chunk_file),
                 language=language,
-                beam_size=5,
-                best_of=5,
+                beam_size=1,
+                best_of=1,
                 temperature=0,
                 vad_filter=False,
                 condition_on_previous_text=False,

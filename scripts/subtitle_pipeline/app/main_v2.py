@@ -8,6 +8,7 @@ from app.translator import TranslationMode, generate_bilingual_srt, translate_sr
 from app.video import burn_subtitles
 from app.notifier import send_success, send_failure
 from app.split_video import split_video_with_overlap
+from app.extract_audio import extract_audio_chunks
 from app.config import ARCHIVE_DIR, FAILED_DIR, OUTPUT_DIR, WORKING_DIR
 
 
@@ -95,18 +96,15 @@ def stage_audio_file(audio_path: str | Path) -> Path:
 
 def process_media_file(
     media_path: str | Path,
-    translation_mode: TranslationMode = "batch",
+    translation_mode: TranslationMode = "single",
 ) -> None:
     media_path = Path(media_path)
+    job_dir = WORKING_DIR / media_path.stem
     language = "ja" if "~" in media_path.name else "en"
     try:
-        input_is_audio = is_audio_file(media_path)
-        audio_path = (
-            stage_audio_file(media_path)
-            if input_is_audio
-            else extract_audio(media_path)
-        )
-        srt_path = transcribe_audio(audio_path, language=language)
+        video_chunks = split_video_with_overlap(media_path)
+        video_chunks = extract_audio_chunks(media_path, video_chunks)
+        srt_path = transcribe_audio(media_path, video_chunks, language)
         zh_srt_path = translate_srt(
             srt_path,
             language=language,
@@ -121,19 +119,18 @@ def process_media_file(
 
         subtitle_output_path = copy_subtitle_to_output(subtitle_path)
 
-        if language == "en" and not input_is_audio:
+        if language == "en":
             output_path = burn_subtitles(media_path, subtitle_path)
         else:
             output_path = subtitle_output_path
-        archived_video_path = cleanup_completed_job(media_path, audio_path.parent)
+        archived_video_path = cleanup_completed_job(media_path, job_dir)
         send_success(archived_video_path, output_path)
-
     except Exception as e:
         send_failure(media_path, str(e))
         raise
 
 
-def main(translation_mode: TranslationMode = "batch") -> None:
+def main(translation_mode: TranslationMode = "single") -> None:
     media_files = find_new_media_files()
 
     failed_media_files = []
