@@ -29,6 +29,47 @@ def list_messages(service, user_id: str, query: str, max_results: int) -> list[d
     return response.get("messages", [])
 
 
+def list_history_message_ids(
+    service,
+    user_id: str,
+    start_history_id: str,
+    label_id: str = "INBOX",
+) -> tuple[list[str], str | None]:
+    message_ids: list[str] = []
+    seen: set[str] = set()
+    page_token: str | None = None
+    newest_history_id: str | None = None
+
+    while True:
+        kwargs: dict[str, Any] = {
+            "userId": user_id,
+            "startHistoryId": start_history_id,
+            "historyTypes": ["messageAdded", "labelAdded"],
+            "labelId": label_id,
+        }
+        if page_token:
+            kwargs["pageToken"] = page_token
+
+        response = _execute(
+            service.users().history().list(**kwargs),
+            f"list Gmail history since {start_history_id}",
+        )
+        response_history_id = response.get("historyId")
+        if response_history_id:
+            newest_history_id = str(response_history_id)
+
+        for history in response.get("history", []):
+            for change in history.get("messagesAdded", []):
+                _append_message_id(change.get("message", {}), seen, message_ids)
+            for change in history.get("labelsAdded", []):
+                if label_id in change.get("labelIds", []):
+                    _append_message_id(change.get("message", {}), seen, message_ids)
+
+        page_token = response.get("nextPageToken")
+        if not page_token:
+            return message_ids, newest_history_id
+
+
 def get_message(service, user_id: str, message_id: str) -> dict[str, Any]:
     return _execute(
         service.users().messages().get(userId=user_id, id=message_id, format="full"),
@@ -79,3 +120,14 @@ def _execute(request, action: str):
         return request.execute()
     except HttpError as exc:
         raise GmailApiError(f"Failed to {action}: {exc}") from exc
+
+
+def _append_message_id(
+    message: dict[str, Any],
+    seen: set[str],
+    message_ids: list[str],
+) -> None:
+    message_id = message.get("id")
+    if message_id and message_id not in seen:
+        seen.add(message_id)
+        message_ids.append(message_id)

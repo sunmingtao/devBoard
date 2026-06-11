@@ -8,6 +8,7 @@ from google.cloud import pubsub_v1
 from auth import CredentialError, load_credentials
 from config import ConfigError, load_settings
 from gmail_client import GmailApiError, build_gmail_service
+from history_store import GmailHistoryStore, HistoryStoreError
 from processor import GmailAutoResponder
 from reply_generator import OllamaReplyGenerator
 
@@ -32,7 +33,8 @@ def main() -> int:
             f"projects/{settings.gmail_pubsub_project_id}"
             f"/topics/{settings.gmail_pubsub_topic_id}"
         )
-        service.users().watch(
+        history_store = GmailHistoryStore(settings.gmail_history_db_file)
+        watch_response = service.users().watch(
             userId=settings.user_id,
             body={
                 "topicName": topic_name,
@@ -40,10 +42,15 @@ def main() -> int:
                 "labelFilterBehavior": "INCLUDE",
             },
         ).execute()
+        initial_history_id = watch_response.get("historyId")
+        if initial_history_id and history_store.get_history_id() is None:
+            history_store.set_history_id(str(initial_history_id))
+            logger.info("Initialized Gmail history id at %s", initial_history_id)
         logger.info("Started watching Gmail inbox for changes on %s", topic_name)
         responder = GmailAutoResponder(
             service=service,
             settings=settings,
+            history_store=history_store,
             reply_generator=OllamaReplyGenerator(
                 model=settings.ollama_model,
                 body_limit=settings.reply_body_limit,
@@ -61,7 +68,7 @@ def main() -> int:
             timeout=settings.gmail_pubsub_timeout_seconds,
             flow_control=pubsub_v1.types.FlowControl(max_messages=1),
         )
-    except (ConfigError, CredentialError, GmailApiError) as exc:
+    except (ConfigError, CredentialError, GmailApiError, HistoryStoreError) as exc:
         logger.error("%s", exc)
         return 1
     except KeyboardInterrupt:

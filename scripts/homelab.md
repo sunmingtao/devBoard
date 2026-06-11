@@ -761,3 +761,11 @@ pip freeze > requirements.txt
 ### 2026-06-12
 
 python -m unittest discover -s tests
+
+(venv) jacky@mike:~/workspace/devBoard/scripts/subtitle_pipeline/input (main)$ ffprobe -v error -i input.mp4
+[mov,mp4,m4a,3gp,3g2,mj2 @ 0x60f7ed3ce780] moov atom not found
+input.mp4: Invalid data found when processing input
+
+
+gcloud auth application-default login
+gcloud config set project cool-phalanx-303803

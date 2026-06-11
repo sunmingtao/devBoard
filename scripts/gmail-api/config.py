@@ -39,6 +39,7 @@ class Settings:
     ollama_host: str
     token_file: Path
     client_secret_file: Path
+    gmail_history_db_file: Path
     gmail_query: str
     user_id: str
     log_level: str
@@ -63,6 +64,10 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         client_secret_file=_path_setting(
             values.get("GMAIL_CLIENT_SECRET_FILE"),
             "secrets/gmail-api-client-secret.json",
+        ),
+        gmail_history_db_file=_path_setting(
+            values.get("GMAIL_HISTORY_DB_FILE"),
+            "secrets/gmail-history.sqlite3",
         ),
         gmail_query=values.get("GMAIL_QUERY", "category:primary is:unread"),
         user_id=values.get("GMAIL_USER_ID", "me"),
