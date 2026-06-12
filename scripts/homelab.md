@@ -769,3 +769,19 @@ input.mp4: Invalid data found when processing input
 
 gcloud auth application-default login
 gcloud config set project cool-phalanx-303803
+
+
+gcloud auth application-default login
+cat /home/jacky/.config/gcloud/application_default_credentials.json
+cp /home/jacky/.config/gcloud/application_default_credentials.json secrets/
+docker compose up -d --build
+docker ps
+docker logs 462cb8e73552
+
+### 2026-06-13
+
+mktemp
+
+ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=language,title -of compact=p=0:nk=1 input.mkv
+
+ffmpeg -i input.mkv -t 00:20:00 -c copy input-sample.mp4
