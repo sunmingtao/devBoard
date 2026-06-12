@@ -782,6 +782,9 @@ docker logs 462cb8e73552
 
 mktemp
 
+# check subtitle
 ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=language,title -of compact=p=0:nk=1 input.mkv
 
-ffmpeg -i input.mkv -t 00:20:00 -c copy input-sample.mp4
+ffmpeg -i input.mkv -t 00:20:00 -c copy input-sample.mkv
+
+jobs -rp

@@ -6,6 +6,8 @@ shopt -s nullglob nocaseglob
 recipient="sunmingtao@gmail.com"
 log_file="convert-video-errors.log"
 summary_file="$(mktemp)"
+job_status_dir="$(mktemp -d)"
+MAX_JOBS=${MAX_JOBS:-4}
 video_patterns=(
   *.3g2 *.3gp *.asf *.avi *.flv *.m4v *.mkv *.mov *.mp4 *.mpeg *.mpg
   *.mts *.m2ts *.ogv *.rm *.rmvb *.ts *.vob *.webm *.wmv
@@ -43,8 +45,20 @@ escape_filter_value() {
   printf "'%s'" "$value"
 }
 
-for input_file in "${video_patterns[@]}"; do
-  [[ -f "$input_file" ]] || continue
+wait_for_slot() {
+  while (( $(jobs -rp | wc -l) >= MAX_JOBS )); do
+    sleep 1
+  done
+}
+
+convert_one() {
+  local input_file=$1
+  local status_file=$2
+  local base_name extension output_file
+  local subtitle_filter_index chinese_subtitle_filter_index subtitle_stream_number
+  local stream_index codec_name language title stream_filter_index title_lower
+  local video_filter
+  local -a ffmpeg_args
 
   base_name=${input_file%.*}
   extension=${input_file##*.}
@@ -58,8 +72,8 @@ for input_file in "${video_patterns[@]}"; do
 
   if [[ "$input_file" == "$output_file" ]]; then
     printf 'Skipping %s: input and output names are identical.\n' "$input_file" >> "$log_file"
-    ((skipped++))
-    continue
+    printf 'skipped\n' > "$status_file"
+    return
   fi
 
   printf 'Converting %s -> %s\n' "$input_file" "$output_file"
@@ -117,12 +131,33 @@ for input_file in "${video_patterns[@]}"; do
   ffmpeg_args+=(-movflags +faststart "$output_file")
 
   if ffmpeg "${ffmpeg_args[@]}" 2>>"$log_file"; then
-    ((converted++))
+    printf 'converted\n' > "$status_file"
   else
-    ((failed++))
+    printf 'failed\n' > "$status_file"
     printf 'Failed to convert %s\n' "$input_file" >> "$log_file"
     rm -f "$output_file"
   fi
+}
+
+job_number=0
+for input_file in "${video_patterns[@]}"; do
+  [[ -f "$input_file" ]] || continue
+
+  wait_for_slot
+  convert_one "$input_file" "$job_status_dir/job-$job_number.status" &
+  ((job_number++))
+done
+
+wait
+
+for status_file in "$job_status_dir"/*.status; do
+  [[ -f "$status_file" ]] || continue
+
+  case "$(<"$status_file")" in
+    converted) ((converted++)) ;;
+    failed) ((failed++)) ;;
+    skipped) ((skipped++)) ;;
+  esac
 done
 
 {
@@ -139,3 +174,4 @@ done
 send_email "Video conversion complete" "$summary_file"
 cat "$summary_file"
 rm -f "$summary_file"
+rm -rf "$job_status_dir"
