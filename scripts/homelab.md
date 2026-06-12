@@ -788,3 +788,8 @@ ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=langua
 ffmpeg -i input.mkv -t 00:20:00 -c copy input-sample.mkv
 
 jobs -rp
+
+sudo apt update
+sudo apt install -y fonts-noto-cjk fontconfig
+fc-cache -f
+fc-match "Noto Sans CJK SC"

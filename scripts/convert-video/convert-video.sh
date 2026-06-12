@@ -8,6 +8,7 @@ log_file="convert-video-errors.log"
 summary_file="$(mktemp)"
 job_status_dir="$(mktemp -d)"
 MAX_JOBS=${MAX_JOBS:-4}
+SUBTITLE_FONT=${SUBTITLE_FONT:-Noto Sans CJK SC}
 video_patterns=(
   *.3g2 *.3gp *.asf *.avi *.flv *.m4v *.mkv *.mov *.mp4 *.mpeg *.mpg
   *.mts *.m2ts *.ogv *.rm *.rmvb *.ts *.vob *.webm *.wmv
@@ -117,7 +118,7 @@ convert_one() {
 
   video_filter="scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2"
   if [[ -n "$subtitle_filter_index" ]]; then
-    video_filter+=",subtitles=filename=$(escape_filter_value "$input_file"):si=$subtitle_filter_index:force_style='Fontsize=36,Bold=1,Outline=3,Shadow=1,MarginV=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000'"
+    video_filter+=",subtitles=filename=$(escape_filter_value "$input_file"):si=$subtitle_filter_index:force_style='Fontname=$SUBTITLE_FONT,Fontsize=36,Bold=1,Outline=3,Shadow=1,MarginV=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000'"
   fi
 
   ffmpeg_args=(
