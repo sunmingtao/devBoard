@@ -5,6 +5,7 @@ shopt -s nullglob nocaseglob
 
 recipient="sunmingtao@gmail.com"
 log_file="convert-video-errors.log"
+output_dir="output"
 summary_file="$(mktemp)"
 job_status_dir="$(mktemp -d)"
 MAX_JOBS=${MAX_JOBS:-4}
@@ -19,6 +20,7 @@ failed=0
 skipped=0
 
 : > "$log_file"
+mkdir -p "$output_dir"
 
 send_email() {
   local subject=$1
@@ -66,9 +68,15 @@ convert_one() {
   extension=${extension,,}
 
   if [[ "$extension" == "mp4" ]]; then
-    output_file="${base_name}-720.mp4"
+    output_file="${output_dir}/${base_name}-720.mp4"
   else
-    output_file="${base_name}.mp4"
+    output_file="${output_dir}/${base_name}.mp4"
+  fi
+
+  if [[ -e "$output_file" ]]; then
+    printf 'Skipping %s: output %s already exists.\n' "$input_file" "$output_file" >> "$log_file"
+    printf 'skipped\n' > "$status_file"
+    return
   fi
 
   if [[ "$input_file" == "$output_file" ]]; then

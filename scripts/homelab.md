@@ -793,3 +793,6 @@ sudo apt update
 sudo apt install -y fonts-noto-cjk fontconfig
 fc-cache -f
 fc-match "Noto Sans CJK SC"
+
+tmux new -s ffmpeg
+tmux attach -t ffmpeg
