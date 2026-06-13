@@ -29,4 +29,6 @@ jobs:
           context: scripts/gmail-api
           file: scripts/gmail-api/Dockerfile
           push: true
-          tags: sunmingtao/gmail-auto-reply:latest
+          tags: |
+            sunmingtao/gmail-auto-reply:latest
+            sunmingtao/gmail-auto-reply:${{ github.sha }}
