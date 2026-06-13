@@ -1,6 +1,6 @@
 services:
   gmail-auto-reply:
-    image: ghcr.io/sunmingtao/gmail-auto-reply:latest
+    image: sunmingtao/gmail-auto-reply:latest
     container_name: gmail-auto-reply
     restart: unless-stopped
     extra_hosts:
