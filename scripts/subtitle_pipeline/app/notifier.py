@@ -42,6 +42,18 @@ def _missing_settings(recipients: list[str]) -> list[str]:
     return [name for name, value in required_settings.items() if not value]
 
 
+def _redact_setting_names(setting_names: Iterable[str]) -> list[str]:
+    sensitive_tokens = ("PASSWORD", "SECRET", "TOKEN", "KEY")
+    redacted: list[str] = []
+    for name in setting_names:
+        upper_name = name.upper()
+        if any(token in upper_name for token in sensitive_tokens):
+            redacted.append("REDACTED_SENSITIVE_SETTING")
+        else:
+            redacted.append(name)
+    return redacted
+
+
 def _elapsed_processing_time() -> str:
     return str(timedelta(seconds=int(time.perf_counter() - _PROCESSING_STARTED_AT)))
 
@@ -63,7 +75,8 @@ def send_email(
     missing = _missing_settings(to_addresses)
 
     if missing:
-        message = "Email notification skipped; missing settings: " + ", ".join(missing)
+        safe_missing = _redact_setting_names(missing)
+        message = "Email notification skipped; missing settings: " + ", ".join(safe_missing)
         if raise_on_error:
             raise NotificationError(message)
         print(message)
