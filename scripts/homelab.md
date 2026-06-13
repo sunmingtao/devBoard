@@ -832,3 +832,24 @@ curl  http://host.docker.internal:11434
 docker compose up -d
 
 docker compose down
+
+at 4am tomorrow <<EOF
+./convert-video
+EOF
+
+### 2026-06-14
+
+sudo blkid /dev/sda1
+sudo mkdir -p /mnt/usb
+
+sudo mount /dev/sda1 /mnt/usb
+
+echo mv */ /mnt/usb/
+mv */ /mnt/usb/
+
+sudo iotop -o
+
+sudo dmesg | tail -50
+ps -ef | grep "[m]v"
+ps -o pid,stat,etime,cmd -p 2351763
+lsusb
