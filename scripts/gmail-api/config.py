@@ -19,6 +19,7 @@ DEFAULT_FAMILY_EMAILS = frozenset(
         "8011638@radford.act.edu.au",
         "selina1224@gmail.com",
         "smtttt@gmail.com",
+        "mingtao.sun@afsa.gov.au"
     }
 )
 DEFAULT_OLLAMA_HOST = "http://localhost:11434"
