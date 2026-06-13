@@ -830,3 +830,5 @@ ss -lntp | grep 11434
 curl  http://host.docker.internal:11434
 
 docker compose up -d
+
+docker compose down
