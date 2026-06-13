@@ -809,3 +809,22 @@ docker run \
   -e OLLAMA_HOST=http://host.docker.internal:11434 \
   -v /secrets:/secrets \
   sunmingtao/gmail-auto-reply:v1
+  
+mike@homelab:~ ()$ sudo ss -lntp | grep ollama
+LISTEN 0      4096       127.0.0.1:11434      0.0.0.0:*    users:(("ollama",pid=421353,fd=4))
+LISTEN 0      4096       127.0.0.1:43135      0.0.0.0:*    users:(("ollama",pid=3928714,fd=4))
+mike@homelab:~ ()$ lsof -i :11434
+
+sudo systemctl edit ollama
+
+[Service]
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+
+
+curl 127.0.0.1:11434
+
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+ss -lntp | grep 11434
+
+curl  http://host.docker.internal:11434

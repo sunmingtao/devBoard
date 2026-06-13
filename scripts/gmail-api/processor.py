@@ -13,6 +13,7 @@ from gmail_client import (
     has_replied_after_message,
     list_history_message_ids,
     list_messages,
+    mark_message_read,
     send_reply,
 )
 from message_utils import extract_body, get_header, parse_message_date, sender_email
@@ -119,6 +120,10 @@ class GmailAutoResponder:
             headers=headers,
         )
         sent_message_id = sent_message.get("id", "")
+        try:
+            mark_message_read(self.service, self.settings.user_id, message_id)
+        except Exception:
+            logger.exception("Sent reply %s but failed to mark source message %s as read", sent_message_id, message_id)
         logger.info("Sent Gmail reply %s for source message %s", sent_message_id, message_id)
         return ProcessResult(
             message_id=message_id,
