@@ -796,3 +796,16 @@ fc-match "Noto Sans CJK SC"
 
 tmux new -s ffmpeg
 tmux attach -t ffmpeg
+
+docker build -t sunmingtao/gmail-auto-reply:v1 .
+docker push sunmingtao/gmail-auto-reply:v1
+docker pull sunmingtao/gmail-auto-reply:v1
+
+docker run \
+  --add-host=host.docker.internal:host-gateway \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/application_default_credentials.json \
+  -e GMAIL_TOKEN_FILE=/secrets/token.json \
+  -e GMAIL_CLIENT_SECRET_FILE=/secrets/gmail-api-client-secret.json \
+  -e OLLAMA_HOST=http://host.docker.internal:11434 \
+  -v /secrets:/secrets \
+  sunmingtao/gmail-auto-reply:v1

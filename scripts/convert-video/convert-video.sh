@@ -18,6 +18,7 @@ video_patterns=(
 converted=0
 failed=0
 skipped=0
+script_start_seconds=$SECONDS
 
 : > "$log_file"
 mkdir -p "$output_dir"
@@ -46,6 +47,23 @@ escape_filter_value() {
   value=${value//\\/\\\\}
   value=${value//\'/\\\'}
   printf "'%s'" "$value"
+}
+
+format_duration() {
+  local total_seconds=$1
+  local hours minutes seconds
+
+  hours=$((total_seconds / 3600))
+  minutes=$(((total_seconds % 3600) / 60))
+  seconds=$((total_seconds % 60))
+
+  if (( hours > 0 )); then
+    printf '%dh %02dm %02ds' "$hours" "$minutes" "$seconds"
+  elif (( minutes > 0 )); then
+    printf '%dm %02ds' "$minutes" "$seconds"
+  else
+    printf '%ds' "$seconds"
+  fi
 }
 
 wait_for_slot() {
@@ -169,11 +187,15 @@ for status_file in "$job_status_dir"/*.status; do
   esac
 done
 
+elapsed_seconds=$((SECONDS - script_start_seconds))
+elapsed_time=$(format_duration "$elapsed_seconds")
+
 {
   printf 'Video conversion complete.\n\n'
   printf 'Converted: %d\n' "$converted"
   printf 'Failed: %d\n' "$failed"
   printf 'Skipped: %d\n' "$skipped"
+  printf 'Time spent: %s\n' "$elapsed_time"
   printf 'Directory: %s\n' "$PWD"
   if (( failed > 0 || skipped > 0 )); then
     printf '\nSee %s for details.\n' "$log_file"
