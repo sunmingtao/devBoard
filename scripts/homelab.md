@@ -847,6 +847,10 @@ sudo mount /dev/sda1 /mnt/usb
 echo mv */ /mnt/usb/
 mv */ /mnt/usb/
 
+sudo mount -t vfat \
+    -o iocharset=utf8,codepage=936,uid=$(id -u),gid=$(id -g) \
+    /dev/sda1 /mnt/usb
+	
 sudo iotop -o
 
 sudo dmesg | tail -50

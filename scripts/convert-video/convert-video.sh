@@ -15,9 +15,14 @@ video_patterns=(
   *.mts *.m2ts *.ogv *.rm *.rmvb *.ts *.vob *.webm *.wmv
 )
 
+declare -a folder_dirs=()
+declare -a folder_status_dirs=()
+
 converted=0
 failed=0
 skipped=0
+renamed=0
+rename_failed=0
 script_start_seconds=$SECONDS
 
 : > "$log_file"
@@ -74,22 +79,17 @@ wait_for_slot() {
 
 convert_one() {
   local input_file=$1
-  local status_file=$2
-  local base_name extension output_file
+  local folder_output_dir=$2
+  local status_file=$3
+  local file_name base_name output_file
   local subtitle_filter_index chinese_subtitle_filter_index subtitle_stream_number
   local stream_index codec_name language title stream_filter_index title_lower
   local video_filter
   local -a ffmpeg_args
 
-  base_name=${input_file%.*}
-  extension=${input_file##*.}
-  extension=${extension,,}
-
-  if [[ "$extension" == "mp4" ]]; then
-    output_file="${output_dir}/${base_name}-720.mp4"
-  else
-    output_file="${output_dir}/${base_name}.mp4"
-  fi
+  file_name=${input_file##*/}
+  base_name=${file_name%.*}
+  output_file="${folder_output_dir}/${base_name}.mp4"
 
   if [[ -e "$output_file" ]]; then
     printf 'Skipping %s: output %s already exists.\n' "$input_file" "$output_file" >> "$log_file"
@@ -167,17 +167,38 @@ convert_one() {
 }
 
 job_number=0
-for input_file in "${video_patterns[@]}"; do
-  [[ -f "$input_file" ]] || continue
+folder_number=0
+for source_dir in */; do
+  source_dir=${source_dir%/}
+  [[ -d "$source_dir" ]] || continue
+  [[ "$source_dir" == "$output_dir" || "$source_dir" == *-done ]] && continue
 
-  wait_for_slot
-  convert_one "$input_file" "$job_status_dir/job-$job_number.status" &
-  ((job_number++))
+  folder_has_videos=0
+  status_subdir="$job_status_dir/folder-$folder_number"
+  folder_output_dir="$output_dir/$source_dir"
+
+  for pattern in "${video_patterns[@]}"; do
+    for input_file in "$source_dir"/$pattern; do
+      [[ -f "$input_file" ]] || continue
+
+      if (( folder_has_videos == 0 )); then
+        mkdir -p "$status_subdir" "$folder_output_dir"
+        folder_dirs+=("$source_dir")
+        folder_status_dirs+=("$status_subdir")
+        ((folder_number++))
+        folder_has_videos=1
+      fi
+
+      wait_for_slot
+      convert_one "$input_file" "$folder_output_dir" "$status_subdir/job-$job_number.status" &
+      ((job_number++))
+    done
+  done
 done
 
 wait
 
-for status_file in "$job_status_dir"/*.status; do
+for status_file in "$job_status_dir"/*/*.status; do
   [[ -f "$status_file" ]] || continue
 
   case "$(<"$status_file")" in
@@ -185,6 +206,33 @@ for status_file in "$job_status_dir"/*.status; do
     failed) ((failed++)) ;;
     skipped) ((skipped++)) ;;
   esac
+done
+
+for folder_index in "${!folder_dirs[@]}"; do
+  source_dir=${folder_dirs[$folder_index]}
+  status_subdir=${folder_status_dirs[$folder_index]}
+  folder_failed=0
+
+  for status_file in "$status_subdir"/*.status; do
+    [[ -f "$status_file" ]] || continue
+    if [[ "$(<"$status_file")" == "failed" ]]; then
+      folder_failed=1
+      break
+    fi
+  done
+
+  (( folder_failed == 0 )) || continue
+
+  done_dir="${source_dir}-done"
+  if [[ -e "$done_dir" ]]; then
+    printf 'Not renaming %s: %s already exists.\n' "$source_dir" "$done_dir" >> "$log_file"
+    ((rename_failed++))
+  elif mv -- "$source_dir" "$done_dir"; then
+    ((renamed++))
+  else
+    printf 'Failed to rename %s to %s.\n' "$source_dir" "$done_dir" >> "$log_file"
+    ((rename_failed++))
+  fi
 done
 
 elapsed_seconds=$((SECONDS - script_start_seconds))
@@ -195,9 +243,11 @@ elapsed_time=$(format_duration "$elapsed_seconds")
   printf 'Converted: %d\n' "$converted"
   printf 'Failed: %d\n' "$failed"
   printf 'Skipped: %d\n' "$skipped"
+  printf 'Folders renamed: %d\n' "$renamed"
+  printf 'Folder rename failures: %d\n' "$rename_failed"
   printf 'Time spent: %s\n' "$elapsed_time"
   printf 'Directory: %s\n' "$PWD"
-  if (( failed > 0 || skipped > 0 )); then
+  if (( failed > 0 || skipped > 0 || rename_failed > 0 )); then
     printf '\nSee %s for details.\n' "$log_file"
   fi
 } > "$summary_file"
