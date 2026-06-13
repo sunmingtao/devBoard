@@ -77,15 +77,6 @@ def get_message(service, user_id: str, message_id: str) -> dict[str, Any]:
     )
 
 
-def mark_message_read(service, user_id: str, message_id: str) -> dict[str, Any]:
-    return _execute(
-        service.users()
-        .messages()
-        .modify(userId=user_id, id=message_id, body={"removeLabelIds": ["UNREAD"]}),
-        f"mark Gmail message {message_id} as read",
-    )
-
-
 def has_replied_after_message(service, user_id: str, message: dict[str, Any]) -> bool:
     thread_id = message["threadId"]
     message_timestamp = int(message["internalDate"])

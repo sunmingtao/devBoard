@@ -801,7 +801,7 @@ docker build -t sunmingtao/gmail-auto-reply:v1 .
 docker push sunmingtao/gmail-auto-reply:v1
 docker pull sunmingtao/gmail-auto-reply:v1
 
-docker run \
+docker run -d \
   --add-host=host.docker.internal:host-gateway \
   -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/application_default_credentials.json \
   -e GMAIL_TOKEN_FILE=/secrets/token.json \
