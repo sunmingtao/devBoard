@@ -58,3 +58,9 @@ Unmount the USB drive before unplugging it:
 ```bash
 sudo umount /mnt/usb
 ```
+
+if busy
+
+```
+sudo umount -l /mnt/usb
+```

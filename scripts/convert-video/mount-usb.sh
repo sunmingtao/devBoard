@@ -24,7 +24,7 @@ find_usb_device() {
       printf '%s\n' "$NAME"
       return 0
     fi
-  done < <(lsblk -rpno NAME,TYPE,TRAN,PKNAME -P)
+  done < <(lsblk -pno NAME,TYPE,TRAN,PKNAME -P)
 
   [[ -n "${first_usb_disk:-}" ]] && printf '%s\n' "$first_usb_disk"
 }

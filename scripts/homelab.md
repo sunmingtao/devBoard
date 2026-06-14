@@ -890,3 +890,7 @@ source .venv/bin/activate
 
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo apt install ./google-chrome-stable_current_amd64.deb
+
+### 2026-06-15
+
+sudo umount /mnt/usb
