@@ -38,7 +38,15 @@ send_notification() {
   fi
 }
 
-rsync -a --whole-file --partial "$SOURCE_DIR"/ "$DEST_DIR"/
+if rsync -a --whole-file --partial "$SOURCE_DIR"/ "$DEST_DIR"/; then
+  :
+else
+  status=$?
+  send_notification \
+    "Video transfer failed" \
+    "Video transfer from ${SOURCE_DIR} to ${DEST_DIR} failed on $(hostname) at $(date) with exit status ${status}. Source files were not deleted." || true
+  exit "$status"
+fi
 find "$SOURCE_DIR" -type f -delete
 find "$SOURCE_DIR" -mindepth 1 -type d -empty -delete
 

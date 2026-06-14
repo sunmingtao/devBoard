@@ -857,3 +857,36 @@ sudo dmesg | tail -50
 ps -ef | grep "[m]v"
 ps -o pid,stat,etime,cmd -p 2351763
 lsusb
+
+
+mkdir -p ~/docker/qbittorrent/config
+mkdir -p /data/torrents
+
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Australia/Canberra
+      - WEBUI_PORT=8080
+    volumes:
+      - ~/docker/qbittorrent/config:/config
+      - /data/torrents:/downloads
+	  - /home/mike/workspaces/videos:/videos
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    restart: unless-stopped
+	
+ffmpeg -i input.mp4 -i input.srt -c:v copy -c:a copy -c:s mov_text output.mp4
+
+https://sehuatang.org/forum.php?mod=viewthread&tid=3544919&highlight=
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install ./google-chrome-stable_current_amd64.deb
