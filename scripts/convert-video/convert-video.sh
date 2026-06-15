@@ -171,7 +171,7 @@ folder_number=0
 for source_dir in */; do
   source_dir=${source_dir%/}
   [[ -d "$source_dir" ]] || continue
-  [[ "$source_dir" == "$output_dir" || "$source_dir" == *-done ]] && continue
+  [[ "$source_dir" == "$output_dir" || "$source_dir" == *done ]] && continue
 
   folder_has_videos=0
   status_subdir="$job_status_dir/folder-$folder_number"
