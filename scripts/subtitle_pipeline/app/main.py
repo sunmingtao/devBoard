@@ -5,7 +5,7 @@ from app.scanner import find_new_media_files, is_audio_file
 from app.audio import extract_audio
 from app.transcriber import transcribe_audio
 from app.translator import TranslationMode, generate_bilingual_srt, translate_srt
-from app.video import burn_subtitles
+from app.video import burn_subtitles, soft_burn_subtitles
 from app.notifier import send_success, send_failure
 from app.split_video import split_video_with_overlap
 from app.config import ARCHIVE_DIR, FAILED_DIR, OUTPUT_DIR, WORKING_DIR
@@ -124,7 +124,11 @@ def process_media_file(
         if language == "en" and not input_is_audio:
             output_path = burn_subtitles(media_path, subtitle_path)
         else:
-            output_path = subtitle_output_path
+            output_path = (
+                subtitle_output_path
+                if input_is_audio
+                else soft_burn_subtitles(media_path, subtitle_output_path)
+            )
         archived_video_path = cleanup_completed_job(media_path, audio_path.parent)
         send_success(archived_video_path, output_path)
 

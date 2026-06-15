@@ -881,7 +881,7 @@ services:
       - 6881:6881/udp
     restart: unless-stopped
 	
-ffmpeg -i input.mp4 -i input.srt -c:v copy -c:a copy -c:s mov_text output.mp4
+ffmpeg -i HJMO-726.mp4 -i input.srt -c:v copy -c:a copy -c:s mov_text output.mp4
 
 https://sehuatang.org/forum.php?mod=viewthread&tid=3544919&highlight=
 
@@ -894,3 +894,9 @@ sudo apt install ./google-chrome-stable_current_amd64.deb
 ### 2026-06-15
 
 sudo umount /mnt/usb
+sudo umount -l /mnt/usb
+df -h /mnt/usb
+
+sudo apt install xvfb
+xvfb-run -a python crawler.py
+

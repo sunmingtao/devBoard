@@ -93,6 +93,7 @@ class ProcessMediaFileTests(unittest.TestCase):
         zh_srt_path = Path("working/input/subtitle_translated.srt")
         bilingual_srt_path = Path("working/input/subtitle_bilingual.srt")
         subtitle_output_path = Path("output/subtitle_bilingual.srt")
+        soft_subtitled_video_path = Path("output/input~jaC.mp4")
         archived_video_path = Path("archive/input~ja.mp4")
 
         with (
@@ -102,6 +103,7 @@ class ProcessMediaFileTests(unittest.TestCase):
             patch.object(main, "generate_bilingual_srt", return_value=bilingual_srt_path) as generate_bilingual_srt,
             patch.object(main, "copy_subtitle_to_output", return_value=subtitle_output_path) as copy_subtitle_to_output,
             patch.object(main, "burn_subtitles") as burn_subtitles,
+            patch.object(main, "soft_burn_subtitles", return_value=soft_subtitled_video_path) as soft_burn_subtitles,
             patch.object(main, "cleanup_completed_job", return_value=archived_video_path) as cleanup_completed_job,
             patch.object(main, "send_success") as send_success,
             patch.object(main, "send_failure") as send_failure,
@@ -118,8 +120,9 @@ class ProcessMediaFileTests(unittest.TestCase):
         generate_bilingual_srt.assert_called_once_with(srt_path, zh_srt_path)
         copy_subtitle_to_output.assert_called_once_with(bilingual_srt_path)
         burn_subtitles.assert_not_called()
+        soft_burn_subtitles.assert_called_once_with(video_path, subtitle_output_path)
         cleanup_completed_job.assert_called_once_with(video_path, audio_path.parent)
-        send_success.assert_called_once_with(archived_video_path, subtitle_output_path)
+        send_success.assert_called_once_with(archived_video_path, soft_subtitled_video_path)
         send_failure.assert_not_called()
 
     def test_process_media_file_sends_failure_and_reraises(self) -> None:

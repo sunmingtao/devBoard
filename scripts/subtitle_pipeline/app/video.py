@@ -1,9 +1,12 @@
-# app/video.py
-
+import os
 import subprocess
 from pathlib import Path
 
 from app.config import OUTPUT_DIR
+
+SOFT_SUBTITLE_OUTPUT_DIR = Path(
+    os.getenv("SOFT_SUBTITLE_OUTPUT_DIR", "/home/mike/workspaces/videos")
+)
 
 
 def escape_ffmpeg_filter_value(value: str) -> str:
@@ -49,6 +52,32 @@ def burn_subtitles(video_path: str | Path, subtitle_path: str | Path) -> Path:
             "-crf", "23",
             "-preset", "veryfast",
             "-c:a", "copy",
+            str(output_path),
+        ],
+        check=True,
+    )
+
+    return output_path
+
+
+def soft_burn_subtitles(video_path: str | Path, subtitle_path: str | Path) -> Path:
+    video_path = Path(video_path)
+    subtitle_path = Path(subtitle_path)
+    SOFT_SUBTITLE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = SOFT_SUBTITLE_OUTPUT_DIR / f"{video_path.stem}C.mp4"
+
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i", str(video_path),
+            "-i", str(subtitle_path),
+            "-map", "0:v",
+            "-map", "0:a?",
+            "-map", "1:0",
+            "-c:v", "copy",
+            "-c:a", "copy",
+            "-c:s", "mov_text",
             str(output_path),
         ],
         check=True,
