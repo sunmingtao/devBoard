@@ -174,6 +174,14 @@ for pattern in "${video_patterns[@]}"; do
 done
 unset "find_video_args[$((${#find_video_args[@]} - 1))]"
 
+wait_for_folder_jobs() {
+  local pid
+
+  for pid in "$@"; do
+    wait "$pid"
+  done
+}
+
 for source_dir in */; do
   source_dir=${source_dir%/}
   echo "checking $source_dir"
@@ -183,6 +191,7 @@ for source_dir in */; do
   folder_has_videos=0
   status_subdir="$job_status_dir/folder-$folder_number"
   folder_output_dir="$output_dir/$source_dir"
+  folder_job_pids=()
 
   while IFS= read -r -d '' input_file; do
     relative_path=${input_file#"$source_dir"/}
@@ -205,8 +214,11 @@ for source_dir in */; do
     mkdir -p "$file_output_dir"
     wait_for_slot
     convert_one "$input_file" "$file_output_dir" "$status_subdir/job-$job_number.status" &
+    folder_job_pids+=("$!")
     ((job_number++))
   done < <(find "$source_dir" -type f \( "${find_video_args[@]}" \) -print0)
+
+  wait_for_folder_jobs "${folder_job_pids[@]}"
 done
 
 wait

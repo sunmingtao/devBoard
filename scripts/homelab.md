@@ -900,3 +900,5 @@ df -h /mnt/usb
 sudo apt install xvfb
 xvfb-run -a python crawler.py
 
+schema
+title interested downloaded
