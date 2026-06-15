@@ -71,10 +71,29 @@ format_duration() {
   fi
 }
 
+log_event() {
+  printf '[%(%Y-%m-%d %H:%M:%S)T] [pid:%s] %s\n' -1 "$BASHPID" "$*" >> "$log_file"
+}
+
 wait_for_slot() {
-  while (( $(jobs -rp | wc -l) >= MAX_JOBS )); do
+  local active_jobs waited_seconds
+
+  waited_seconds=0
+  while true; do
+    active_jobs=$(jobs -rp | wc -l)
+    (( active_jobs < MAX_JOBS )) && break
+
+    if (( waited_seconds == 0 || waited_seconds % 60 == 0 )); then
+      log_event "Waiting for job slot: active_jobs=$active_jobs max_jobs=$MAX_JOBS"
+    fi
+
     sleep 1
+    ((waited_seconds++))
   done
+
+  if (( waited_seconds > 0 )); then
+    log_event "Job slot available after ${waited_seconds}s: active_jobs=$active_jobs max_jobs=$MAX_JOBS"
+  fi
 }
 
 convert_one() {
@@ -85,6 +104,7 @@ convert_one() {
   local subtitle_filter_index chinese_subtitle_filter_index subtitle_stream_number
   local stream_index codec_name language title stream_filter_index title_lower
   local video_filter
+  local start_seconds elapsed_seconds
   local -a ffmpeg_args
 
   file_name=${input_file##*/}
@@ -104,6 +124,8 @@ convert_one() {
   fi
 
   printf 'Converting %s -> %s\n' "$input_file" "$output_file"
+  log_event "Starting conversion: input=$input_file output=$output_file status_file=$status_file"
+  start_seconds=$SECONDS
 
   subtitle_filter_index=""
   chinese_subtitle_filter_index=""
@@ -159,10 +181,14 @@ convert_one() {
 
   if ffmpeg "${ffmpeg_args[@]}" 2>>"$log_file"; then
     printf 'converted\n' > "$status_file"
+    elapsed_seconds=$((SECONDS - start_seconds))
+    log_event "Finished conversion: input=$input_file output=$output_file status=converted elapsed=$(format_duration "$elapsed_seconds")"
   else
     printf 'failed\n' > "$status_file"
     printf 'Failed to convert %s\n' "$input_file" >> "$log_file"
     rm -f "$output_file"
+    elapsed_seconds=$((SECONDS - start_seconds))
+    log_event "Finished conversion: input=$input_file output=$output_file status=failed elapsed=$(format_duration "$elapsed_seconds")"
   fi
 }
 
@@ -175,16 +201,23 @@ done
 unset "find_video_args[$((${#find_video_args[@]} - 1))]"
 
 wait_for_folder_jobs() {
-  local pid
+  local pid exit_status
 
   for pid in "$@"; do
-    wait "$pid"
+    log_event "Waiting for folder job: pid=$pid"
+    if wait "$pid"; then
+      log_event "Folder job finished: pid=$pid exit_status=0"
+    else
+      exit_status=$?
+      log_event "Folder job finished: pid=$pid exit_status=$exit_status"
+    fi
   done
 }
 
 for source_dir in */; do
   source_dir=${source_dir%/}
   echo "checking $source_dir"
+  log_event "Checking folder: folder=$source_dir"
   [[ -d "$source_dir" ]] || continue
   [[ "$source_dir" == "$output_dir" || "$source_dir" == *done ]] && continue
 
@@ -213,12 +246,20 @@ for source_dir in */; do
 
     mkdir -p "$file_output_dir"
     wait_for_slot
-    convert_one "$input_file" "$file_output_dir" "$status_subdir/job-$job_number.status" &
-    folder_job_pids+=("$!")
+    status_file="$status_subdir/job-$job_number.status"
+    log_event "Queueing conversion job: job=$job_number folder=$source_dir input=$input_file output_dir=$file_output_dir"
+    convert_one "$input_file" "$file_output_dir" "$status_file" &
+    job_pid=$!
+    folder_job_pids+=("$job_pid")
+    log_event "Started conversion job: job=$job_number pid=$job_pid folder=$source_dir status_file=$status_file"
     ((job_number++))
   done < <(find "$source_dir" -type f \( "${find_video_args[@]}" \) -print0)
 
+  if (( ${#folder_job_pids[@]} > 0 )); then
+    log_event "Waiting for folder jobs: folder=$source_dir jobs=${#folder_job_pids[@]}"
+  fi
   wait_for_folder_jobs "${folder_job_pids[@]}"
+  log_event "Finished folder: folder=$source_dir jobs=${#folder_job_pids[@]}"
 done
 
 wait
