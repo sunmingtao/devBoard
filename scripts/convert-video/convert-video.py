@@ -18,7 +18,7 @@ from pathlib import Path
 
 RECIPIENT = "sunmingtao@gmail.com"
 MAX_JOBS = int(os.environ.get("MAX_JOBS", "4"))
-CONVERT_TIMEOUT = os.environ.get("CONVERT_TIMEOUT", "20m")
+CONVERT_TIMEOUT = os.environ.get("CONVERT_TIMEOUT", "15m")
 SUBTITLE_FONT = os.environ.get("SUBTITLE_FONT", "Noto Sans CJK SC")
 BASE_DIR = Path(os.environ.get("CONVERT_VIDEO_BASE_DIR", Path(__file__).resolve().parent)).resolve()
 INPUT_DIR = BASE_DIR / "input"
@@ -364,6 +364,10 @@ def build_summary(results: list[VideoResult], elapsed_seconds: float, log_file: 
 
 
 def main() -> int:
+    if not os.environ.get("TMUX"):
+        print("Run this script inside a tmux session.", file=sys.stderr)
+        return 1
+
     log_file = configure_logging()
     start = time.monotonic()
     timeout_seconds = parse_timeout(CONVERT_TIMEOUT)
