@@ -168,6 +168,12 @@ convert_one() {
 
 job_number=0
 folder_number=0
+find_video_args=()
+for pattern in "${video_patterns[@]}"; do
+  find_video_args+=(-iname "$pattern" -o)
+done
+unset 'find_video_args[${#find_video_args[@]}-1]'
+
 for source_dir in */; do
   source_dir=${source_dir%/}
   echo "checking $source_dir"
@@ -178,23 +184,29 @@ for source_dir in */; do
   status_subdir="$job_status_dir/folder-$folder_number"
   folder_output_dir="$output_dir/$source_dir"
 
-  for pattern in "${video_patterns[@]}"; do
-    for input_file in "$source_dir"/$pattern; do
-      [[ -f "$input_file" ]] || continue
+  while IFS= read -r -d '' input_file; do
+    relative_path=${input_file#"$source_dir"/}
+    relative_dir=${relative_path%/*}
 
-      if (( folder_has_videos == 0 )); then
-        mkdir -p "$status_subdir" "$folder_output_dir"
-        folder_dirs+=("$source_dir")
-        folder_status_dirs+=("$status_subdir")
-        ((folder_number++))
-        folder_has_videos=1
-      fi
+    if [[ "$relative_dir" == "$relative_path" ]]; then
+      file_output_dir="$folder_output_dir"
+    else
+      file_output_dir="$folder_output_dir/$relative_dir"
+    fi
 
-      wait_for_slot
-      convert_one "$input_file" "$folder_output_dir" "$status_subdir/job-$job_number.status" &
-      ((job_number++))
-    done
-  done
+    if (( folder_has_videos == 0 )); then
+      mkdir -p "$status_subdir" "$folder_output_dir"
+      folder_dirs+=("$source_dir")
+      folder_status_dirs+=("$status_subdir")
+      ((folder_number++))
+      folder_has_videos=1
+    fi
+
+    mkdir -p "$file_output_dir"
+    wait_for_slot
+    convert_one "$input_file" "$file_output_dir" "$status_subdir/job-$job_number.status" &
+    ((job_number++))
+  done < <(find "$source_dir" -type f \( "${find_video_args[@]}" \) -print0)
 done
 
 wait
