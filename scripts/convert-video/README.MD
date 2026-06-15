@@ -2,27 +2,45 @@
 
 Run these scripts from the `scripts/convert-video` directory.
 
+The video converter now runs as a Python script. The old Bash converter is kept
+under `legacy/` for reference, while the active workflow uses these directories:
+
+- `input/`: source video folders to convert
+- `output/`: converted MP4 files, grouped by source folder
+- `archived/`: source folders moved here after every video in the folder
+  converts or is already present in `output/`
+
 ## Prepare videos
 
-Copy each source video folder into this directory. The converter scans immediate
-subdirectories, writes converted files under `output/`, and renames fully
-successful source folders to `<folder>-done`.
+Create `input/` if needed, then copy each source video folder into it. The
+converter scans immediate subdirectories of `input/`, preserves nested paths
+inside `output/<source-folder>/`, and moves fully successful source folders to
+`archived/<source-folder>/`.
+
+```bash
+mkdir -p input output archived
+```
 
 ## Convert videos
 
 ```bash
-./convert-video.sh
+tmux
+python3 convert-video.py
 ```
 
-Converted files are written to `output/<source-folder>/` as MP4 files. Progress
-and failures are logged to `convert-video-errors.log`, and a completion email is
-sent when the run finishes.
+Converted files are written to `output/<source-folder>/` as MP4 files. Progress,
+failures, and skipped files are logged to `convert-video-YYYYMMDD-HHMMSS.log`,
+and a completion email is sent when the run finishes. The converter exits with a
+non-zero status if any video fails or times out.
 
 Optional environment variables:
 
 ```bash
-MAX_JOBS=8 SUBTITLE_FONT="Noto Sans CJK SC" ./convert-video.sh
+MAX_JOBS=8 CONVERT_TIMEOUT=30m SUBTITLE_FONT="Noto Sans CJK SC" python3 convert-video.py
 ```
+
+`CONVERT_VIDEO_BASE_DIR` can point the converter at another directory with the
+same `input/`, `output/`, and `archived/` structure.
 
 ## Mount the USB drive
 
