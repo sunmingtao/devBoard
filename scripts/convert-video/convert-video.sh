@@ -170,6 +170,7 @@ job_number=0
 folder_number=0
 for source_dir in */; do
   source_dir=${source_dir%/}
+  echo "checking $source_dir"
   [[ -d "$source_dir" ]] || continue
   [[ "$source_dir" == "$output_dir" || "$source_dir" == *done ]] && continue
 
