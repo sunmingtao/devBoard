@@ -11,8 +11,8 @@ job_status_dir="$(mktemp -d)"
 MAX_JOBS=${MAX_JOBS:-4}
 SUBTITLE_FONT=${SUBTITLE_FONT:-Noto Sans CJK SC}
 video_patterns=(
-  *.3g2 *.3gp *.asf *.avi *.flv *.m4v *.mkv *.mov *.mp4 *.mpeg *.mpg
-  *.mts *.m2ts *.ogv *.rm *.rmvb *.ts *.vob *.webm *.wmv
+  '*.3g2' '*.3gp' '*.asf' '*.avi' '*.flv' '*.m4v' '*.mkv' '*.mov' '*.mp4' '*.mpeg' '*.mpg'
+  '*.mts' '*.m2ts' '*.ogv' '*.rm' '*.rmvb' '*.ts' '*.vob' '*.webm' '*.wmv'
 )
 
 declare -a folder_dirs=()
@@ -172,7 +172,7 @@ find_video_args=()
 for pattern in "${video_patterns[@]}"; do
   find_video_args+=(-iname "$pattern" -o)
 done
-unset 'find_video_args[${#find_video_args[@]}-1]'
+unset "find_video_args[$((${#find_video_args[@]} - 1))]"
 
 for source_dir in */; do
   source_dir=${source_dir%/}
