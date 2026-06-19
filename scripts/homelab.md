@@ -900,5 +900,36 @@ df -h /mnt/usb
 sudo apt install xvfb
 xvfb-run -a python crawler.py
 
+
 schema
-title interested downloaded
+create table videos (
+title pk
+boolean interested 
+boolean downloaded
+)
+
+
+
+### 2026-06-16
+
+sudo apt-get update
+sudo apt-get install python3-tk
+rsync -a --whole-file --partial 主角/ /mnt/usb/
+
+### 2026-06-19
+
+nmap -sn 192.168.0.0/24
+
+smbclient -L //192.168.0.46 -N
+
+smbclient //192.168.0.46/workspaces -N
+
+sudo mount -t cifs \
+  //192.168.0.46/workspaces \
+  /mnt/workspaces \
+  -o username=mike
+  
+sudo mkdir -p /etc/samba
+sudo nano /etc/samba/workspaces.credentials
+
+//192.168.0.46/workspaces /mnt/workspaces cifs credentials=/etc/samba/workspaces.credentials,uid=1000,gid=1000,_netdev,nofail,vers=3.0 0 0
