@@ -933,3 +933,55 @@ sudo mkdir -p /etc/samba
 sudo nano /etc/samba/workspaces.credentials
 
 //192.168.0.46/workspaces /mnt/workspaces cifs credentials=/etc/samba/workspaces.credentials,uid=1000,gid=1000,_netdev,nofail,vers=3.0 0 0
+
+ffprobe -v error \
+  -select_streams v:0 \
+  -show_entries stream=width,height \
+  -of csv=s=x:p=0 \
+  USAG-093C.mp4
+  
+  
+ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -of default=noprint_wrappers=1 USAG-093~A.mp4
+
+# reduce size
+ffmpeg -i input.mp4 -c:v libx265 -crf 28 -c:a copy output.mp4
+# soft burn 
+ffmpeg -i input.mp4 -i input.srt -c:v copy -c:a copy -c:s mov_text output.mp4
+
+
+file="report.tar.gz"
+echo "${file%%.*}"
+
+ffmpeg_reduce () {
+	input="$1"
+	file_base="${input%%.*}"
+	echo ffmpeg -i "$input" -c:v libx265 -crf 28 -c:a copy $file_base-SMALL.mp4"
+}
+
+ffmpeg_soft () {
+	input="$1"
+	file_base="${input%%.*}"
+	echo ffmpeg -i "$input" -i "$2" -c:v copy -c:a copy -c:s mov_text $file_base-SOFT.mp4
+}
+
+ffmpeg -i SVVRT-079~A.mp4 -i SVVRT-079~A_bilingual.srt -c:v copy -c:a copy -c:s mov_text $file_base-SOFT.mp4
+
+[url=https://windfiles.com/share/39fMuI82ba72c5][b]SVVRT-079 【1080P 无水印 高清中文字幕下载】 [/b][/url]
+
+findmnt -no OPTIONS /mnt/workspaces
+
+### 2026-06-20
+
+ffmpeg -i input.mkv \
+-vf scale=2560:-2 \
+-c:v libx265 \
+-crf 23 \
+-preset slow \
+-c:a copy \
+output.mkv
+
+
+docker compose exec postgres psql -U crawler -d crawler -c "SELECT 1;"
+docker compose exec postgres pg_isready -U crawler -d crawler
+
+psql -h 192.168.0.46 -p 5432 -U crawler -d crawler -c "SELECT * from crawler;"
