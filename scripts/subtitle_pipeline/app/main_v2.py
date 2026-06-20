@@ -122,9 +122,7 @@ def process_media_file(
         if language == "en":
             output_path = burn_subtitles(media_path, subtitle_path)
         else:
-            output_path = (
-                subtitle_output_path = soft_burn_subtitles(media_path, subtitle_output_path)
-            )
+            output_path = soft_burn_subtitles(media_path, subtitle_output_path)
         archived_video_path = cleanup_completed_job(media_path, job_dir)
         send_success(archived_video_path, output_path)
     except Exception as e:
