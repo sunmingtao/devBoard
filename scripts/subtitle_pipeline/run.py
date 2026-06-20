@@ -2,7 +2,6 @@ import argparse
 import datetime
 import time
 
-from app.main import main
 from app.main_v2 import main as main_v2
 
 def parse_args() -> argparse.Namespace:

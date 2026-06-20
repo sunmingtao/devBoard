@@ -985,3 +985,6 @@ docker compose exec postgres psql -U crawler -d crawler -c "SELECT 1;"
 docker compose exec postgres pg_isready -U crawler -d crawler
 
 psql -h 192.168.0.46 -p 5432 -U crawler -d crawler -c "SELECT * from crawler;"
+
+sudo usermod -aG systemd-journal mike
+systemctl cat email-alert@.service
