@@ -762,7 +762,7 @@ pip freeze > requirements.txt
 
 python -m unittest discover -s tests
 
-(venv) jacky@mike:~/workspace/devBoard/scripts/subtitle_pipeline/input (main)$ ffprobe -v error -i input.mp4
+$ ffprobe -v error -i input.mp4
 [mov,mp4,m4a,3gp,3g2,mj2 @ 0x60f7ed3ce780] moov atom not found
 input.mp4: Invalid data found when processing input
 
@@ -833,10 +833,6 @@ docker compose up -d
 
 docker compose down
 
-at 4am tomorrow <<EOF
-./convert-video
-EOF
-
 ### 2026-06-14
 
 sudo blkid /dev/sda1
@@ -874,7 +870,7 @@ services:
     volumes:
       - ~/docker/qbittorrent/config:/config
       - /data/torrents:/downloads
-	  - /home/mike/workspaces/videos:/videos
+	    - /home/mike/workspaces/videos:/videos
     ports:
       - 8080:8080
       - 6881:6881
@@ -914,7 +910,7 @@ boolean downloaded
 
 sudo apt-get update
 sudo apt-get install python3-tk
-rsync -a --whole-file --partial 主角/ /mnt/usb/
+rsync -avh --whole-file --partial 主角/ /mnt/usb/
 
 ### 2026-06-19
 
@@ -930,7 +926,7 @@ sudo mount -t cifs \
   -o username=mike
   
 sudo mkdir -p /etc/samba
-sudo nano /etc/samba/workspaces.credentials
+sudo vi /etc/samba/workspaces.credentials
 
 //192.168.0.46/workspaces /mnt/workspaces cifs credentials=/etc/samba/workspaces.credentials,uid=1000,gid=1000,_netdev,nofail,vers=3.0 0 0
 
@@ -966,7 +962,8 @@ ffmpeg_soft () {
 
 ffmpeg -i SVVRT-079~A.mp4 -i SVVRT-079~A_bilingual.srt -c:v copy -c:a copy -c:s mov_text $file_base-SOFT.mp4
 
-[url=https://windfiles.com/share/39fMuI82ba72c5][b]SVVRT-079 【1080P 无水印 高清中文字幕下载】 [/b][/url]
+[url=https://windfiles.com/share/39fLv7a4dae456][b]DASS-986 【1080P 无水印 高清中文字幕下载】 [/b][/url]
+
 
 findmnt -no OPTIONS /mnt/workspaces
 
@@ -994,3 +991,11 @@ rsync -av \
   --exclude='Singleton*' \
   chrome_playwright_profile/ \
   homelab:/data/chrome_playwright_profile/
+
+### 2026-06-21
+
+python -m pip install streamlit
+python -m streamlit run dashboard.py
+
+
+git config --global alias.compush '!f() { git commit "$@" && git push; }; f'
