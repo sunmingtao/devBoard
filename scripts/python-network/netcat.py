@@ -64,8 +64,9 @@ class NetCat:
 
     def handle(self, client_socket):
         if self.args.execute:
+            print(f'run execute')
             output = execute(self.args.execute)
-            client_socket.send(output.encode())
+            client_socket.sendall(output.encode())
         elif self.args.upload:
             file_buffer = b''
             while True:
