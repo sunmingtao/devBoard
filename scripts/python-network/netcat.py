@@ -29,6 +29,7 @@ class NetCat:
     def send(self):
         self.socket.connect((self.args.target, self.args.port))
         if self.buffer:
+            print (f'send buffer {self.buffer}')
             self.socket.send(self.buffer)
         
         try:
@@ -56,6 +57,7 @@ class NetCat:
         self.socket.listen(5)
         while(True):
             client_socket, _ = self.socket.accept()
+            print(f'Received packet')
             client_thread = threading.Thread(
                 target=self.handle, args=(client_socket,)
             )
@@ -85,7 +87,9 @@ class NetCat:
                     client_socket.send(b'BHP: #> ')
                     while '\n' not in cmd_buffer.decode():
                         cmd_buffer += client_socket.recv(64)
+                    print(f'excute command: {cmd_buffer.decode()}')
                     response = execute(cmd_buffer.decode())
+                    print(f'excution response is: {response}')
                     if response:
                         client_socket.send(response.encode())
                     cmd_buffer = b''
