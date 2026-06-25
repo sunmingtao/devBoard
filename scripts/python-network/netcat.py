@@ -30,7 +30,7 @@ class NetCat:
         self.socket.connect((self.args.target, self.args.port))
         if self.buffer:
             print (f'send buffer {self.buffer}')
-            self.socket.send(self.buffer)
+            self.socket.sendall(self.buffer)
         prompt = 'BHP: #> '
         try:
             while True:
@@ -45,7 +45,7 @@ class NetCat:
                     print(response)
                     buffer = input('> ')
                     buffer += '\n'
-                    self.socket.send(buffer.encode())
+                    self.socket.sendall(buffer.encode())
         except KeyboardInterrupt:
             print('User terminated')
             self.socket.close()
