@@ -84,6 +84,7 @@ class NetCat:
             cmd_buffer = b''
             while True:
                 try:
+                    print('Send BHP prompt')
                     client_socket.send(b'BHP: #> ')
                     while '\n' not in cmd_buffer.decode():
                         cmd_buffer += client_socket.recv(64)
