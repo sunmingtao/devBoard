@@ -78,26 +78,42 @@ class NetCat:
             with open(self.args.upload, 'wb') as f:
                 f.write(file_buffer)
             message = f'Saved file {self.args.upload}'
-            client_socket.send(message.encode())
+            client_socket.sendall(message.encode())
         elif self.args.command:
             cmd_buffer = b''
             while True:
                 try:
-                    print('Send BHP prompt')
-                    client_socket.send(b'BHP: #> ')
-                    while '\n' not in cmd_buffer.decode():
-                        cmd_buffer += client_socket.recv(64)
-                    print(f'excute command: {cmd_buffer.decode()}')
-                    response = execute(cmd_buffer.decode())
-                    print(f'excution response is: {response}')
-                    if response:
-                        client_socket.send(response.encode())
-                        print('complete sending response')
+                    client_socket.sendall(b'BHP: #> ')
+
                     cmd_buffer = b''
+                    while b'\n' not in cmd_buffer:
+                        chunk = client_socket.recv(64)
+                        if not chunk:
+                            print('client disconnected')
+                            return
+                        cmd_buffer += chunk
+
+                    command = cmd_buffer.decode(errors='replace').strip()
+                    print(f'execute command: {command}')
+
+                    try:
+                        response = execute(command)
+                    except Exception as e:
+                        response = f'command execution failed: {e}\n'
+
+                    if response:
+                        client_socket.sendall(response.encode())
+
+                except (ConnectionResetError, BrokenPipeError):
+                    print('client disconnected')
+                    return
+
                 except Exception as e:
-                    print(f'server killed {e}')
-                    self.socket.send
-                    sys.exit()
+                    print(f'server error: {e}')
+                    try:
+                        client_socket.sendall(f'server error: {e}\n'.encode())
+                    except Exception:
+                        return
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
