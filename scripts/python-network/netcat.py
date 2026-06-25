@@ -92,6 +92,7 @@ class NetCat:
                     print(f'excution response is: {response}')
                     if response:
                         client_socket.send(response.encode())
+                        print('complete sending response')
                     cmd_buffer = b''
                 except Exception as e:
                     print(f'server killed {e}')
