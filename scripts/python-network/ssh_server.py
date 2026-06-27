@@ -53,7 +53,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     print('[+] Authenciated!')
-    print(chan.recv(1024))
+    print(chan.recv(1024).decode())
 
     chan.send(b'Welcome to bh_ssh')
     try:
