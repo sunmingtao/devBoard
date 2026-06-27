@@ -20,14 +20,19 @@ class Server (paramiko.ServerInterface):
     def check_auth_password(self, username, password):
         if (username == 'tim') and (password == 'sekret'):
             return paramiko.AUTH_SUCCESSFUL
-        
+        return paramiko.AUTH_FAILED
+    
+    def check_channel_shell_request(self, channel):
+        self.event.set()
+        return True
+    
 if __name__ == '__main__':
     server = '192.168.0.46'
     ssh_port = 2222
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(server, ssh_port)
+        sock.bind((server, ssh_port))
         sock.listen(100)
         print("[+] Listening for connection ...")
         client, addr = sock.accept()
@@ -50,12 +55,12 @@ if __name__ == '__main__':
     print('[+] Authenciated!')
     print(chan.recv(1024))
 
-    chan.send('Welcome to bh_ssh')
+    chan.send(b'Welcome to bh_ssh')
     try:
         while True:
             command= input("Enter command: ")
             if command != 'exit':
-                chan.send(command)
+                chan.send(command.encode())
                 r = chan.recv(8192)
                 print(r.decode())
             else:
