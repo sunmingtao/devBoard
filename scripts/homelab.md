@@ -999,3 +999,7 @@ python -m streamlit run dashboard.py
 
 
 git config --global alias.compush '!f() { git commit "$@" && git push; }; f'
+
+### 2026-06-28
+
+pip install paramiko
