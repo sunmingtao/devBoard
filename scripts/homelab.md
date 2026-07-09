@@ -1003,3 +1003,10 @@ git config --global alias.compush '!f() { git commit "$@" && git push; }; f'
 ### 2026-06-28
 
 pip install paramiko
+py -m http.server 8080
+
+python3 -m http.server 8088 -b localhost
+
+
+.\.venv\Scripts\Activate.ps1
+.venv\Scripts\activate.bat
