@@ -19,4 +19,33 @@ if ! flock -n 9; then
   exit 0
 fi
 
-exec timeout -k "${KILL_AFTER}" "${TIMEOUT_DURATION}" "${VENV_DIR}/bin/python" "${SCRIPT_DIR}/run.py" -mode single
+echo "$(date --iso-8601=seconds) Starting subtitle pipeline."
+echo "$(date --iso-8601=seconds) Timeout: ${TIMEOUT_DURATION}; force-kill delay: ${KILL_AFTER}."
+
+set +e
+timeout \
+  -k "${KILL_AFTER}" \
+  "${TIMEOUT_DURATION}" \
+  "${VENV_DIR}/bin/python" -u \
+  "${SCRIPT_DIR}/run.py" \
+  -mode single
+
+exit_code=$?
+set -e
+
+case "${exit_code}" in
+  0)
+    echo "$(date --iso-8601=seconds) Subtitle pipeline completed successfully."
+    ;;
+  124)
+    echo "$(date --iso-8601=seconds) ERROR: Subtitle pipeline exceeded ${TIMEOUT_DURATION} and was terminated." >&2
+    ;;
+  137)
+    echo "$(date --iso-8601=seconds) ERROR: Subtitle pipeline did not stop within ${KILL_AFTER} and was force-killed with SIGKILL." >&2
+    ;;
+  *)
+    echo "$(date --iso-8601=seconds) ERROR: Subtitle pipeline exited with code ${exit_code}." >&2
+    ;;
+esac
+
+exit "${exit_code}"

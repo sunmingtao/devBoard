@@ -6,7 +6,7 @@ from app.audio import extract_audio
 from app.transcriber import transcribe_audio
 from app.translator import TranslationMode, generate_bilingual_srt, translate_srt
 from app.video import burn_subtitles, soft_burn_subtitles
-from app.notifier import send_success, send_failure
+from app.notifier import send_success, send_failure, start_processing_timer
 from app.split_video import split_video_with_overlap
 from app.extract_audio import extract_audio_chunks
 from app.config import ARCHIVE_DIR, FAILED_DIR, OUTPUT_DIR, WORKING_DIR
@@ -99,6 +99,7 @@ def process_media_file(
     translation_mode: TranslationMode = "single",
 ) -> None:
     media_path = Path(media_path)
+    start_processing_timer()
     job_dir = WORKING_DIR / media_path.stem
     language = "ja" if "~" in media_path.name else "en"
     try:

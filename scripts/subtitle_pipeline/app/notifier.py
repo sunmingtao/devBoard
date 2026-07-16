@@ -58,6 +58,11 @@ def _elapsed_processing_time() -> str:
     return str(timedelta(seconds=int(time.perf_counter() - _PROCESSING_STARTED_AT)))
 
 
+def start_processing_timer() -> None:
+    global _PROCESSING_STARTED_AT
+    _PROCESSING_STARTED_AT = time.perf_counter()
+
+
 def send_email(
     subject: str,
     body: str,
