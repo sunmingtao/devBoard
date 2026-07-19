@@ -187,7 +187,7 @@ def choose_subtitle_stream(source: Path) -> int | None:
 
 
 def build_ffmpeg_command(job: VideoJob) -> list[str]:
-    video_filter = "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2"
+    video_filter = "scale=1920:-2"
     subtitle_stream = choose_subtitle_stream(job.source)
 
     if subtitle_stream is not None:
@@ -221,10 +221,18 @@ def build_ffmpeg_command(job: VideoJob) -> list[str]:
         "ultrafast",
         "-b:v",
         "1.5M",
+        "-pix_fmt",
+        "yuv420p",
         "-c:a",
         "aac",
+        "-profile:a",
+        "aac_low",
+        "-ac",
+        "2",
+        "-ar",
+        "48000",
         "-b:a",
-        "128k",
+        "192k",
         "-movflags",
         "+faststart",
         str(job.destination),

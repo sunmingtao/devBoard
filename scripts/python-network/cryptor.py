@@ -60,8 +60,8 @@ if __name__ == '__main__':
 
 # Why use both RSA and AES
 # It is very slow to use RSA to encrypt large amount of data
-# There is a limit to the size of payload RSA can decrypt. 
-# It cannot exceed the length of RSA key. 
+# You can't encrypt data longer than the RSA key size in one go 
+# Have to split a large payload into smaller chunks.  
 #  
 # Purpose of tag
-# Checksum. To prevent payload from being tampered. 
+# Checksum. To prevent payload from being tampered. Integrity protection
