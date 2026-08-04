@@ -44,3 +44,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# python3 make_question.py 2 4 20
+# 20 questions of 4 digit number divided by 2 digit number

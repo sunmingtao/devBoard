@@ -201,7 +201,7 @@ def build_ffmpeg_command(job: VideoJob) -> list[str]:
         )
 
     return [
-        "ffmpeg",
+        "ffmpeg7",
         "-nostdin",
         "-y",
         "-hide_banner",
